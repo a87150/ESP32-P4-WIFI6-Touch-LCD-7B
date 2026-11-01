@@ -147,61 +147,61 @@ lv_obj_t * ui_SpinnerScreenSettingVerification;
 
 ///////////////////// FUNCTIONS ////////////////////
 void ui_event_PanelSettingMainContainerItem1( lv_event_t * e) {
-    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = (lv_obj_t *)lv_event_get_target(e);
 if ( event_code == LV_EVENT_CLICKED) {
       _ui_screen_change( &ui_ScreenSettingWiFi, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_ScreenSettingWiFi_screen_init);
 }
 }
 void ui_event_PanelSettingMainContainerItem2( lv_event_t * e) {
-    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = (lv_obj_t *)lv_event_get_target(e);
 if ( event_code == LV_EVENT_CLICKED) {
       _ui_screen_change( &ui_ScreenSettingBLE, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_ScreenSettingBLE_screen_init);
 }
 }
 void ui_event_PanelSettingMainContainerItem3( lv_event_t * e) {
-    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = (lv_obj_t *)lv_event_get_target(e);
 if ( event_code == LV_EVENT_CLICKED) {
       _ui_screen_change( &ui_ScreenSettingVolume, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_ScreenSettingVolume_screen_init);
 }
 }
 void ui_event_PanelSettingMainContainerItem4( lv_event_t * e) {
-    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = (lv_obj_t *)lv_event_get_target(e);
 if ( event_code == LV_EVENT_CLICKED) {
       _ui_screen_change( &ui_ScreenSettingLight, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_ScreenSettingLight_screen_init);
 }
 }
 void ui_event_PanelSettingMainContainerItem5( lv_event_t * e) {
-    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = (lv_obj_t *)lv_event_get_target(e);
 if ( event_code == LV_EVENT_CLICKED) {
       _ui_screen_change( &ui_ScreenSettingAbout, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_ScreenSettingAbout_screen_init);
 }
 }
 void ui_event_ButtonScreenSettingWiFiReturn( lv_event_t * e) {
-    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = (lv_obj_t *)lv_event_get_target(e);
 if ( event_code == LV_EVENT_CLICKED) {
       _ui_screen_change( &ui_ScreenSettingMain, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_ScreenSettingMain_screen_init);
 }
 }
 void ui_event_ButtonScreenSettingBLEReturn( lv_event_t * e) {
-    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = (lv_obj_t *)lv_event_get_target(e);
 if ( event_code == LV_EVENT_CLICKED) {
       _ui_screen_change( &ui_ScreenSettingMain, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_ScreenSettingMain_screen_init);
 }
 }
 void ui_event_ButtonScreenSettingVolumeReturn( lv_event_t * e) {
-    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = (lv_obj_t *)lv_event_get_target(e);
 if ( event_code == LV_EVENT_CLICKED) {
       _ui_screen_change( &ui_ScreenSettingMain, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_ScreenSettingMain_screen_init);
 }
 }
 void ui_event_ButtonScreenSettingLightReturn( lv_event_t * e) {
-    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = (lv_obj_t *)lv_event_get_target(e);
 if ( event_code == LV_EVENT_CLICKED) {
       _ui_screen_change( &ui_ScreenSettingMain, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_ScreenSettingMain_screen_init);
 }
 }
 void ui_event_ButtonScreenSettingAboutReturn( lv_event_t * e) {
-    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = (lv_obj_t *)lv_event_get_target(e);
 if ( event_code == LV_EVENT_CLICKED) {
       _ui_screen_change( &ui_ScreenSettingMain, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_ScreenSettingMain_screen_init);
 }

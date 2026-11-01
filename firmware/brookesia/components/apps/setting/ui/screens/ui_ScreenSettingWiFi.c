@@ -56,7 +56,8 @@ lv_obj_set_flex_align(ui_PanelScreenSettingWiFiList, LV_FLEX_ALIGN_START, LV_FLE
 lv_obj_add_flag( ui_PanelScreenSettingWiFiList, LV_OBJ_FLAG_HIDDEN );   /// Flags
 lv_obj_set_style_radius(ui_PanelScreenSettingWiFiList, 10, LV_PART_MAIN| LV_STATE_DEFAULT);
 
-ui_SpinnerScreenSettingWiFi = lv_spinner_create(ui_ScreenSettingWiFi,1000,90);
+ui_SpinnerScreenSettingWiFi = lv_spinner_create(ui_ScreenSettingWiFi);
+lv_spinner_set_anim_params(ui_SpinnerScreenSettingWiFi, 1000, 90);
 lv_obj_set_width( ui_SpinnerScreenSettingWiFi, lv_pct(16));
 lv_obj_set_height( ui_SpinnerScreenSettingWiFi, lv_pct(16));
 lv_obj_set_align( ui_SpinnerScreenSettingWiFi, LV_ALIGN_CENTER );

@@ -23,3 +23,11 @@ target_compile_options(
     >
     -DLV_LVGL_H_INCLUDE_SIMPLE
 )
+
+# LVGL v8 compatibility shim injected into every source (types/aliases live in
+# lv_api_map_v8.h; this header covers the remaining v8 identifiers)
+target_compile_options(
+    ${COMPONENT_LIB}
+    PRIVATE
+    "--include=${CMAKE_CURRENT_LIST_DIR}/lvgl8_compat.h"
+)

@@ -1,5 +1,6 @@
 #include <math.h>
 #include <vector>
+#include <cstring>
 #include "Calculator.hpp"
 
 using namespace std;
@@ -284,20 +285,12 @@ void Calculator::keyboard_event_cb(lv_event_t *e)
     lv_event_code_t code = lv_event_get_code(e);
     Calculator *app= (Calculator *)lv_event_get_user_data(e);
 
-    if (code == LV_EVENT_DRAW_PART_BEGIN) {
-        lv_obj_draw_part_dsc_t * dsc = (lv_obj_draw_part_dsc_t *)lv_event_get_draw_part_dsc(e);
+    /* Note: LVGL 9 removed the v8 per-button draw-part interception
+     * (LV_EVENT_DRAW_PART_BEGIN / lv_obj_draw_part_dsc_t).  The special-keys
+     * color highlight is dropped; buttons draw with the keyboard's default
+     * styling. Call-the-press behavior is unchanged below. */
 
-        /* When the button matrix draws the buttons... */
-        if(dsc->class_p == &lv_btnmatrix_class && dsc->type == LV_BTNMATRIX_DRAW_PART_BTN) {
-            /*Change the draw descriptor the 0/1/2/3/7/11/15nd button*/
-            if((dsc->id == 0) || (dsc->id == 1) ||
-               (dsc->id == 2) || (dsc->id == 3) ||
-               (dsc->id == 7) || (dsc->id == 11) ||
-               (dsc->id == 15)) {
-                dsc->label_dsc->color = KEYBOARD_SPECIAL_COLOR;
-            }
-        }
-    } else if (code == LV_EVENT_VALUE_CHANGED) {
+    if (code == LV_EVENT_VALUE_CHANGED) {
         int btn_id = lv_btnmatrix_get_selected_btn(app->keyboard);
         bool calculate_flag = false;
         bool equal_flag = false;

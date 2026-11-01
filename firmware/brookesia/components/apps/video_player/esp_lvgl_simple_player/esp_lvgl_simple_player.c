@@ -121,7 +121,7 @@ static void pause_event_cb(lv_event_t *e)
 static void repeat_event_cb(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
-    lv_obj_t *obj = lv_event_get_target(e);
+    lv_obj_t *obj = (lv_obj_t *)lv_event_get_target(e);
 
     if (code == LV_EVENT_VALUE_CHANGED) {
         bool loop = lv_obj_get_state(obj) & LV_STATE_CHECKED ? true : false;

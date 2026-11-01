@@ -41,13 +41,13 @@ lv_obj_t *ui_ImageCameraPhotoImage;
 
 ///////////////////// FUNCTIONS ////////////////////
 void ui_event_PanelCameraShotAlbum( lv_event_t * e) {
-    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = (lv_obj_t *)lv_event_get_target(e);
 if ( event_code == LV_EVENT_CLICKED) {
       _ui_screen_change( &ui_ScreenCameraPhoto, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_ScreenCameraPhoto_screen_init);
 }
 }
 void ui_event_ScreenCameraPhoto( lv_event_t * e) {
-    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = (lv_obj_t *)lv_event_get_target(e);
 if ( event_code == LV_EVENT_CLICKED) {
       _ui_screen_change( &ui_ScreenCameraShot, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_ScreenCameraShot_screen_init);
 }

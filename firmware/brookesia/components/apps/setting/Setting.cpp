@@ -23,6 +23,7 @@
 #include "app_sntp.h"
 
 #include "esp_brookesia_versions.h"
+#include "private/esp_brookesia_utils.h"
 
 #define ENABLE_DEBUG_LOG                (0)
 
@@ -356,7 +357,8 @@ void AppSettings::extraUiInit(void)
     lv_obj_center(_panel_wifi_connect);
     _img_wifi_connect = lv_img_create(_panel_wifi_connect);
     lv_obj_center(_img_wifi_connect);
-    _spinner_wifi_connect = lv_spinner_create(_panel_wifi_connect, 1000, 600);
+    _spinner_wifi_connect = lv_spinner_create(_panel_wifi_connect);
+    lv_spinner_set_anim_params(_spinner_wifi_connect, 1000, 600);
     lv_obj_set_size(_spinner_wifi_connect, lv_pct(20), lv_pct(20));
     lv_obj_center(_spinner_wifi_connect);
     processWifiConnect(WIFI_CONNECT_HIDE);
@@ -966,7 +968,7 @@ void AppSettings::wifiEventHandler(void* arg, esp_event_base_t event_base, int32
 void AppSettings::onKeyboardScreenSettingVerificationClickedEventCallback(lv_event_t *e)
 {
     AppSettings *app = (AppSettings *)lv_event_get_user_data(e);
-    lv_obj_t *target = lv_event_get_target(e);
+    lv_obj_t *target = (lv_obj_t *)lv_event_get_target(e);
 
     ESP_BROOKESIA_CHECK_NULL_GOTO(app, end, "Invalid app pointer");
 
@@ -994,7 +996,7 @@ void AppSettings::onScreenLoadEventCallback( lv_event_t * e)
     ESP_BROOKESIA_CHECK_NULL_GOTO(app, end, "Invalid app pointer");
 
     for (int i = 0; i < UI_MAX_INDEX; i++) {
-        if (app->_screen_list[i] == lv_event_get_target(e)) {
+        if (app->_screen_list[i] == (lv_obj_t *)lv_event_get_target(e)) {
             app->_screen_index = (SettingScreenIndex_t)i;
             break;
         }
@@ -1046,7 +1048,7 @@ end:
 void AppSettings::onButtonWifiListClickedEventCallback(lv_event_t * e)
 {
     lv_obj_t *label_wifi_ssid = (lv_obj_t*)lv_event_get_user_data(e);
-    lv_obj_t *btn = lv_event_get_target(e);
+    lv_obj_t *btn = (lv_obj_t *)lv_event_get_target(e);
     lv_area_t btn_click_area;
     lv_point_t point;
 

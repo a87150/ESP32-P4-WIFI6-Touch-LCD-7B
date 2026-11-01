@@ -188,14 +188,15 @@ const LV_ATTRIBUTE_MEM_ALIGN uint8_t img_lv_demo_music_wave_top_map[] = {
 #endif
 };
 
-lv_img_dsc_t img_lv_demo_music_wave_top = {
-  .header.always_zero = 0,
-  .header.w = 272,
-  .header.h = 42,
-  .data_size = 11424 * LV_COLOR_SIZE / 8,
-  .header.cf = LV_IMG_CF_TRUE_COLOR,
-  .data = img_lv_demo_music_wave_top_map,
-};
+const lv_image_dsc_t img_lv_demo_music_wave_top = {    .header.magic = LV_IMAGE_HEADER_MAGIC,
+   .header.cf = LV_COLOR_FORMAT_RGB565,
+   .header.flags = 0,
+   .header.w = 272,
+   .header.h = 42,
+   .header.stride = 544,
+   .data_size = 22848,
+   .data = img_lv_demo_music_wave_top_map,
+};;
 
 #endif /*APP_DEMO_MUSIC_ENABLE*/
 

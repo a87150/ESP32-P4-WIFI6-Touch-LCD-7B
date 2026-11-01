@@ -127,10 +127,9 @@ bool Camera::run(void)
     lv_img_dsc_t img_dsc = {
         .header = {
             .cf = LV_IMG_CF_TRUE_COLOR,
-            .always_zero = 0,
-            .reserved = 0,
             .w = _hor_res,
             .h = _ver_res,
+            .stride = (uint32_t)(_hor_res * 2),
         },
         .data_size = _img_album_buf_bytes,
         .data = (const uint8_t *)_img_album_buffer,
@@ -279,10 +278,9 @@ bool Camera::init(void)
     lv_img_dsc_t img_dsc = {
         .header = {
             .cf = LV_IMG_CF_TRUE_COLOR,
-            .always_zero = 0,
-            .reserved = 0,
             .w = _hor_res,
             .h = _ver_res,
+            .stride = (uint32_t)(_hor_res * 2),
         },
         .data_size = _cam_buffer_size[0],
         .data = (const uint8_t *)_cam_buffer[0],

@@ -408,14 +408,15 @@ const LV_ATTRIBUTE_MEM_ALIGN uint8_t img_lv_demo_music_logo_map[] = {
 #endif
 };
 
-lv_img_dsc_t img_lv_demo_music_logo = {
-  .header.always_zero = 0,
-  .header.w = 97,
-  .header.h = 97,
-  .data_size = 9409 * LV_COLOR_SIZE / 8,
-  .header.cf = LV_IMG_CF_TRUE_COLOR,
-  .data = img_lv_demo_music_logo_map,
-};
+const lv_image_dsc_t img_lv_demo_music_logo = {    .header.magic = LV_IMAGE_HEADER_MAGIC,
+   .header.cf = LV_COLOR_FORMAT_RGB565,
+   .header.flags = 0,
+   .header.w = 97,
+   .header.h = 97,
+   .header.stride = 194,
+   .data_size = 18818,
+   .data = img_lv_demo_music_logo_map,
+};;
 
 
 #endif /*APP_DEMO_MUSIC_ENABLE*/

@@ -13,7 +13,7 @@
 #include "product_audio.h"
 
 #include "esp_brookesia.hpp"
-#include "app_examples/phone/squareline/src/phone_app_squareline.hpp"
+#include "systems/phone/app_examples/squareline/src/phone_app_squareline.hpp"
 #include "apps.h"
 
 static const char *TAG = "main";
@@ -58,7 +58,7 @@ extern "C" void app_main(void)
     ESP_Brookesia_Phone *phone = new ESP_Brookesia_Phone();
     assert(phone != nullptr && "Failed to create phone");
 
-    ESP_Brookesia_PhoneStylesheet_t *phone_stylesheet = new ESP_Brookesia_PhoneStylesheet_t ESP_BROOKESIA_PHONE_1024_600_DARK_STYLESHEET();
+    ESP_Brookesia_PhoneStylesheet_t *phone_stylesheet = new ESP_Brookesia_PhoneStylesheet_t(ESP_BROOKESIA_PHONE_1024_600_DARK_STYLESHEET());
     if (phone_stylesheet == nullptr) {
         ESP_LOGE(TAG, "Failed to create phone stylesheet");
         bsp_display_unlock();
@@ -81,7 +81,7 @@ extern "C" void app_main(void)
         return;
     }
 
-    PhoneAppSquareline *smart_gadget = new PhoneAppSquareline();
+    PhoneAppSquareline *smart_gadget = PhoneAppSquareline::getInstance(true, true);
     assert(smart_gadget != nullptr && "Failed to create phone app squareline");
     if (phone->installApp(smart_gadget) < 0) {
         ESP_LOGE(TAG, "Failed to install phone app squareline");
@@ -125,6 +125,14 @@ extern "C" void app_main(void)
     assert(camera != nullptr && "Failed to create camera");
     if (phone->installApp(camera) < 0) {
         ESP_LOGE(TAG, "Failed to install camera");
+        bsp_display_unlock();
+        return;
+    }
+
+    SystemMonitor *system_monitor = new SystemMonitor();
+    assert(system_monitor != nullptr && "Failed to create system_monitor");
+    if (phone->installApp(system_monitor) < 0) {
+        ESP_LOGE(TAG, "Failed to install system_monitor");
         bsp_display_unlock();
         return;
     }

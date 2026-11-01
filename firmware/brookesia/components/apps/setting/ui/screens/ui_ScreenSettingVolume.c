@@ -56,7 +56,8 @@ lv_obj_set_flex_align(ui_PanelScreenSettingVolumeList, LV_FLEX_ALIGN_START, LV_F
 lv_obj_add_flag( ui_PanelScreenSettingVolumeList, LV_OBJ_FLAG_HIDDEN );   /// Flags
 lv_obj_set_style_radius(ui_PanelScreenSettingVolumeList, 10, LV_PART_MAIN| LV_STATE_DEFAULT);
 
-ui_SpinnerScreenSettingVolume = lv_spinner_create(ui_ScreenSettingVolume,1000,90);
+ui_SpinnerScreenSettingVolume = lv_spinner_create(ui_ScreenSettingVolume);
+lv_spinner_set_anim_params(ui_SpinnerScreenSettingVolume, 1000, 90);
 lv_obj_set_width( ui_SpinnerScreenSettingVolume, lv_pct(16));
 lv_obj_set_height( ui_SpinnerScreenSettingVolume, lv_pct(16));
 lv_obj_set_align( ui_SpinnerScreenSettingVolume, LV_ALIGN_CENTER );

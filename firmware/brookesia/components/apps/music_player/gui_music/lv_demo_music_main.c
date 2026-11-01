@@ -306,7 +306,7 @@ lv_obj_t * _lv_demo_music_main_create(lv_obj_t * parent, file_iterator_instance_
     lv_anim_set_time(&a, 400);
     lv_anim_set_delay(&a, INTRO_TIME + 800);
     lv_anim_set_values(&a, LV_IMG_ZOOM_NONE, 10);
-    lv_anim_set_ready_cb(&a, lv_obj_del_anim_ready_cb);
+    lv_anim_set_ready_cb(&a, lv_obj_delete_anim_ready_cb);
     lv_anim_start(&a);
 
     lv_obj_update_layout(main_cont);
@@ -436,7 +436,7 @@ static lv_obj_t * create_cont(lv_obj_t * parent)
 #else
     lv_obj_set_size(player, LV_HOR_RES, LV_VER_RES + APP_DEMO_MUSIC_HANDLE_SIZE * 2);
 #endif
-    lv_obj_clear_flag(player, LV_OBJ_FLAG_SNAPABLE);
+    lv_obj_clear_flag(player, LV_OBJ_FLAG_SNAPPABLE);
 
     lv_obj_set_style_bg_color(player, lv_color_hex(0xffffff), 0);
     lv_obj_set_style_border_width(player, 0, 0);
@@ -755,7 +755,7 @@ static void track_load(uint32_t id)
     }
 #endif
     lv_anim_set_exec_cb(&a, _obj_set_x_anim_cb);
-    lv_anim_set_ready_cb(&a, lv_obj_del_anim_ready_cb);
+    lv_anim_set_ready_cb(&a, lv_obj_delete_anim_ready_cb);
     lv_anim_start(&a);
 
     lv_anim_set_path_cb(&a, lv_anim_path_linear);
@@ -818,19 +818,22 @@ static void spectrum_draw_event_cb(lv_event_t * e)
         lv_event_set_cover_res(e, LV_COVER_RES_NOT_COVER);
     }
     else if(code == LV_EVENT_DRAW_POST) {
-        lv_obj_t * obj = lv_event_get_target(e);
-        lv_draw_ctx_t * draw_ctx = lv_event_get_draw_ctx(e);
+        lv_obj_t * obj = (lv_obj_t *)lv_event_get_target(e);
+        lv_layer_t * layer = lv_event_get_layer(e);
 
         lv_opa_t opa = lv_obj_get_style_opa_recursive(obj, LV_PART_MAIN);
         if(opa < LV_OPA_MIN) return;
 
-        lv_point_t poly[4];
-        lv_point_t center;
-        center.x = obj->coords.x1 + lv_obj_get_width(obj) / 2;
-        center.y = obj->coords.y1 + lv_obj_get_height(obj) / 2;
+        lv_area_t obj_coords;
+        lv_obj_get_coords(obj, &obj_coords);
 
-        lv_draw_rect_dsc_t draw_dsc;
-        lv_draw_rect_dsc_init(&draw_dsc);
+        lv_point_precise_t poly[4];
+        lv_point_precise_t center;
+        center.x = obj_coords.x1 + lv_obj_get_width(obj) / 2;
+        center.y = obj_coords.y1 + lv_obj_get_height(obj) / 2;
+
+        lv_draw_triangle_dsc_t draw_dsc;
+        lv_draw_triangle_dsc_init(&draw_dsc);
         draw_dsc.bg_opa = LV_OPA_COVER;
 
         uint16_t r[64];
@@ -897,6 +900,7 @@ static void spectrum_draw_event_cb(lv_event_t * e)
                                                                               ((v - BAR_COLOR2_STOP) * 255) / (BAR_COLOR3_STOP - BAR_COLOR2_STOP));
             else draw_dsc.bg_color = lv_color_mix(BAR_COLOR2, BAR_COLOR1,
                                                       ((v - BAR_COLOR1_STOP) * 255) / (BAR_COLOR2_STOP - BAR_COLOR1_STOP));
+            draw_dsc.bg_opa = LV_OPA_COVER;
 
             uint32_t di = deg + deg_space;
 
@@ -917,13 +921,25 @@ static void spectrum_draw_event_cb(lv_event_t * e)
             poly[3].x = center.x + x2_out;
             poly[3].y = center.y + get_sin(di, v);
 
-            lv_draw_polygon(draw_ctx, &draw_dsc, poly, 4);
+            draw_dsc.p[0] = poly[0];
+            draw_dsc.p[1] = poly[1];
+            draw_dsc.p[2] = poly[2];
+            lv_draw_triangle(layer, &draw_dsc);
+            draw_dsc.p[1] = poly[2];
+            draw_dsc.p[2] = poly[3];
+            lv_draw_triangle(layer, &draw_dsc);
 
             poly[0].x = center.x - x1_out;
             poly[1].x = center.x - x1_in;
             poly[2].x = center.x - x2_in;
             poly[3].x = center.x - x2_out;
-            lv_draw_polygon(draw_ctx, &draw_dsc, poly, 4);
+            draw_dsc.p[0] = poly[0];
+            draw_dsc.p[1] = poly[1];
+            draw_dsc.p[2] = poly[2];
+            lv_draw_triangle(layer, &draw_dsc);
+            draw_dsc.p[1] = poly[2];
+            draw_dsc.p[2] = poly[3];
+            lv_draw_triangle(layer, &draw_dsc);
         }
     }
 }
@@ -1010,7 +1026,7 @@ static void album_gesture_event_cb(lv_event_t * e)
 
 static void play_event_click_cb(lv_event_t * e)
 {
-    lv_obj_t * obj = lv_event_get_target(e);
+    lv_obj_t * obj = (lv_obj_t *)lv_event_get_target(e);
     if(lv_obj_has_state(obj, LV_STATE_CHECKED)) {
         _lv_demo_music_resume();
     }

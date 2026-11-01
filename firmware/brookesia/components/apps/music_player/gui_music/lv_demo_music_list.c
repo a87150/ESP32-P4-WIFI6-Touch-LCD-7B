@@ -221,9 +221,9 @@ static lv_obj_t * add_list_btn(lv_obj_t * parent, uint32_t track_id)
 
 static void btn_click_event_cb(lv_event_t * e)
 {
-    lv_obj_t * btn = lv_event_get_target(e);
+    lv_obj_t * btn = (lv_obj_t *)lv_event_get_target(e);
 
-    uint32_t idx = lv_obj_get_child_id(btn);
+    uint32_t idx = lv_obj_get_index(btn);
 
     _lv_demo_music_play(idx);
 }

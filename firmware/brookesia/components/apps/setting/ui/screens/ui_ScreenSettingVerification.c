@@ -48,7 +48,8 @@ void ui_ScreenSettingVerification_screen_init(void)
     lv_obj_set_y(ui_KeyboardScreenSettingVerification, 120);
     lv_obj_set_align(ui_KeyboardScreenSettingVerification, LV_ALIGN_CENTER);
 
-    ui_SpinnerScreenSettingVerification = lv_spinner_create(ui_ScreenSettingVerification, 1000, 90);
+    ui_SpinnerScreenSettingVerification = lv_spinner_create(ui_ScreenSettingVerification);
+    lv_spinner_set_anim_params(ui_SpinnerScreenSettingVerification, 1000, 90);
     lv_obj_set_width(ui_SpinnerScreenSettingVerification, 153);
     lv_obj_set_height(ui_SpinnerScreenSettingVerification, 180);
     lv_obj_set_x(ui_SpinnerScreenSettingVerification, -24);

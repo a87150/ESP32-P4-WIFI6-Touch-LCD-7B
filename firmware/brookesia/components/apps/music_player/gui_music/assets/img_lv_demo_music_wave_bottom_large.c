@@ -321,13 +321,14 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_IMG_MUSIC
 #endif
 };
 
-const lv_img_dsc_t img_lv_demo_music_wave_bottom = {
-  .header.always_zero = 0,
-  .header.w = 479,
-  .header.h = 74,
-  .data_size = 35446 * LV_COLOR_SIZE / 8,
-  .header.cf = LV_IMG_CF_TRUE_COLOR,
-  .data = img_lv_demo_music_wave_bottom_map,
-};
+const lv_image_dsc_t img_lv_demo_music_wave_bottom = {    .header.magic = LV_IMAGE_HEADER_MAGIC,
+   .header.cf = LV_COLOR_FORMAT_RGB565,
+   .header.flags = 0,
+   .header.w = 479,
+   .header.h = 74,
+   .header.stride = 958,
+   .data_size = 70892,
+   .data = img_lv_demo_music_wave_bottom_map,
+};;
 
 #endif
