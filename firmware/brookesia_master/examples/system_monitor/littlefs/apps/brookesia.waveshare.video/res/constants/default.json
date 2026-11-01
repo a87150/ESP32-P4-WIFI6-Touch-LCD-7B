@@ -1,0 +1,25 @@
+{
+    "type": "constant",
+    "data": {
+        "video": {
+            "layout": {
+                "pageX": "0dp",
+                "pageY": "0dp",
+                "pageWidth": "${env.widthDp}",
+                "pageHeight": "${env.heightDp}",
+                "barHeight": "76dp",
+                "barY": "${expr(${env.heightDp} - 76dp)}",
+                "hintX": "16dp",
+                "hintY": "12dp",
+                "buttonHeight": "46dp",
+                "buttonRadius": "14dp"
+            },
+            "font": {
+                "title": "16sp",
+                "meta": "13sp",
+                "button": "17sp",
+                "time": "14sp"
+            }
+        }
+    }
+}

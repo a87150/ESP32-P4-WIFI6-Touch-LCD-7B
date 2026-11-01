@@ -1,0 +1,9 @@
+{
+    "type": "screenFlow",
+    "id": "video_flow",
+    "screens": [
+        "video"
+    ],
+    "initial": "video",
+    "transitions": []
+}

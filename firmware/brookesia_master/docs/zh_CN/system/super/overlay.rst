@@ -1,0 +1,99 @@
+.. _system-super-overlay-sec-00:
+
+Overlay
+====================
+
+:link_to_translation:`en:[English]`
+
+Overlay 是 ShellApp 管理的系统覆盖层，用于承载 status bar、底部上滑退出 app 的 gesture indicator，以及 message dialog、keyboard、app modal 等系统浮层。
+
+.. _system-super-overlay-sec-01:
+
+概述
+--------------------
+
+Overlay 属于 Shell 的系统 UI 能力，资源文件为 ``resource/shell/screens/overlay.json``，物理上位于 Shell 主 document 的 ``/overlay`` screen 中，由 Shell manifest 中的 ``overlay`` flow 挂到 ``AppTop``，使用 ``Stack`` mount mode 和 ``z_order = 101``，映射到 GUI backend 的 ``GuiLayer::Top`` 并保持置顶。普通 app 打开时可以替换 app layer 的 replace screen，但不会覆盖该 stack overlay。
+
+Shell 的桌面背景不属于 overlay。背景 screen ``/background`` 由 ``background`` flow 挂到 ``SystemBottom``，overlay 只负责 status、gesture indicator 和 app modal。
+
+.. _system-super-overlay-sec-02:
+
+加载和挂载
+--------------------
+
+``ShellApp::mount_overlay()`` 执行：
+
+1. Shell app 启动时 core 已加载 ``resource/shell/root.json``。
+2. core 已根据 Shell manifest 自动启动 ``overlay`` flow 并挂载 ``/overlay``。
+3. ShellApp 初始化 status、Wi-Fi 状态、时钟定时器和 Display touch gesture 订阅。
+
+因此 overlay 不会被普通 app 的 ``GuiLayer::Default`` 或普通 ``GuiLayer::Top`` replace screen 覆盖。
+
+.. _system-super-overlay-sec-03:
+
+Status 与 Gesture Indicator
+---------------------------
+
+当前 overlay 只有一个 screen：
+
+.. list-table::
+   :header-rows: 1
+
+   * - 节点
+     - 行为
+   * - ``/overlay/status``
+     - 顶部状态栏
+   * - ``/overlay/status/status_left/app_icon``
+     - 前台应用图标
+   * - ``/overlay/status/status_right/wifi_icon``
+     - Wi-Fi 已连接时显示
+   * - ``/overlay/status/status_right/bt_icon``
+     - 蓝牙指示
+   * - ``/overlay/status/clock``
+     - 本地时间
+   * - ``/overlay/gesture_indicator``
+     - 底部上滑退出 app 的进度指示
+   * - ``/overlay/gesture_indicator/bar``
+     - 随上滑 progress 缩短的 indicator bar
+
+status 分为三段：左侧为前台应用图标，中间为时钟，右侧为 Wi-Fi、蓝牙与电量指示。Wi-Fi service 不可用或未连接时隐藏 Wi-Fi 标志，连接成功后标志变为绿色。时间在 Shell 启动时刷新一次，并通过 Shell timer 周期刷新。
+
+Gesture indicator 默认隐藏。普通 app 前台时，如果 Display service 上报从 BottomEdge 开始的 Up 方向手势，Shell 会临时切换 active display source 到 GUI，显示 indicator bar，并根据拖拽距离缩短 bar 宽度。达到退出阈值并保持 ``gestureExitHoldMs`` 后，Shell 关闭当前 foreground app。中途松开则播放回弹动画并隐藏 indicator。
+
+.. _system-super-overlay-sec-04:
+
+Actions
+--------------------
+
+当前 overlay 不再提供 nav/close/hide/handle action。Shell page 切换由 Shell 自身逻辑触发，普通 app 退出由 Display service ``TouchGesture`` 驱动。JSON UI 要求同一 document 内 action owner 唯一；overlay 保留 keyboard、message dialog、app modal 等子树自己的 action。
+
+.. _system-super-overlay-sec-05:
+
+close
+--------------------
+
+当前行为：
+
+- 没有 active app：no-op。
+- active app 是 shell：no-op。
+- active app 是普通 app：底部上滑达到阈值后，把 pending Shell page 设为 App Launcher，再调用 ``stop_app(active.app_id)``。
+
+普通 app 停止后，``on_app_stopped()`` 会触发 Shell 恢复流程并显示 App Launcher。
+
+.. _system-super-overlay-sec-06:
+
+卸载
+--------------------
+
+``ShellApp::unmount_overlay()`` 会断开 overlay action connections、断开 Display/Wi-Fi event connections、停止 system bar/gesture indicator/clock timer。Shell app stop 后由 core 停止 manifest 中的 ``overlay`` flow 并卸载 ``/overlay``，Shell 主 document 由 core 在 Shell app stop 时统一 unload。
+
+.. _system-super-overlay-sec-07:
+
+扩展板提示
+--------------------
+
+当 Device service 提供扩展板发现能力时，Shell 会在识别到扩展板和确认扩展板拔出后显示 message dialog。系统启动时已连接的扩展板也会显示识别提示。弹窗包含板名称和插槽位置，文案随系统语言切换，点击“确定”或等待 3 秒后关闭。身份有效但暂不支持的扩展板会额外显示不支持说明。
+
+扩展板提示与其他 message dialog 共用系统队列。同一插槽再次变化时，会更新该插槽尚未关闭的提示，避免显示过时信息。摄像头打开、关闭引起的占用和扫描恢复状态不会重复触发识别提示。
+
+提示时机取决于底层确认的扫描结果。ESP-Mosaico 使用摄像头期间会暂停左右插槽扫描，此时拔出的扩展板要等摄像头释放、扫描恢复后才会提示。Shell 停止时会取消订阅、停止提示定时器并关闭剩余扩展板提示。

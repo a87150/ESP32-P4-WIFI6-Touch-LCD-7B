@@ -1,0 +1,35 @@
+set(COMPONENT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(COMPONENT_SRC_DIR ${COMPONENT_DIR}/src)
+set(COMPONENT_INCLUDE_DIRS ${COMPONENT_DIR}/include)
+set(COMPONENT_PRIVATE_INCLUDE_DIRS ${COMPONENT_SRC_DIR})
+set(COMPONENT_REQUIRES "")
+if(ESP_PLATFORM)
+    # The Bluetooth page talks to the on-board BLE controller through the
+    # `bt_service` component (NimBLE over ESP-Hosted VHCI).
+    list(APPEND COMPONENT_REQUIRES bt_service)
+endif()
+set(COMPONENT_SRCS_C "")
+set(COMPONENT_SRCS_CPP "")
+set(COMPONENT_SRCS_C_COMPILE_FLAGS "")
+set(COMPONENT_SRCS_CPP_COMPILE_FLAGS "")
+file(GLOB_RECURSE APP_SETTINGS_SRCS_C ${COMPONENT_SRC_DIR}/*.c)
+file(GLOB_RECURSE APP_SETTINGS_SRCS_CPP ${COMPONENT_SRC_DIR}/*.cpp)
+list(APPEND COMPONENT_SRCS_C ${APP_SETTINGS_SRCS_C})
+list(APPEND COMPONENT_SRCS_CPP ${APP_SETTINGS_SRCS_CPP})
+
+if(ESP_PLATFORM)
+    include(${CMAKE_CURRENT_LIST_DIR}/cmake/esp_platform.cmake)
+else()
+    include(${CMAKE_CURRENT_LIST_DIR}/cmake/pc_platform.cmake)
+endif()
+
+if(NOT CMAKE_SCRIPT_MODE_FILE)
+    set_source_files_properties(${COMPONENT_SRCS_C}
+        PROPERTIES
+            COMPILE_FLAGS "${COMPONENT_SRCS_C_COMPILE_FLAGS}"
+    )
+    set_source_files_properties(${COMPONENT_SRCS_CPP}
+        PROPERTIES
+            COMPILE_FLAGS "${COMPONENT_SRCS_CPP_COMPILE_FLAGS}"
+    )
+endif()

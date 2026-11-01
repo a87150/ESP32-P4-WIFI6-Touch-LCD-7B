@@ -1,0 +1,908 @@
+{
+    "type": "viewScreen",
+    "id": "bluetooth",
+    "mountMode": "dynamic",
+    "commonProps": {
+        "scrollable": false
+    },
+    "styleRefs": [
+        "app.page"
+    ],
+    "children": [
+        {
+            "type": "container",
+            "id": "page",
+            "commonProps": {
+                "scrollable": true
+            },
+            "layout": {
+                "type": "flex",
+                "flexFlow": "column",
+                "gap": "${constant.settings.layout.pageGap}"
+            },
+            "placement": {
+                "mode": "absolute",
+                "x": "${constant.settings.layout.pageX}",
+                "y": "${constant.settings.layout.pageY}",
+                "width": "${constant.settings.layout.pageWidth}",
+                "height": "${constant.settings.layout.pageHeight}"
+            },
+            "children": [
+                {
+                    "type": "templateRef",
+                    "id": "status_card",
+                    "templateId": "settings_card",
+                    "overrides": {
+                        ".": {
+                            "style": {
+                                "padding": "${constant.settings.layout.cardPadding}"
+                            },
+                            "layout": {
+                                "gap": "12dp"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "match",
+                                "height": "wrap",
+                                "alignSelf": "stretch"
+                            }
+                        }
+                    },
+                    "slots": {
+                        "content": [
+                            {
+                                "type": "templateRef",
+                                "id": "bluetooth_switch",
+                                "templateId": "switch_row",
+                                "overrides": {
+                                    ".": {
+                                        "placement": {
+                                            "mode": "flow",
+                                            "width": "match",
+                                            "height": "${constant.settings.layout.rowHeight}",
+                                            "alignSelf": "stretch"
+                                        }
+                                    },
+                                    "text": {
+                                        "layout": {
+                                            "type": "flex",
+                                            "flexFlow": "column",
+                                            "mainAlign": "center",
+                                            "crossAlign": "start",
+                                            "gap": "2dp"
+                                        }
+                                    },
+                                    "text/title": {
+                                        "labelProps": {
+                                            "text": "蓝牙"
+                                        }
+                                    },
+                                    "text/subtitle": {
+                                        "labelProps": {
+                                            "text": "BLE 5（低功耗蓝牙，无经典蓝牙）"
+                                        },
+                                        "style": {
+                                            "textColor": "${color.text.muted}"
+                                        }
+                                    },
+                                    "toggle": {
+                                        "commonProps": {
+                                            "disabled": true
+                                        },
+                                        "toggleProps": {
+                                            "checked": true
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "label",
+                    "id": "status_caption",
+                    "styleRefs": [
+                        "app.caption"
+                    ],
+                    "labelProps": {
+                        "text": "蓝牙状态"
+                    },
+                    "placement": {
+                        "mode": "flow"
+                    }
+                },
+                {
+                    "type": "container",
+                    "id": "info_card",
+                    "styleRefs": [
+                        "app.card"
+                    ],
+                    "style": {
+                        "padding": "${constant.settings.layout.cardPadding}"
+                    },
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "column",
+                        "gap": "0dp"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "wrap",
+                        "alignSelf": "stretch"
+                    },
+                    "children": [
+                        {
+                            "type": "container",
+                            "id": "state_row",
+                            "styleRefs": [
+                                "app.listItem"
+                            ],
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "column",
+                                "gap": "4dp",
+                                "mainAlign": "center",
+                                "crossAlign": "stretch"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "match",
+                                "height": "68dp",
+                                "alignSelf": "stretch"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "state_title",
+                                    "styleRefs": [
+                                        "app.caption"
+                                    ],
+                                    "labelProps": {
+                                        "text": "状态"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
+                                        "alignSelf": "stretch"
+                                    }
+                                },
+                                {
+                                    "type": "label",
+                                    "id": "state_value",
+                                    "styleRefs": [
+                                        "app.listItemTitle"
+                                    ],
+                                    "labelProps": {
+                                        "text": "正在启动"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
+                                        "alignSelf": "stretch"
+                                    },
+                                    "bindings": {
+                                        "labelProps.text": "labelProps.text"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "container",
+                            "id": "address_row",
+                            "styleRefs": [
+                                "app.listItem"
+                            ],
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "column",
+                                "gap": "4dp",
+                                "mainAlign": "center",
+                                "crossAlign": "stretch"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "match",
+                                "height": "68dp",
+                                "alignSelf": "stretch"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "address_title",
+                                    "styleRefs": [
+                                        "app.caption"
+                                    ],
+                                    "labelProps": {
+                                        "text": "本机地址"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
+                                        "alignSelf": "stretch"
+                                    }
+                                },
+                                {
+                                    "type": "label",
+                                    "id": "address_value",
+                                    "styleRefs": [
+                                        "app.listItemTitle"
+                                    ],
+                                    "labelProps": {
+                                        "text": "--"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
+                                        "alignSelf": "stretch"
+                                    },
+                                    "bindings": {
+                                        "labelProps.text": "labelProps.text"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "container",
+                    "id": "device_header",
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "row",
+                        "mainAlign": "spaceBetween",
+                        "crossAlign": "center"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "wrap",
+                        "alignSelf": "stretch"
+                    },
+                    "children": [
+                        {
+                            "type": "label",
+                            "id": "device_caption",
+                            "styleRefs": [
+                                "app.caption"
+                            ],
+                            "labelProps": {
+                                "text": "附近设备"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "alignSelf": "center"
+                            }
+                        },
+                        {
+                            "type": "button",
+                            "id": "scan_button",
+                            "styleRefs": [
+                                "app.card"
+                            ],
+                            "style": {
+                                "padding": "0dp"
+                            },
+                            "events": [
+                                {
+                                    "type": "clicked",
+                                    "action": "settings.bluetooth.scan"
+                                }
+                            ],
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "row",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "110dp",
+                                "height": "40dp"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "scan_label",
+                                    "styleRefs": [
+                                        "app.listItemTitle"
+                                    ],
+                                    "labelProps": {
+                                        "text": "扫描"
+                                    },
+                                    "placement": {
+                                        "mode": "flow"
+                                    },
+                                    "bindings": {
+                                        "labelProps.text": "labelProps.text"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "container",
+                    "id": "device_card",
+                    "styleRefs": [
+                        "app.card"
+                    ],
+                    "style": {
+                        "padding": "${constant.settings.layout.cardPadding}"
+                    },
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "column",
+                        "gap": "8dp"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "wrap",
+                        "alignSelf": "stretch"
+                    },
+                    "children": [
+                        {
+                            "type": "container",
+                            "id": "rows",
+                            "commonProps": {
+                                "scrollable": false
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "column",
+                                "gap": "8dp"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "match",
+                                "height": "wrap",
+                                "alignSelf": "stretch"
+                            },
+                            "children": [
+                                {
+                                    "type": "container",
+                                    "id": "row0",
+                                    "styleRefs": [
+                                        "app.listItem"
+                                    ],
+                                    "bindings": {
+                                        "commonProps.hidden": "commonProps.hidden"
+                                    },
+                                    "layout": {
+                                        "type": "grid",
+                                        "gridTemplateColumns": [
+                                            "match",
+                                            "96dp"
+                                        ],
+                                        "gridTemplateRows": [
+                                            "match"
+                                        ],
+                                        "gap": "12dp",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
+                                        "height": "64dp",
+                                        "alignSelf": "stretch"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "container",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "scrollable": false
+                                            },
+                                            "layout": {
+                                                "type": "flex",
+                                                "flexFlow": "column",
+                                                "gap": "2dp",
+                                                "mainAlign": "center",
+                                                "crossAlign": "start"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "gridColumn": 0,
+                                                "gridRow": 0,
+                                                "alignSelf": "stretch"
+                                            },
+                                            "children": [
+                                                {
+                                                    "type": "label",
+                                                    "id": "name",
+                                                    "styleRefs": [
+                                                        "app.listItemTitle"
+                                                    ],
+                                                    "labelProps": {
+                                                        "text": ""
+                                                    },
+                                                    "placement": {
+                                                        "mode": "flow"
+                                                    },
+                                                    "bindings": {
+                                                        "labelProps.text": "labelProps.text"
+                                                    }
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "id": "address",
+                                                    "styleRefs": [
+                                                        "app.caption"
+                                                    ],
+                                                    "labelProps": {
+                                                        "text": ""
+                                                    },
+                                                    "placement": {
+                                                        "mode": "flow"
+                                                    },
+                                                    "bindings": {
+                                                        "labelProps.text": "labelProps.text"
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "label",
+                                            "id": "rssi",
+                                            "styleRefs": [
+                                                "app.caption"
+                                            ],
+                                            "labelProps": {
+                                                "text": ""
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "gridColumn": 1,
+                                                "gridRow": 0,
+                                                "alignSelf": "center",
+                                                "width": "wrap"
+                                            },
+                                            "bindings": {
+                                                "labelProps.text": "labelProps.text"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "container",
+                                    "id": "row1",
+                                    "styleRefs": [
+                                        "app.listItem"
+                                    ],
+                                    "bindings": {
+                                        "commonProps.hidden": "commonProps.hidden"
+                                    },
+                                    "layout": {
+                                        "type": "grid",
+                                        "gridTemplateColumns": [
+                                            "match",
+                                            "96dp"
+                                        ],
+                                        "gridTemplateRows": [
+                                            "match"
+                                        ],
+                                        "gap": "12dp",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
+                                        "height": "64dp",
+                                        "alignSelf": "stretch"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "container",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "scrollable": false
+                                            },
+                                            "layout": {
+                                                "type": "flex",
+                                                "flexFlow": "column",
+                                                "gap": "2dp",
+                                                "mainAlign": "center",
+                                                "crossAlign": "start"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "gridColumn": 0,
+                                                "gridRow": 0,
+                                                "alignSelf": "stretch"
+                                            },
+                                            "children": [
+                                                {
+                                                    "type": "label",
+                                                    "id": "name",
+                                                    "styleRefs": [
+                                                        "app.listItemTitle"
+                                                    ],
+                                                    "labelProps": {
+                                                        "text": ""
+                                                    },
+                                                    "placement": {
+                                                        "mode": "flow"
+                                                    },
+                                                    "bindings": {
+                                                        "labelProps.text": "labelProps.text"
+                                                    }
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "id": "address",
+                                                    "styleRefs": [
+                                                        "app.caption"
+                                                    ],
+                                                    "labelProps": {
+                                                        "text": ""
+                                                    },
+                                                    "placement": {
+                                                        "mode": "flow"
+                                                    },
+                                                    "bindings": {
+                                                        "labelProps.text": "labelProps.text"
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "label",
+                                            "id": "rssi",
+                                            "styleRefs": [
+                                                "app.caption"
+                                            ],
+                                            "labelProps": {
+                                                "text": ""
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "gridColumn": 1,
+                                                "gridRow": 0,
+                                                "alignSelf": "center",
+                                                "width": "wrap"
+                                            },
+                                            "bindings": {
+                                                "labelProps.text": "labelProps.text"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "container",
+                                    "id": "row2",
+                                    "styleRefs": [
+                                        "app.listItem"
+                                    ],
+                                    "bindings": {
+                                        "commonProps.hidden": "commonProps.hidden"
+                                    },
+                                    "layout": {
+                                        "type": "grid",
+                                        "gridTemplateColumns": [
+                                            "match",
+                                            "96dp"
+                                        ],
+                                        "gridTemplateRows": [
+                                            "match"
+                                        ],
+                                        "gap": "12dp",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
+                                        "height": "64dp",
+                                        "alignSelf": "stretch"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "container",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "scrollable": false
+                                            },
+                                            "layout": {
+                                                "type": "flex",
+                                                "flexFlow": "column",
+                                                "gap": "2dp",
+                                                "mainAlign": "center",
+                                                "crossAlign": "start"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "gridColumn": 0,
+                                                "gridRow": 0,
+                                                "alignSelf": "stretch"
+                                            },
+                                            "children": [
+                                                {
+                                                    "type": "label",
+                                                    "id": "name",
+                                                    "styleRefs": [
+                                                        "app.listItemTitle"
+                                                    ],
+                                                    "labelProps": {
+                                                        "text": ""
+                                                    },
+                                                    "placement": {
+                                                        "mode": "flow"
+                                                    },
+                                                    "bindings": {
+                                                        "labelProps.text": "labelProps.text"
+                                                    }
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "id": "address",
+                                                    "styleRefs": [
+                                                        "app.caption"
+                                                    ],
+                                                    "labelProps": {
+                                                        "text": ""
+                                                    },
+                                                    "placement": {
+                                                        "mode": "flow"
+                                                    },
+                                                    "bindings": {
+                                                        "labelProps.text": "labelProps.text"
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "label",
+                                            "id": "rssi",
+                                            "styleRefs": [
+                                                "app.caption"
+                                            ],
+                                            "labelProps": {
+                                                "text": ""
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "gridColumn": 1,
+                                                "gridRow": 0,
+                                                "alignSelf": "center",
+                                                "width": "wrap"
+                                            },
+                                            "bindings": {
+                                                "labelProps.text": "labelProps.text"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "container",
+                                    "id": "row3",
+                                    "styleRefs": [
+                                        "app.listItem"
+                                    ],
+                                    "bindings": {
+                                        "commonProps.hidden": "commonProps.hidden"
+                                    },
+                                    "layout": {
+                                        "type": "grid",
+                                        "gridTemplateColumns": [
+                                            "match",
+                                            "96dp"
+                                        ],
+                                        "gridTemplateRows": [
+                                            "match"
+                                        ],
+                                        "gap": "12dp",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
+                                        "height": "64dp",
+                                        "alignSelf": "stretch"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "container",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "scrollable": false
+                                            },
+                                            "layout": {
+                                                "type": "flex",
+                                                "flexFlow": "column",
+                                                "gap": "2dp",
+                                                "mainAlign": "center",
+                                                "crossAlign": "start"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "gridColumn": 0,
+                                                "gridRow": 0,
+                                                "alignSelf": "stretch"
+                                            },
+                                            "children": [
+                                                {
+                                                    "type": "label",
+                                                    "id": "name",
+                                                    "styleRefs": [
+                                                        "app.listItemTitle"
+                                                    ],
+                                                    "labelProps": {
+                                                        "text": ""
+                                                    },
+                                                    "placement": {
+                                                        "mode": "flow"
+                                                    },
+                                                    "bindings": {
+                                                        "labelProps.text": "labelProps.text"
+                                                    }
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "id": "address",
+                                                    "styleRefs": [
+                                                        "app.caption"
+                                                    ],
+                                                    "labelProps": {
+                                                        "text": ""
+                                                    },
+                                                    "placement": {
+                                                        "mode": "flow"
+                                                    },
+                                                    "bindings": {
+                                                        "labelProps.text": "labelProps.text"
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "label",
+                                            "id": "rssi",
+                                            "styleRefs": [
+                                                "app.caption"
+                                            ],
+                                            "labelProps": {
+                                                "text": ""
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "gridColumn": 1,
+                                                "gridRow": 0,
+                                                "alignSelf": "center",
+                                                "width": "wrap"
+                                            },
+                                            "bindings": {
+                                                "labelProps.text": "labelProps.text"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "container",
+                                    "id": "row4",
+                                    "styleRefs": [
+                                        "app.listItem"
+                                    ],
+                                    "bindings": {
+                                        "commonProps.hidden": "commonProps.hidden"
+                                    },
+                                    "layout": {
+                                        "type": "grid",
+                                        "gridTemplateColumns": [
+                                            "match",
+                                            "96dp"
+                                        ],
+                                        "gridTemplateRows": [
+                                            "match"
+                                        ],
+                                        "gap": "12dp",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
+                                        "height": "64dp",
+                                        "alignSelf": "stretch"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "container",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "scrollable": false
+                                            },
+                                            "layout": {
+                                                "type": "flex",
+                                                "flexFlow": "column",
+                                                "gap": "2dp",
+                                                "mainAlign": "center",
+                                                "crossAlign": "start"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "gridColumn": 0,
+                                                "gridRow": 0,
+                                                "alignSelf": "stretch"
+                                            },
+                                            "children": [
+                                                {
+                                                    "type": "label",
+                                                    "id": "name",
+                                                    "styleRefs": [
+                                                        "app.listItemTitle"
+                                                    ],
+                                                    "labelProps": {
+                                                        "text": ""
+                                                    },
+                                                    "placement": {
+                                                        "mode": "flow"
+                                                    },
+                                                    "bindings": {
+                                                        "labelProps.text": "labelProps.text"
+                                                    }
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "id": "address",
+                                                    "styleRefs": [
+                                                        "app.caption"
+                                                    ],
+                                                    "labelProps": {
+                                                        "text": ""
+                                                    },
+                                                    "placement": {
+                                                        "mode": "flow"
+                                                    },
+                                                    "bindings": {
+                                                        "labelProps.text": "labelProps.text"
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "label",
+                                            "id": "rssi",
+                                            "styleRefs": [
+                                                "app.caption"
+                                            ],
+                                            "labelProps": {
+                                                "text": ""
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "gridColumn": 1,
+                                                "gridRow": 0,
+                                                "alignSelf": "center",
+                                                "width": "wrap"
+                                            },
+                                            "bindings": {
+                                                "labelProps.text": "labelProps.text"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "label",
+                            "id": "empty",
+                            "styleRefs": [
+                                "app.caption"
+                            ],
+                            "labelProps": {
+                                "text": "未发现设备，点击“扫描”查找附近 BLE 设备"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "match",
+                                "alignSelf": "stretch"
+                            },
+                            "bindings": {
+                                "commonProps.hidden": "commonProps.hidden"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

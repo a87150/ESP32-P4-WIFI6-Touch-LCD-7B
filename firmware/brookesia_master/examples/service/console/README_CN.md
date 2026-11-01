@@ -1,0 +1,107 @@
+# 服务控制台示例
+
+[English Version](./README.md)
+
+本示例演示了如何通过串口控制台运行和测试 ESP-Brookesia 的服务框架。它提供了一个交互式 CLI（Command Line Interface）界面，支持历史命令记录，可直接通过命令行管理和调用各类服务、订阅事件以及查看运行时性能数据。
+
+## 📑 目录
+
+- [服务控制台示例](#服务控制台示例)
+  - [📑 目录](#-目录)
+  - [✨ 功能特性](#-功能特性)
+  - [🚩 快速入门](#-快速入门)
+    - [硬件要求](#硬件要求)
+    - [开发环境](#开发环境)
+  - [🔨 如何使用](#-如何使用)
+  - [🚀 快速体验](#-快速体验)
+  - [📖 命令参考](#-命令参考)
+    - [服务命令](#服务命令)
+    - [调试命令](#调试命令)
+  - [🔍 故障排除](#-故障排除)
+  - [💬 技术支持与反馈](#-技术支持与反馈)
+
+## ✨ 功能特性
+
+- 🎯 **服务管理**：通过命令行列出、调用各类服务函数，以及订阅/取消订阅服务事件
+- 📊 **运行时分析**：内置内存与线程性能分析器，支持按需打印或定期自动输出
+- 📝 **历史命令记录**：命令历史持久化存储于 Flash，重启后仍可回溯（可配置）
+
+## 🚩 快速入门
+
+### 硬件要求
+
+本示例通过 [brookesia_hal_boards](https://components.espressif.com/components/espressif/brookesia_hal_boards) 组件管理硬件。
+
+请参考 [ESP-Brookesia 编程指南 - 支持的开发板](https://docs.espressif.com/projects/esp-brookesia/zh_CN/latest/hal/boards/index.html#hal-boards-sec-02) 获取支持的开发板列表。
+
+### 开发环境
+
+请参考以下文档：
+
+- [ESP-Brookesia 编程指南 - 版本说明](https://docs.espressif.com/projects/esp-brookesia/zh_CN/latest/getting_started.html#getting-started-versioning)
+- [ESP-Brookesia 编程指南 - 开发环境搭建](https://docs.espressif.com/projects/esp-brookesia/zh_CN/latest/getting_started.html#getting-started-dev-environment)
+
+## 🔨 如何使用
+
+<a href="https://espressif.github.io/esp-brookesia/index.html">
+  <img alt="Try it with ESP Launchpad" src="https://dl.espressif.com/AE/esp-dev-kits/new_launchpad.png" width="400">
+</a>
+
+请参考 [ESP-Brookesia 编程指南 - 如何使用示例工程](https://docs.espressif.com/projects/esp-brookesia/zh_CN/latest/getting_started.html#getting-started-example-projects)。
+
+## 🚀 快速体验
+
+固件烧录成功后，您可以参考 [快速入门教程](./docs/tutorial_cn.md) 开始体验服务控制台示例。
+
+## 📖 命令参考
+
+### 服务命令
+
+| 命令 | 说明 | 示例 |
+|------|------|------|
+| `svc_list` | 列出所有已注册服务 | `svc_list` |
+| `svc_funcs <服务>` | 列出服务的所有函数 | `svc_funcs Wifi` |
+| `svc_events <服务>` | 列出服务的所有事件 | `svc_events Wifi` |
+| `svc_call <服务> <函数> [JSON参数]` | 调用服务函数 | `svc_call Wifi GetConnectedAps` |
+| `svc_subscribe <服务> <事件>` | 订阅服务事件 | `svc_subscribe Wifi ScanApInfosUpdated` |
+| `svc_unsubscribe <服务> <事件>` | 取消订阅服务事件 | `svc_unsubscribe Wifi ScanApInfosUpdated` |
+| `svc_stop <服务>` | 解除服务绑定 | `svc_stop Wifi` |
+
+> [!TIP]
+> - `svc_call` 的 `JSON参数` 中不能存在空格。例如：`svc_call Wifi TriggerGeneralAction { "Action": "Start" }` 是错误的，正确的格式是：`svc_call Wifi TriggerGeneralAction {"Action":"Start"}`。
+> - 服务命令的具体参数说明和使用方法，请参考 **ESP-Brookesia 编程指南** 各服务章节中 **服务接口** 小节。请参考示例 [CLI 命令](https://docs.espressif.com/projects/esp-brookesia/zh_CN/latest/service/wifi.html#helper-contract-service-wifi-main-functions-triggergeneralaction-cli-command)（将 `null` 替换为实际参数值）。
+
+### 调试命令
+
+| 命令 | 说明 | 示例 |
+|------|------|------|
+| `debug_mem` | 打印当前内存使用情况 | `debug_mem` |
+| `debug_thread [-p <排序>] [-s <排序>] [-d <ms>]` | 打印线程运行状态（可指定排序方式和采样间隔） | `debug_thread -p core -s cpu -d 1000` |
+| `debug_time_report` | 打印时间分析器统计报告 | `debug_time_report` |
+| `debug_time_clear` | 清除时间分析器历史数据 | `debug_time_clear` |
+
+> [!TIP]
+> 详细说明请参考 [调试命令文档](./docs/cmd_debug_cn.md)。
+
+## 🔍 故障排除
+
+**VSCode 编译失败**
+
+使用命令行安装 ESP-IDF，参考 [开发环境](#开发环境)。
+
+**命令无法识别**
+
+确认固件已正确烧录，并检查串口连接是否正常。输入 `help` 查看当前已注册的全部命令。
+
+**服务未找到**
+
+运行 `svc_list` 查看已注册服务。若服务不在列表中，请在 menuconfig 中确认对应服务已启用。
+
+## 💬 技术支持与反馈
+
+请通过以下渠道进行反馈：
+
+- 有关技术问题，请访问 [esp32.com](https://esp32.com/viewforum.php?f=52&sid=86e7d3b29eae6d591c965ec885874da6) 论坛
+- 有关功能请求或错误报告，请创建新的 [GitHub 问题](https://github.com/espressif/esp-brookesia/issues)
+
+我们会尽快回复。

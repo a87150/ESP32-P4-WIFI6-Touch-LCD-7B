@@ -1,0 +1,10 @@
+{
+    "version": "0.1.0",
+    "assets": [
+        "constants/default.json",
+        "images/index.json",
+        "screens/music.json",
+        "flows/music_flow.json"
+    ],
+    "variants": []
+}

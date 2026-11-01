@@ -1,0 +1,28 @@
+# Name,   Type, SubType, Offset,   Size, Flags
+#
+# Layout of the ESP32-P4-WIFI6-Touch-LCD-7B (32 MB flash).
+#
+# This table is a *deliberate* modification of the stock Waveshare table: the
+# original had a 9 MB "factory" app slot plus ota_0 / ota_1 / assets in the
+# middle. Neither the OTA slots nor the factory-demo "assets" data are used by
+# Brookesia, so they were merged into "factory" to give the application room to
+# grow. Everything that holds live data keeps its original offset:
+#
+#   nvsfactory  0x9000    - per-device Wi-Fi calibration, never touch
+#   nvs         0x3b000   - NVS
+#   otadata     0x10d000  - kept (empty, bootloader falls back to factory)
+#   phy_init    0x10f000
+#   factory     0x110000  - our application (~15 MB)
+#   storage     0x1000000 - littlefs (shell/app packages, wallpapers, music)
+#                           (16 MB, starts on the 16 MB flash boundary)
+#
+# Original stock table (9 MB factory + ota_0/ota_1/assets) is backed up in
+# firmware/backups/partition-table-0x8000-original.bin, and the complete stock
+# flash image is firmware/ESP32-P4-WIFI6-Touch-LCD-7B-FactoryOnly.bin (flash at
+# 0x0) if the board ever has to be returned to the factory demo.
+nvsfactory, data, nvs,     0x9000,   0x32000,
+nvs,        data, nvs,     0x3b000,  0xd2000,
+otadata,    data, ota,     0x10d000, 0x2000,
+phy_init,   data, phy,     0x10f000, 0x1000,
+factory,    app,  factory, 0x110000, 0xEF0000,
+storage,    data, 0x82,    0x1000000, 0x1000000,

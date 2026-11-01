@@ -1,0 +1,265 @@
+# -*- coding: utf-8 -*-
+"""Post-process Doxygen output after esp-docs run_doxygen runs.
+
+Patches:
+- ``service_manager/helper/base.hpp``: drops the duplicate standalone ``EventMonitor``
+  block so Breathe does not emit duplicate C++ domain IDs.
+- ``hal_interface/interface.hpp``: drops the ``InterfaceHandle`` class block,
+  which some CI Doxygen/Breathe combinations expand into both the forward
+  declaration and the definition, creating duplicate C++ domain IDs.
+- ``hal_interface/device.hpp``: appends namespace-level free functions, the
+  ``InterfaceSpec`` type alias, and the ``IsDevice`` concept that gen-dxd.py
+  skips (it only emits ``doxygenclass`` directives for file-level entities).
+- ``hal_adaptor/expansion/module_provider.hpp``: drops the registration macro
+  define, whose preprocessor replacement Sphinx cannot parse as C++. The
+  generated file is ``inc/module_provider.inc`` because that header name is
+  unique in the Doxyfile INPUT list.
+- Breathe XML (``xml_in/*.xml``): strips C++20 constructs that the Sphinx 4.x
+  C++ domain parser cannot handle (``requires`` constraint clauses and
+  designated-/brace-initializer default member values), which would otherwise
+  raise "Invalid C++ declaration" warnings treated as fatal by the build.
+"""
+
+from __future__ import annotations
+
+import os
+import re
+
+# ---------------------------------------------------------------------------
+# service_manager/helper/base.hpp patch
+# ---------------------------------------------------------------------------
+
+def _strip_duplicate_event_monitor_block(text: str) -> str:
+    return re.sub(
+        r"\n\.\. doxygenclass:: esp_brookesia::service::helper::Base::EventMonitor\n    :members:\n\n",
+        "\n",
+        text,
+        count=1,
+    )
+
+
+def _patch_base_inc(build_dir: str) -> None:
+    base_inc = os.path.join(
+        build_dir,
+        "inc",
+        "service",
+        "framework",
+        "brookesia_service_manager",
+        "include",
+        "brookesia",
+        "service_manager",
+        "helper",
+        "base.inc",
+    )
+    if not os.path.isfile(base_inc):
+        return
+    with open(base_inc, encoding="utf-8") as f:
+        content = f.read()
+    patched = _strip_duplicate_event_monitor_block(content)
+    if patched != content:
+        with open(base_inc, "w", encoding="utf-8") as f:
+            f.write(patched)
+
+
+# ---------------------------------------------------------------------------
+# hal_interface/interface.hpp patch
+# ---------------------------------------------------------------------------
+
+def _strip_duplicate_interface_handle_block(text: str) -> str:
+    return re.sub(
+        r"\n\.\. doxygenclass:: esp_brookesia::hal::InterfaceHandle\n    :members:\n\n?",
+        "\n",
+        text,
+        count=1,
+    )
+
+
+def _patch_interface_inc(build_dir: str) -> None:
+    interface_inc = os.path.join(build_dir, "inc", "interface.inc")
+    if not os.path.isfile(interface_inc):
+        return
+    with open(interface_inc, encoding="utf-8") as f:
+        content = f.read()
+    patched = _strip_duplicate_interface_handle_block(content)
+    if patched != content:
+        with open(interface_inc, "w", encoding="utf-8") as f:
+            f.write(patched)
+
+
+def _patch_log_inc(build_dir: str) -> None:
+    log_inc = os.path.join(build_dir, "inc", "log.inc")
+    if not os.path.isfile(log_inc):
+        return
+    with open(log_inc, encoding="utf-8") as f:
+        content = f.read()
+    patched = content.replace(".. doxygendefine:: _BROOKESIA_LOG_GNU_NOCLONE\n", "")
+    if patched != content:
+        with open(log_inc, "w", encoding="utf-8") as f:
+            f.write(patched)
+
+
+def _patch_expansion_module_provider_inc(build_dir: str) -> None:
+    provider_inc = os.path.join(build_dir, "inc", "module_provider.inc")
+    if not os.path.isfile(provider_inc):
+        return
+    with open(provider_inc, encoding="utf-8") as f:
+        content = f.read()
+    patched = content.replace(
+        ".. doxygendefine:: ESP_BROOKESIA_HAL_EXPANSION_REGISTER_PROVIDER\n", ""
+    )
+    if patched != content:
+        with open(provider_inc, "w", encoding="utf-8") as f:
+            f.write(patched)
+
+
+# ---------------------------------------------------------------------------
+# hal_interface/device.hpp patch
+# ---------------------------------------------------------------------------
+
+# Entities in esp_brookesia::hal namespace that originate from device.hpp but
+# are skipped by gen-dxd.py (which only handles classes and free functions, but
+# not type aliases or concepts).
+#
+# Two variants are provided:
+# - _DEVICE_INC_EXTRA: includes doxygenconcept (requires Doxygen >= 1.9.2 that
+#   generates concept XML and a Breathe version that supports doxygenconcept).
+# - _DEVICE_INC_EXTRA_NO_CONCEPT: omits doxygenconcept when the concept XML is
+#   absent (e.g. older Doxygen), avoiding a Breathe "Cannot find concept" warning.
+_DEVICE_INC_EXTRA = """\
+Type Aliases
+^^^^^^^^^^^^
+
+.. doxygentypedef:: esp_brookesia::hal::InterfaceSpec
+
+Concepts
+^^^^^^^^
+
+.. doxygenconcept:: esp_brookesia::hal::IsDevice
+"""
+
+_DEVICE_INC_EXTRA_NO_CONCEPT = """\
+Type Aliases
+^^^^^^^^^^^^
+
+.. doxygentypedef:: esp_brookesia::hal::InterfaceSpec
+"""
+
+# Use InterfaceSpec as sentinel: gen-dxd.py never emits doxygentypedef, so
+# this string only appears once our patch has already run.
+_DEVICE_INC_SENTINEL = ".. doxygentypedef:: esp_brookesia::hal::InterfaceSpec"
+
+# Doxygen 1.9.2+ generates a dedicated XML file for each C++20 concept.
+# The filename encodes the fully-qualified name with "::" → "_1_1" mangling.
+_ISDEVICE_CONCEPT_XML = "conceptesp__brookesia_1_1hal_1_1IsDevice.xml"
+
+
+def _patch_device_inc(build_dir: str) -> None:
+    device_inc = os.path.join(
+        build_dir,
+        "inc",
+        "hal",
+        "brookesia_hal_interface",
+        "include",
+        "brookesia",
+        "hal_interface",
+        "device.inc",
+    )
+    if not os.path.isfile(device_inc):
+        return
+    with open(device_inc, encoding="utf-8") as f:
+        content = f.read()
+    # Idempotent: skip if already patched.
+    if _DEVICE_INC_SENTINEL in content:
+        return
+    # Only emit doxygenconcept when the concept XML was actually generated by
+    # Doxygen (requires version >= 1.9.2).  Without the XML the directive emits
+    # a "Cannot find concept" Sphinx warning that cannot be suppressed via the
+    # known-warnings baseline because it embeds the absolute build directory.
+    concept_xml = os.path.join(build_dir, "xml_in", _ISDEVICE_CONCEPT_XML)
+    extra = _DEVICE_INC_EXTRA if os.path.isfile(concept_xml) else _DEVICE_INC_EXTRA_NO_CONCEPT
+    with open(device_inc, "w", encoding="utf-8") as f:
+        # Use "\n\n" to guarantee a blank line before our appended headings,
+        # regardless of whether gen-dxd.py left a trailing newline or not.
+        f.write(content.rstrip("\n") + "\n\n" + extra)
+
+
+# ---------------------------------------------------------------------------
+# Breathe XML sanitization (workaround for Sphinx 4.x C++ domain limitations)
+# ---------------------------------------------------------------------------
+
+# Doxygen faithfully emits two C++20 constructs into its XML that the Sphinx
+# C++ domain parser (driven by Breathe) cannot parse:
+#   1. ``requires`` constraint clauses, stored as ``<requiresclause>``.
+#   2. designated-/brace-initializer default member values, stored as
+#      ``<initializer>= {.field = ...}</initializer>``.
+# Either one makes Sphinx emit an "Invalid C++ declaration" warning, which the
+# esp-docs build treats as fatal. We strip only the offending fragment from the
+# XML *before* Breathe reads it (run_doxygen copies xml/ to xml_in/ at default
+# listener priority 500; this runs at 900), so each entity and its
+# documentation are preserved while the rendered signature stays parseable.
+_REQUIRESCLAUSE_RE = re.compile(r"<requiresclause>.*?</requiresclause>", re.DOTALL)
+_INITIALIZER_RE = re.compile(r"<initializer>.*?</initializer>", re.DOTALL)
+_DESIGNATED_INIT_RE = re.compile(r"\.\w+\s*=")
+_LOG_NOCLONE_REF_RE = re.compile(r"<ref[^>]*>_BROOKESIA_LOG_GNU_NOCLONE</ref>\s*")
+_LOG_NOCLONE_TEXT_RE = re.compile(r"_BROOKESIA_LOG_GNU_NOCLONE\s*")
+
+
+def _strip_unparseable_cpp(xml_text: str) -> str:
+    text = _REQUIRESCLAUSE_RE.sub("", xml_text)
+    text = _LOG_NOCLONE_REF_RE.sub("", text)
+    text = _LOG_NOCLONE_TEXT_RE.sub("", text)
+
+    def _drop_designated(match: re.Match) -> str:
+        body = match.group(0)
+        # Only drop brace initializers that use designated initializers; simple
+        # scalar initializers (``= 1``, ``= true``) parse fine and are kept.
+        if "{" in body and _DESIGNATED_INIT_RE.search(body):
+            return ""
+        return body
+
+    return _INITIALIZER_RE.sub(_drop_designated, text)
+
+
+def _sanitize_breathe_xml(build_dir: str) -> None:
+    xml_dir = os.path.join(build_dir, "xml_in")
+    if not os.path.isdir(xml_dir):
+        return
+    for name in os.listdir(xml_dir):
+        if not name.endswith(".xml"):
+            continue
+        path = os.path.join(xml_dir, name)
+        try:
+            with open(path, encoding="utf-8") as f:
+                content = f.read()
+        except OSError:
+            continue
+        patched = _strip_unparseable_cpp(content)
+        if patched != content:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(patched)
+
+
+# ---------------------------------------------------------------------------
+# Sphinx hook
+# ---------------------------------------------------------------------------
+
+def _on_defines_generated(app, _defines) -> None:
+    build_dir = getattr(app.config, "build_dir", None)
+    if not build_dir:
+        return
+    _sanitize_breathe_xml(build_dir)
+    _patch_base_inc(build_dir)
+    _patch_interface_inc(build_dir)
+    _patch_log_inc(build_dir)
+    _patch_expansion_module_provider_inc(build_dir)
+    _patch_device_inc(build_dir)
+
+
+def setup(app):
+    # Run after esp_docs run_doxygen (default listener priority 500).
+    app.connect("defines-generated", _on_defines_generated, priority=900)
+    return {
+        "version": "1.0",
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
+    }

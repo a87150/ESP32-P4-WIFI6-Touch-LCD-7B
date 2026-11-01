@@ -1,0 +1,17 @@
+{
+    "version": "0.1.1",
+    "assets": [
+        "constants/default.json",
+        "images/index.json",
+        "screens/system_monitor.json",
+        "flows/system_monitor_flow.json"
+    ],
+    "variants": [
+        {
+            "when": "${expr(${env.widthDp} == 1024dp && ${env.heightDp} == 600dp)}",
+            "assets": [
+                "constants/1024x600.json"
+            ]
+        }
+    ]
+}

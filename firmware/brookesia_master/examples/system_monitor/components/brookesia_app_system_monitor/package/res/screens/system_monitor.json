@@ -1,0 +1,885 @@
+{
+    "type": "viewScreen",
+    "id": "system_monitor",
+    "commonProps": {
+        "clickable": true,
+        "scrollable": false
+    },
+    "style": {
+        "bgColor": "#05070c"
+    },
+    "children": [
+        {
+            "type": "container",
+            "id": "dashboard",
+            "layout": {
+                "type": "flex",
+                "flexFlow": "column",
+                "mainAlign": "start",
+                "crossAlign": "center",
+                "gap": "${constant.sysmon.layout.sectionGap}"
+            },
+            "placement": {
+                "mode": "absolute",
+                "x": "${constant.sysmon.layout.pageX}",
+                "y": "${constant.sysmon.layout.pageY}",
+                "width": "${constant.sysmon.layout.pageWidth}",
+                "height": "${constant.sysmon.layout.pageHeight}"
+            },
+            "style": {
+                "padding": "0dp"
+            },
+            "children": [
+                {
+                    "type": "container",
+                    "id": "header",
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "row",
+                        "mainAlign": "spaceBetween",
+                        "crossAlign": "center",
+                        "gap": "12dp"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "${constant.sysmon.layout.headerHeight}",
+                        "alignSelf": "stretch"
+                    },
+                    "children": [
+                        {
+                            "type": "label",
+                            "id": "title",
+                            "style": {
+                                "textColor": "#e6edf7",
+                                "fontSize": "${constant.sysmon.font.title}"
+                            },
+                            "labelProps": {
+                                "text": "SYSTEM MONITOR"
+                            },
+                            "placement": {
+                                "mode": "relative",
+                                "width": "wrap",
+                                "height": "wrap"
+                            }
+                        },
+                        {
+                            "type": "label",
+                            "id": "link_state",
+                            "style": {
+                                "textColor": "#fbbf24",
+                                "fontSize": "${constant.sysmon.font.status}"
+                            },
+                            "labelProps": {
+                                "text": "WAITING FOR PC AGENT    UDP :9999"
+                            },
+                            "placement": {
+                                "mode": "relative",
+                                "width": "wrap",
+                                "height": "wrap"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "container",
+                    "id": "gauges",
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "row",
+                        "mainAlign": "center",
+                        "crossAlign": "center",
+                        "gap": "${constant.sysmon.layout.cardGap}"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "${constant.sysmon.layout.gaugesHeight}",
+                        "alignSelf": "stretch"
+                    },
+                    "children": [
+                        {
+                            "type": "container",
+                            "id": "cpu_card",
+                            "layout": {
+                                "type": "none"
+                            },
+                            "style": {
+                                "bgColor": "#0f1624",
+                                "radius": "${constant.sysmon.layout.cardRadius}",
+                                "padding": "10dp"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "${constant.sysmon.layout.cardWidth}",
+                                "height": "${constant.sysmon.layout.cardHeight}"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "cpu_name",
+                                    "style": {
+                                        "textColor": "#8b97ad",
+                                        "fontSize": "${constant.sysmon.font.name}",
+                                        "textAlign": "center"
+                                    },
+                                    "labelProps": {
+                                        "text": "CPU"
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 0,
+                                        "y": 0,
+                                        "width": "match",
+                                        "height": "wrap"
+                                    }
+                                },
+                                {
+                                    "type": "arc",
+                                    "id": "cpu_arc",
+                                    "rangeProps": {
+                                        "value": 0,
+                                        "min": 0,
+                                        "max": 100
+                                    },
+                                    "style": {
+                                        "bgColor": "#0f1624",
+                                        "arcColor": "#1a2333",
+                                        "arcWidth": "12dp"
+                                    },
+                                    "partStyles": {
+                                        "indicator": {
+                                            "arcColor": "#22d3ee",
+                                            "arcGradientColor": "#6366f1",
+                                            "arcWidth": "12dp",
+                                            "arcRounded": true,
+                                            "arcGradientSegments": 40
+                                        }
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 20,
+                                        "y": 28,
+                                        "width": "${constant.sysmon.layout.arcSize}",
+                                        "height": "${constant.sysmon.layout.arcSize}"
+                                    },
+                                    "bindings": {
+                                        "partStyles.indicator.arcColor": "indicator_color",
+                                        "partStyles.indicator.arcGradientColor": "indicator_gradient"
+                                    }
+                                },
+                                {
+                                    "type": "container",
+                                    "id": "cpu_center",
+                                    "layout": {
+                                        "type": "flex",
+                                        "flexFlow": "column",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center",
+                                        "gap": "2dp"
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 20,
+                                        "y": 28,
+                                        "width": "${constant.sysmon.layout.arcSize}",
+                                        "height": "${constant.sysmon.layout.arcSize}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "cpu_value",
+                                            "style": {
+                                                "textColor": "#e6edf7",
+                                                "fontSize": "${constant.sysmon.font.value}",
+                                                "textAlign": "center"
+                                            },
+                                            "labelProps": {
+                                                "text": "--"
+                                            },
+                                            "placement": {
+                                                "mode": "flow"
+                                            }
+                                        },
+                                        {
+                                            "type": "label",
+                                            "id": "cpu_temp",
+                                            "style": {
+                                                "textColor": "#8b97ad",
+                                                "fontSize": "${constant.sysmon.font.detail}",
+                                                "textAlign": "center"
+                                            },
+                                            "labelProps": {
+                                                "text": "SOC -- C"
+                                            },
+                                            "placement": {
+                                                "mode": "flow"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "label",
+                                    "id": "cpu_detail",
+                                    "style": {
+                                        "textColor": "#8b97ad",
+                                        "fontSize": "${constant.sysmon.font.detail}",
+                                        "textAlign": "center"
+                                    },
+                                    "labelProps": {
+                                        "text": "waiting for agent"
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 0,
+                                        "y": 176,
+                                        "width": "match",
+                                        "height": "wrap"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "container",
+                            "id": "mem_card",
+                            "layout": {
+                                "type": "none"
+                            },
+                            "style": {
+                                "bgColor": "#0f1624",
+                                "radius": "${constant.sysmon.layout.cardRadius}",
+                                "padding": "10dp"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "${constant.sysmon.layout.cardWidth}",
+                                "height": "${constant.sysmon.layout.cardHeight}"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "mem_name",
+                                    "style": {
+                                        "textColor": "#8b97ad",
+                                        "fontSize": "${constant.sysmon.font.name}",
+                                        "textAlign": "center"
+                                    },
+                                    "labelProps": {
+                                        "text": "MEMORY"
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 0,
+                                        "y": 0,
+                                        "width": "match",
+                                        "height": "wrap"
+                                    }
+                                },
+                                {
+                                    "type": "arc",
+                                    "id": "mem_arc",
+                                    "rangeProps": {
+                                        "value": 0,
+                                        "min": 0,
+                                        "max": 100
+                                    },
+                                    "style": {
+                                        "bgColor": "#0f1624",
+                                        "arcColor": "#1a2333",
+                                        "arcWidth": "12dp"
+                                    },
+                                    "partStyles": {
+                                        "indicator": {
+                                            "arcColor": "#34d399",
+                                            "arcGradientColor": "#0ea5e9",
+                                            "arcWidth": "12dp",
+                                            "arcRounded": true,
+                                            "arcGradientSegments": 40
+                                        }
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 20,
+                                        "y": 28,
+                                        "width": "${constant.sysmon.layout.arcSize}",
+                                        "height": "${constant.sysmon.layout.arcSize}"
+                                    },
+                                    "bindings": {
+                                        "partStyles.indicator.arcColor": "indicator_color",
+                                        "partStyles.indicator.arcGradientColor": "indicator_gradient"
+                                    }
+                                },
+                                {
+                                    "type": "container",
+                                    "id": "mem_center",
+                                    "layout": {
+                                        "type": "flex",
+                                        "flexFlow": "column",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center",
+                                        "gap": "2dp"
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 20,
+                                        "y": 28,
+                                        "width": "${constant.sysmon.layout.arcSize}",
+                                        "height": "${constant.sysmon.layout.arcSize}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "mem_value",
+                                            "style": {
+                                                "textColor": "#e6edf7",
+                                                "fontSize": "${constant.sysmon.font.value}",
+                                                "textAlign": "center"
+                                            },
+                                            "labelProps": {
+                                                "text": "--"
+                                            },
+                                            "placement": {
+                                                "mode": "flow"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "label",
+                                    "id": "mem_detail",
+                                    "style": {
+                                        "textColor": "#8b97ad",
+                                        "fontSize": "${constant.sysmon.font.detail}",
+                                        "textAlign": "center"
+                                    },
+                                    "labelProps": {
+                                        "text": "waiting for agent"
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 0,
+                                        "y": 176,
+                                        "width": "match",
+                                        "height": "wrap"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "container",
+                            "id": "disk_card",
+                            "layout": {
+                                "type": "none"
+                            },
+                            "style": {
+                                "bgColor": "#0f1624",
+                                "radius": "${constant.sysmon.layout.cardRadius}",
+                                "padding": "10dp"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "${constant.sysmon.layout.cardWidth}",
+                                "height": "${constant.sysmon.layout.cardHeight}"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "disk_name",
+                                    "style": {
+                                        "textColor": "#8b97ad",
+                                        "fontSize": "${constant.sysmon.font.name}",
+                                        "textAlign": "center"
+                                    },
+                                    "labelProps": {
+                                        "text": "DISK"
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 0,
+                                        "y": 0,
+                                        "width": "match",
+                                        "height": "wrap"
+                                    }
+                                },
+                                {
+                                    "type": "arc",
+                                    "id": "disk_arc",
+                                    "rangeProps": {
+                                        "value": 0,
+                                        "min": 0,
+                                        "max": 100
+                                    },
+                                    "style": {
+                                        "bgColor": "#0f1624",
+                                        "arcColor": "#1a2333",
+                                        "arcWidth": "12dp"
+                                    },
+                                    "partStyles": {
+                                        "indicator": {
+                                            "arcColor": "#fbbf24",
+                                            "arcGradientColor": "#f97316",
+                                            "arcWidth": "12dp",
+                                            "arcRounded": true,
+                                            "arcGradientSegments": 40
+                                        }
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 20,
+                                        "y": 28,
+                                        "width": "${constant.sysmon.layout.arcSize}",
+                                        "height": "${constant.sysmon.layout.arcSize}"
+                                    },
+                                    "bindings": {
+                                        "partStyles.indicator.arcColor": "indicator_color",
+                                        "partStyles.indicator.arcGradientColor": "indicator_gradient"
+                                    }
+                                },
+                                {
+                                    "type": "container",
+                                    "id": "disk_center",
+                                    "layout": {
+                                        "type": "flex",
+                                        "flexFlow": "column",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center",
+                                        "gap": "2dp"
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 20,
+                                        "y": 28,
+                                        "width": "${constant.sysmon.layout.arcSize}",
+                                        "height": "${constant.sysmon.layout.arcSize}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "disk_value",
+                                            "style": {
+                                                "textColor": "#e6edf7",
+                                                "fontSize": "${constant.sysmon.font.value}",
+                                                "textAlign": "center"
+                                            },
+                                            "labelProps": {
+                                                "text": "--"
+                                            },
+                                            "placement": {
+                                                "mode": "flow"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "label",
+                                    "id": "disk_detail",
+                                    "style": {
+                                        "textColor": "#8b97ad",
+                                        "fontSize": "${constant.sysmon.font.detail}",
+                                        "textAlign": "center"
+                                    },
+                                    "labelProps": {
+                                        "text": "waiting for agent"
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 0,
+                                        "y": 176,
+                                        "width": "match",
+                                        "height": "wrap"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "container",
+                            "id": "gpu_card",
+                            "layout": {
+                                "type": "none"
+                            },
+                            "style": {
+                                "bgColor": "#0f1624",
+                                "radius": "${constant.sysmon.layout.cardRadius}",
+                                "padding": "10dp"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "${constant.sysmon.layout.cardWidth}",
+                                "height": "${constant.sysmon.layout.cardHeight}"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "gpu_name",
+                                    "style": {
+                                        "textColor": "#8b97ad",
+                                        "fontSize": "${constant.sysmon.font.name}",
+                                        "textAlign": "center"
+                                    },
+                                    "labelProps": {
+                                        "text": "GPU"
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 0,
+                                        "y": 0,
+                                        "width": "match",
+                                        "height": "wrap"
+                                    }
+                                },
+                                {
+                                    "type": "arc",
+                                    "id": "gpu_arc",
+                                    "rangeProps": {
+                                        "value": 0,
+                                        "min": 0,
+                                        "max": 100
+                                    },
+                                    "style": {
+                                        "bgColor": "#0f1624",
+                                        "arcColor": "#1a2333",
+                                        "arcWidth": "12dp"
+                                    },
+                                    "partStyles": {
+                                        "indicator": {
+                                            "arcColor": "#a78bfa",
+                                            "arcGradientColor": "#ec4899",
+                                            "arcWidth": "12dp",
+                                            "arcRounded": true,
+                                            "arcGradientSegments": 40
+                                        }
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 20,
+                                        "y": 28,
+                                        "width": "${constant.sysmon.layout.arcSize}",
+                                        "height": "${constant.sysmon.layout.arcSize}"
+                                    },
+                                    "bindings": {
+                                        "partStyles.indicator.arcColor": "indicator_color",
+                                        "partStyles.indicator.arcGradientColor": "indicator_gradient"
+                                    }
+                                },
+                                {
+                                    "type": "container",
+                                    "id": "gpu_center",
+                                    "layout": {
+                                        "type": "flex",
+                                        "flexFlow": "column",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center",
+                                        "gap": "2dp"
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 20,
+                                        "y": 28,
+                                        "width": "${constant.sysmon.layout.arcSize}",
+                                        "height": "${constant.sysmon.layout.arcSize}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "gpu_value",
+                                            "style": {
+                                                "textColor": "#e6edf7",
+                                                "fontSize": "${constant.sysmon.font.value}",
+                                                "textAlign": "center"
+                                            },
+                                            "labelProps": {
+                                                "text": "--"
+                                            },
+                                            "placement": {
+                                                "mode": "flow"
+                                            }
+                                        },
+                                        {
+                                            "type": "label",
+                                            "id": "gpu_temp",
+                                            "labelProps": {
+                                                "text": "GPU -- C"
+                                            },
+                                            "style": {
+                                                "textColor": "#8b97ad",
+                                                "fontSize": "${constant.sysmon.font.detail}",
+                                                "textAlign": "center"
+                                            },
+                                            "placement": {
+                                                "mode": "flow"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "label",
+                                    "id": "gpu_detail",
+                                    "style": {
+                                        "textColor": "#8b97ad",
+                                        "fontSize": "${constant.sysmon.font.detail}",
+                                        "textAlign": "center"
+                                    },
+                                    "labelProps": {
+                                        "text": "waiting for agent"
+                                    },
+                                    "placement": {
+                                        "mode": "absolute",
+                                        "x": 0,
+                                        "y": 176,
+                                        "width": "match",
+                                        "height": "wrap"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "container",
+                    "id": "bottom",
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "row",
+                        "mainAlign": "center",
+                        "crossAlign": "center",
+                        "gap": "${constant.sysmon.layout.cardGap}"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "${constant.sysmon.layout.bottomHeight}",
+                        "alignSelf": "stretch"
+                    },
+                    "children": [
+                        {
+                            "type": "container",
+                            "id": "net_card",
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "row",
+                                "mainAlign": "spaceBetween",
+                                "crossAlign": "center",
+                                "gap": "12dp"
+                            },
+                            "style": {
+                                "bgColor": "#0f1624",
+                                "radius": "${constant.sysmon.layout.cardRadius}",
+                                "padding": "12dp"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "${constant.sysmon.layout.netCardWidth}",
+                                "height": "${constant.sysmon.layout.bottomHeight}"
+                            },
+                            "children": [
+                                {
+                                    "type": "container",
+                                    "id": "net_col",
+                                    "layout": {
+                                        "type": "flex",
+                                        "flexFlow": "column",
+                                        "mainAlign": "center",
+                                        "crossAlign": "start",
+                                        "gap": "2dp"
+                                    },
+                                    "placement": {
+                                        "mode": "relative",
+                                        "width": "wrap",
+                                        "height": "wrap"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "net_title",
+                                            "style": {
+                                                "textColor": "#8b97ad",
+                                                "fontSize": "${constant.sysmon.font.detail}"
+                                            },
+                                            "labelProps": {
+                                                "text": "NETWORK"
+                                            },
+                                            "placement": {
+                                                "mode": "relative",
+                                                "width": "wrap",
+                                                "height": "wrap"
+                                            }
+                                        },
+                                        {
+                                            "type": "label",
+                                            "id": "net_down",
+                                            "style": {
+                                                "textColor": "#38bdf8",
+                                                "fontSize": "${constant.sysmon.font.net}"
+                                            },
+                                            "labelProps": {
+                                                "text": "DOWN  0.00 Mb/s"
+                                            },
+                                            "placement": {
+                                                "mode": "relative",
+                                                "width": "wrap",
+                                                "height": "wrap"
+                                            }
+                                        },
+                                        {
+                                            "type": "label",
+                                            "id": "net_up",
+                                            "style": {
+                                                "textColor": "#c084fc",
+                                                "fontSize": "${constant.sysmon.font.net}"
+                                            },
+                                            "labelProps": {
+                                                "text": "UP  0.00 Mb/s"
+                                            },
+                                            "placement": {
+                                                "mode": "relative",
+                                                "width": "wrap",
+                                                "height": "wrap"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "container",
+                                    "id": "io_col",
+                                    "layout": {
+                                        "type": "flex",
+                                        "flexFlow": "column",
+                                        "mainAlign": "center",
+                                        "crossAlign": "start",
+                                        "gap": "2dp"
+                                    },
+                                    "placement": {
+                                        "mode": "relative",
+                                        "width": "wrap",
+                                        "height": "wrap"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "io_title",
+                                            "style": {
+                                                "textColor": "#8b97ad",
+                                                "fontSize": "${constant.sysmon.font.detail}"
+                                            },
+                                            "labelProps": {
+                                                "text": "DISK I/O"
+                                            },
+                                            "placement": {
+                                                "mode": "relative",
+                                                "width": "wrap",
+                                                "height": "wrap"
+                                            }
+                                        },
+                                        {
+                                            "type": "label",
+                                            "id": "io_read",
+                                            "style": {
+                                                "textColor": "#34d399",
+                                                "fontSize": "${constant.sysmon.font.net}"
+                                            },
+                                            "labelProps": {
+                                                "text": "READ  0.00 MB/s"
+                                            },
+                                            "placement": {
+                                                "mode": "relative",
+                                                "width": "wrap",
+                                                "height": "wrap"
+                                            }
+                                        },
+                                        {
+                                            "type": "label",
+                                            "id": "io_write",
+                                            "style": {
+                                                "textColor": "#fbbf24",
+                                                "fontSize": "${constant.sysmon.font.net}"
+                                            },
+                                            "labelProps": {
+                                                "text": "WRITE  0.00 MB/s"
+                                            },
+                                            "placement": {
+                                                "mode": "relative",
+                                                "width": "wrap",
+                                                "height": "wrap"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "container",
+                            "id": "hint_card",
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "column",
+                                "mainAlign": "center",
+                                "crossAlign": "start",
+                                "gap": "4dp"
+                            },
+                            "style": {
+                                "bgColor": "#0f1624",
+                                "radius": "${constant.sysmon.layout.cardRadius}",
+                                "padding": "12dp"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "${constant.sysmon.layout.hintCardWidth}",
+                                "height": "${constant.sysmon.layout.bottomHeight}"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "hint_title",
+                                    "style": {
+                                        "textColor": "#8b97ad",
+                                        "fontSize": "${constant.sysmon.font.detail}"
+                                    },
+                                    "labelProps": {
+                                        "text": "PC AGENT"
+                                    },
+                                    "placement": {
+                                        "mode": "relative",
+                                        "width": "wrap",
+                                        "height": "wrap"
+                                    }
+                                },
+                                {
+                                    "type": "label",
+                                    "id": "hint_line1",
+                                    "style": {
+                                        "textColor": "#e6edf7",
+                                        "fontSize": "${constant.sysmon.font.name}"
+                                    },
+                                    "labelProps": {
+                                        "text": "UDP :9999  (LAN)"
+                                    },
+                                    "placement": {
+                                        "mode": "relative",
+                                        "width": "wrap",
+                                        "height": "wrap"
+                                    }
+                                },
+                                {
+                                    "type": "label",
+                                    "id": "hint_line2",
+                                    "style": {
+                                        "textColor": "#8b97ad",
+                                        "fontSize": "${constant.sysmon.font.caption}"
+                                    },
+                                    "labelProps": {
+                                        "text": "tools/pc_monitor_agent.py"
+                                    },
+                                    "placement": {
+                                        "mode": "relative",
+                                        "width": "wrap",
+                                        "height": "wrap"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

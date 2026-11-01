@@ -1,0 +1,6 @@
+dependencies:
+  espressif/brookesia_service_bt_speaker:
+    override_path: ../..
+
+  espressif/brookesia_hal_adaptor:
+    override_path: ../../../../../hal/brookesia_hal_adaptor

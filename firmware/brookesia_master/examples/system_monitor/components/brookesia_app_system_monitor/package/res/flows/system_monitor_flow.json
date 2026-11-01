@@ -1,0 +1,9 @@
+{
+    "type": "screenFlow",
+    "id": "system_monitor_flow",
+    "screens": [
+        "system_monitor"
+    ],
+    "initial": "system_monitor",
+    "transitions": []
+}

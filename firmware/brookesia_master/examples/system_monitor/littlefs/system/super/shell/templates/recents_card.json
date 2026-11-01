@@ -1,0 +1,224 @@
+{
+    "type": "viewTemplate",
+    "id": "recents_card",
+    "node": {
+        "type": "button",
+        "interactionRefs": [
+            "press.scale"
+        ],
+        "events": [
+            {
+                "type": "clicked",
+                "effects": [
+                    {
+                        "type": "emitAction",
+                        "action": "super.recents.open",
+                        "requireValidPress": true
+                    }
+                ]
+            }
+        ],
+        "style": {
+            "padding": "14dp"
+        },
+        "styleRefs": [
+            "shell.card"
+        ],
+        "layout": {
+            "type": "flex",
+            "flexFlow": "row",
+            "mainAlign": "spaceBetween",
+            "crossAlign": "center",
+            "gap": "14dp"
+        },
+        "placement": {
+            "mode": "relative",
+            "width": "match",
+            "height": "96dp"
+        },
+        "children": [
+            {
+                "type": "container",
+                "id": "left",
+                "commonProps": {
+                    "clickable": false
+                },
+                "layout": {
+                    "type": "flex",
+                    "flexFlow": "row",
+                    "mainAlign": "start",
+                    "crossAlign": "center",
+                    "gap": "14dp"
+                },
+                "style": {
+                    "padding": 0
+                },
+                "placement": {
+                    "mode": "relative",
+                    "width": "wrap",
+                    "height": "wrap"
+                },
+                "children": [
+                    {
+                        "type": "container",
+                        "id": "icon_box",
+                        "commonProps": {
+                            "clickable": false
+                        },
+                        "layout": {
+                            "type": "flex",
+                            "mainAlign": "center",
+                            "crossAlign": "center"
+                        },
+                        "styleRefs": [
+                            "shell.launcherIconTile"
+                        ],
+                        "placement": {
+                            "mode": "relative",
+                            "width": "56dp",
+                            "height": "56dp"
+                        },
+                        "children": [
+                            {
+                                "type": "label",
+                                "id": "icon",
+                                "commonProps": {
+                                    "clickable": false
+                                },
+                                "bindings": {
+                                    "labelProps.text": "text"
+                                },
+                                "labelProps": {
+                                    "text": ""
+                                },
+                                "styleRefs": [
+                                    "shell.launcherFallbackIcon"
+                                ],
+                                "placement": {
+                                    "mode": "relative",
+                                    "width": "wrap",
+                                    "height": "wrap"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "type": "container",
+                        "id": "text_box",
+                        "commonProps": {
+                            "clickable": false
+                        },
+                        "layout": {
+                            "type": "flex",
+                            "flexFlow": "column",
+                            "mainAlign": "center",
+                            "crossAlign": "start",
+                            "gap": "4dp"
+                        },
+                        "style": {
+                            "padding": 0
+                        },
+                        "placement": {
+                            "mode": "relative",
+                            "width": "wrap",
+                            "height": "wrap"
+                        },
+                        "children": [
+                            {
+                                "type": "label",
+                                "id": "title",
+                                "commonProps": {
+                                    "clickable": false
+                                },
+                                "bindings": {
+                                    "labelProps.text": "name"
+                                },
+                                "labelProps": {
+                                    "text": ""
+                                },
+                                "styleRefs": [
+                                    "shell.cardTitle"
+                                ],
+                                "placement": {
+                                    "mode": "relative",
+                                    "width": "wrap",
+                                    "height": "wrap"
+                                }
+                            },
+                            {
+                                "type": "label",
+                                "id": "hint",
+                                "commonProps": {
+                                    "clickable": false
+                                },
+                                "labelProps": {
+                                    "text": "Tap to open"
+                                },
+                                "styleRefs": [
+                                    "shell.subtitle"
+                                ],
+                                "placement": {
+                                    "mode": "relative",
+                                    "width": "wrap",
+                                    "height": "wrap"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "type": "button",
+                "id": "close_button",
+                "events": [
+                    {
+                        "type": "clicked",
+                        "effects": [
+                            {
+                                "type": "emitAction",
+                                "action": "super.recents.close",
+                                "requireValidPress": true
+                            }
+                        ]
+                    }
+                ],
+                "layout": {
+                    "type": "flex",
+                    "mainAlign": "center",
+                    "crossAlign": "center"
+                },
+                "styleRefs": [
+                    "shell.closeButton"
+                ],
+                "placement": {
+                    "mode": "relative",
+                    "width": "44dp",
+                    "height": "44dp"
+                },
+                "children": [
+                    {
+                        "type": "label",
+                        "id": "close_label",
+                        "commonProps": {
+                            "clickable": false
+                        },
+                        "labelProps": {
+                            "text": "×"
+                        },
+                        "style": {
+                            "fontSize": "18sp"
+                        },
+                        "styleRefs": [
+                            "shell.closeButtonLabel"
+                        ],
+                        "placement": {
+                            "mode": "relative",
+                            "width": "wrap",
+                            "height": "wrap"
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}

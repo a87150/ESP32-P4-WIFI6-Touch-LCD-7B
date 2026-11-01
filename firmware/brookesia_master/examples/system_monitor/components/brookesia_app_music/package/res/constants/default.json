@@ -1,0 +1,25 @@
+{
+    "type": "constant",
+    "data": {
+        "music": {
+            "layout": {
+                "pageX": "24dp",
+                "pageY": "20dp",
+                "pageWidth": "${expr(${env.widthDp} - 48dp)}",
+                "pageHeight": "${expr(${env.heightDp} - 40dp)}",
+                "gap": "14dp",
+                "cardRadius": "20dp",
+                "cardPadding": "20dp",
+                "buttonHeight": "54dp",
+                "buttonRadius": "16dp"
+            },
+            "font": {
+                "title": "26sp",
+                "name": "22sp",
+                "meta": "14sp",
+                "button": "18sp",
+                "status": "13sp"
+            }
+        }
+    }
+}

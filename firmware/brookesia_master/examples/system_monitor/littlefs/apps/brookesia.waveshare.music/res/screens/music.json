@@ -1,0 +1,447 @@
+{
+    "type": "viewScreen",
+    "id": "music",
+    "mountMode": "dynamic",
+    "commonProps": {
+        "scrollable": false
+    },
+    "style": {
+        "bgColor": "#070b14"
+    },
+    "children": [
+        {
+            "type": "container",
+            "id": "page",
+            "layout": {
+                "type": "flex",
+                "flexFlow": "column",
+                "mainAlign": "start",
+                "crossAlign": "stretch",
+                "gap": "${constant.music.layout.gap}"
+            },
+            "placement": {
+                "mode": "absolute",
+                "x": "${constant.music.layout.pageX}",
+                "y": "${constant.music.layout.pageY}",
+                "width": "${constant.music.layout.pageWidth}",
+                "height": "${constant.music.layout.pageHeight}"
+            },
+            "children": [
+                {
+                    "type": "label",
+                    "id": "title",
+                    "labelProps": {
+                        "text": "音乐"
+                    },
+                    "style": {
+                        "textColor": "#e5e7eb",
+                        "fontSize": "${constant.music.font.title}"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "wrap",
+                        "height": "wrap"
+                    }
+                },
+                {
+                    "type": "container",
+                    "id": "player_card",
+                    "style": {
+                        "bgColor": "#131c2e",
+                        "radius": "${constant.music.layout.cardRadius}",
+                        "padding": "${constant.music.layout.cardPadding}"
+                    },
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "column",
+                        "mainAlign": "start",
+                        "crossAlign": "stretch",
+                        "gap": "12dp"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "wrap",
+                        "alignSelf": "stretch"
+                    },
+                    "children": [
+                        {
+                            "type": "label",
+                            "id": "track_name",
+                            "labelProps": {
+                                "text": "未在播放"
+                            },
+                            "style": {
+                                "textColor": "#f8fafc",
+                                "fontSize": "${constant.music.font.name}"
+                            },
+                            "bindings": {
+                                "labelProps.text": "track_name"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "match",
+                                "height": "wrap"
+                            }
+                        },
+                        {
+                            "type": "label",
+                            "id": "track_meta",
+                            "labelProps": {
+                                "text": "没有找到 WAV 文件"
+                            },
+                            "style": {
+                                "textColor": "#94a3b8",
+                                "fontSize": "${constant.music.font.meta}"
+                            },
+                            "bindings": {
+                                "labelProps.text": "track_meta"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "match",
+                                "height": "wrap"
+                            }
+                        },
+                        {
+                            "type": "slider",
+                            "id": "progress",
+                            "rangeProps": {
+                                "min": 0,
+                                "max": 1000,
+                                "value": 0
+                            },
+                            "events": [
+                                {
+                                    "type": "valueChanged",
+                                    "action": "music.seek"
+                                }
+                            ],
+                            "style": {
+                                "bgColor": "#1b2230",
+                                "radius": "6dp"
+                            },
+                            "partStyles": {
+                                "indicator": {
+                                    "bgColor": "#22d3ee",
+                                    "bgGradientColor": "#6366f1",
+                                    "bgGradientDirection": "horizontal",
+                                    "radius": "6dp"
+                                },
+                                "knob": {
+                                    "bgColor": "#f8fafc",
+                                    "radius": "9dp"
+                                }
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "match",
+                                "height": "22dp",
+                                "alignSelf": "stretch"
+                            }
+                        },
+                        {
+                            "type": "label",
+                            "id": "time_label",
+                            "labelProps": {
+                                "text": "00:00 / 00:00"
+                            },
+                            "style": {
+                                "textColor": "#94a3b8",
+                                "fontSize": "${constant.music.font.meta}"
+                            },
+                            "bindings": {
+                                "labelProps.text": "time_label"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "wrap",
+                                "height": "wrap"
+                            }
+                        },
+                        {
+                            "type": "container",
+                            "id": "volume",
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "row",
+                                "mainAlign": "start",
+                                "crossAlign": "center",
+                                "gap": "12dp"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "match",
+                                "height": "wrap",
+                                "alignSelf": "stretch"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "volume_text",
+                                    "commonProps": {
+                                        "clickable": false
+                                    },
+                                    "labelProps": {
+                                        "text": "音量 75%"
+                                    },
+                                    "style": {
+                                        "textColor": "#94a3b8",
+                                        "fontSize": "${constant.music.font.meta}"
+                                    },
+                                    "bindings": {
+                                        "labelProps.text": "volume_text"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "150dp",
+                                        "height": "wrap"
+                                    }
+                                },
+                                {
+                                    "type": "slider",
+                                    "id": "volume_slider",
+                                    "rangeProps": {
+                                        "min": 0,
+                                        "max": 100,
+                                        "value": 75
+                                    },
+                                    "events": [
+                                        {
+                                            "type": "valueChanged",
+                                            "action": "music.volume"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#1b2230",
+                                        "radius": "6dp"
+                                    },
+                                    "partStyles": {
+                                        "indicator": {
+                                            "bgColor": "#34d399",
+                                            "radius": "6dp"
+                                        },
+                                        "knob": {
+                                            "bgColor": "#f8fafc",
+                                            "radius": "9dp"
+                                        }
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "740dp",
+                                        "height": "22dp"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "container",
+                    "id": "controls",
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "row",
+                        "mainAlign": "start",
+                        "crossAlign": "center",
+                        "gap": "12dp"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "${constant.music.layout.buttonHeight}",
+                        "alignSelf": "stretch"
+                    },
+                    "children": [
+                        {
+                            "type": "button",
+                            "id": "prev",
+                            "events": [
+                                {
+                                    "type": "clicked",
+                                    "action": "music.prev"
+                                }
+                            ],
+                            "style": {
+                                "bgColor": "#1f2a44",
+                                "radius": "${constant.music.layout.buttonRadius}",
+                                "borderWidth": "0dp"
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "160dp",
+                                "height": "match"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "text",
+                                    "commonProps": {
+                                        "clickable": false
+                                    },
+                                    "labelProps": {
+                                        "text": "上一首"
+                                    },
+                                    "style": {
+                                        "textColor": "#e2e8f0",
+                                        "fontSize": "${constant.music.font.button}"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "button",
+                            "id": "toggle",
+                            "events": [
+                                {
+                                    "type": "clicked",
+                                    "action": "music.toggle"
+                                }
+                            ],
+                            "style": {
+                                "bgColor": "#6366f1",
+                                "radius": "${constant.music.layout.buttonRadius}",
+                                "borderWidth": "0dp"
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "200dp",
+                                "height": "match"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "text",
+                                    "commonProps": {
+                                        "clickable": false
+                                    },
+                                    "labelProps": {
+                                        "text": "播放"
+                                    },
+                                    "style": {
+                                        "textColor": "#ffffff",
+                                        "fontSize": "${constant.music.font.button}"
+                                    },
+                                    "bindings": {
+                                        "labelProps.text": "toggle_text"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "button",
+                            "id": "next",
+                            "events": [
+                                {
+                                    "type": "clicked",
+                                    "action": "music.next"
+                                }
+                            ],
+                            "style": {
+                                "bgColor": "#1f2a44",
+                                "radius": "${constant.music.layout.buttonRadius}",
+                                "borderWidth": "0dp"
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "160dp",
+                                "height": "match"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "text",
+                                    "commonProps": {
+                                        "clickable": false
+                                    },
+                                    "labelProps": {
+                                        "text": "下一首"
+                                    },
+                                    "style": {
+                                        "textColor": "#e2e8f0",
+                                        "fontSize": "${constant.music.font.button}"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "button",
+                            "id": "refresh",
+                            "events": [
+                                {
+                                    "type": "clicked",
+                                    "action": "music.refresh"
+                                }
+                            ],
+                            "style": {
+                                "bgColor": "#14251f",
+                                "radius": "${constant.music.layout.buttonRadius}",
+                                "borderWidth": "0dp"
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "160dp",
+                                "height": "match"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "text",
+                                    "commonProps": {
+                                        "clickable": false
+                                    },
+                                    "labelProps": {
+                                        "text": "刷新列表"
+                                    },
+                                    "style": {
+                                        "textColor": "#d1fae5",
+                                        "fontSize": "${constant.music.font.button}"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "label",
+                    "id": "status",
+                    "labelProps": {
+                        "text": "把 WAV 文件放到 SD 卡或 /littlefs/sounds"
+                    },
+                    "style": {
+                        "textColor": "#94a3b8",
+                        "fontSize": "${constant.music.font.status}"
+                    },
+                    "bindings": {
+                        "labelProps.text": "status_text"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "wrap"
+                    }
+                }
+            ]
+        }
+    ]
+}

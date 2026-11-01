@@ -1,0 +1,16 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/brookesia_system_core:
+    version: "0.8.*"
+    override_path: ../../../../system/brookesia_system_core
+    require: public
+
+  espressif/brookesia_service_helper:
+    version: "0.8.*"
+    override_path: ../../../../service/framework/brookesia_service_helper
+    require: public
+
+  espressif/brookesia_hal_interface:
+    version: "0.8.*"
+    override_path: ../../../../hal/brookesia_hal_interface
+    require: public

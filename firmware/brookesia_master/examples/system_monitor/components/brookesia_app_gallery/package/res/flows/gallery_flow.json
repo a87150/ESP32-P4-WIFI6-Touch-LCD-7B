@@ -1,0 +1,9 @@
+{
+    "type": "screenFlow",
+    "id": "gallery_flow",
+    "screens": [
+        "gallery"
+    ],
+    "initial": "gallery",
+    "transitions": []
+}

@@ -1,0 +1,9 @@
+{
+    "type": "screenFlow",
+    "id": "music_flow",
+    "screens": [
+        "music"
+    ],
+    "initial": "music",
+    "transitions": []
+}

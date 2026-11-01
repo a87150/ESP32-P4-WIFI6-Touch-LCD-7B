@@ -1,0 +1,454 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#pragma once
+
+#include <cstdint>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
+#include "brookesia/gui_interface.hpp"
+#include "brookesia/system_super/macro_configs.h"
+#include "brookesia/system_super/system.hpp"
+
+namespace esp_brookesia::system::super {
+
+#define BROOKESIA_SYSTEM_SUPER_STATE_HOME "home"
+#define BROOKESIA_SYSTEM_SUPER_STATE_BACKGROUND "background"
+#define BROOKESIA_SYSTEM_SUPER_STATE_LAUNCHER "launcher"
+#define BROOKESIA_SYSTEM_SUPER_STATE_NOTIFICATIONS "notifications"
+#define BROOKESIA_SYSTEM_SUPER_STATE_OVERLAY "overlay"
+#define BROOKESIA_SYSTEM_SUPER_STATE_KEYBOARD_HIDDEN "keyboard_hidden"
+#define BROOKESIA_SYSTEM_SUPER_STATE_KEYBOARD_INPUT "keyboard_input"
+#define BROOKESIA_SYSTEM_SUPER_STATE_MESSAGE_DIALOG_HIDDEN "message_dialog_hidden"
+#define BROOKESIA_SYSTEM_SUPER_STATE_MESSAGE_DIALOG "message_dialog"
+#define BROOKESIA_SYSTEM_SUPER_PATH_HOME "/" BROOKESIA_SYSTEM_SUPER_STATE_HOME
+#define BROOKESIA_SYSTEM_SUPER_PATH_BACKGROUND "/" BROOKESIA_SYSTEM_SUPER_STATE_BACKGROUND
+#define BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER "/" BROOKESIA_SYSTEM_SUPER_STATE_LAUNCHER
+#define BROOKESIA_SYSTEM_SUPER_PATH_NOTIFICATIONS "/" BROOKESIA_SYSTEM_SUPER_STATE_NOTIFICATIONS
+#define BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/" BROOKESIA_SYSTEM_SUPER_STATE_OVERLAY
+#define BROOKESIA_SYSTEM_SUPER_PATH_KEYBOARD_HIDDEN "/" BROOKESIA_SYSTEM_SUPER_STATE_KEYBOARD_HIDDEN
+#define BROOKESIA_SYSTEM_SUPER_PATH_KEYBOARD_INPUT "/" BROOKESIA_SYSTEM_SUPER_STATE_KEYBOARD_INPUT
+#define BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG_HIDDEN "/" BROOKESIA_SYSTEM_SUPER_STATE_MESSAGE_DIALOG_HIDDEN
+#define BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG "/" BROOKESIA_SYSTEM_SUPER_STATE_MESSAGE_DIALOG
+#define BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/status"
+#define BROOKESIA_SYSTEM_SUPER_PATH_SYSTEM_UI_MASK BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/system_ui_mask"
+#define BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/app_modal"
+#define BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL_LAUNCH BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL "/launch_group"
+#define BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL_LOADING BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL "/loading_group"
+#define BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL_LAUNCH_ICON_BOX \
+    BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL_LAUNCH "/icon_box"
+#define BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_CONTENT BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER "/content"
+#define BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_GRID_STAGE \
+    BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_CONTENT "/grid_stage"
+#define BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_SLOT_GRID \
+    BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_GRID_STAGE "/slot_grid"
+#define BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_ITEM_LAYER \
+    BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_GRID_STAGE "/item_layer"
+#define BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_DRAG_LAYER \
+    BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_GRID_STAGE "/drag_layer"
+#define BROOKESIA_SYSTEM_SUPER_LAUNCHER_INSTANCE_PREFIX "app_"
+#define BROOKESIA_SYSTEM_SUPER_LAUNCHER_SLOT_INSTANCE_PREFIX "slot_"
+
+#define BROOKESIA_SYSTEM_SUPER_PATH_RECENTS "/recents"
+#define BROOKESIA_SYSTEM_SUPER_PATH_RECENTS_CONTENT BROOKESIA_SYSTEM_SUPER_PATH_RECENTS "/content"
+#define BROOKESIA_SYSTEM_SUPER_PATH_RECENTS_LIST BROOKESIA_SYSTEM_SUPER_PATH_RECENTS_CONTENT "/list"
+#define BROOKESIA_SYSTEM_SUPER_PATH_RECENTS_ITEM_LAYER \
+    BROOKESIA_SYSTEM_SUPER_PATH_RECENTS_LIST "/item_layer"
+#define BROOKESIA_SYSTEM_SUPER_RECENTS_INSTANCE_PREFIX "recent_"
+
+#define BROOKESIA_SYSTEM_SUPER_ACTION_NAV_PREFIX "super.nav."
+#define BROOKESIA_SYSTEM_SUPER_ACTION_BACKGROUND_PREFIX "super.background."
+#define BROOKESIA_SYSTEM_SUPER_ACTION_LAUNCH_PREFIX "super.launch.app"
+#define BROOKESIA_SYSTEM_SUPER_ACTION_KEYBOARD_PREFIX "super.keyboard."
+#define BROOKESIA_SYSTEM_SUPER_ACTION_MESSAGE_DIALOG_PREFIX "super.message_dialog."
+#define BROOKESIA_SYSTEM_SUPER_ACTION_RECENTS_PREFIX "super.recents."
+
+inline constexpr const char *SUPER_RESOURCE_DIR = BROOKESIA_SYSTEM_SUPER_RESOURCE_DIR;
+inline constexpr const char *SUPER_SHELL_APP_ID = "brookesia.system.super.shell";
+inline constexpr const char *SUPER_SHELL_ROOT_JSON = "shell/root.json";
+inline constexpr const char *SUPER_BACKGROUND_FLOW_ID = "background";
+inline constexpr const char *SUPER_SHELL_PAGES_FLOW_ID = "shell_pages";
+inline constexpr const char *SUPER_OVERLAY_FLOW_ID = "overlay";
+inline constexpr const char *SUPER_KEYBOARD_FLOW_ID = "keyboard";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_FLOW_ID = "message_dialog";
+inline constexpr const char *SUPER_FONT_DIR = "fonts";
+inline constexpr const char *SUPER_DEFAULT_FONT_ID = "default";
+inline constexpr const char *SUPER_THEME_DIR = "themes";
+inline constexpr const char *SUPER_LIGHT_THEME_ID = "light";
+inline constexpr const char *SUPER_DARK_THEME_ID = "dark";
+inline constexpr const char *SUPER_DEFAULT_THEME_ID = SUPER_LIGHT_THEME_ID;
+inline constexpr const char *SUPER_DEFAULT_IMAGE_ID = "default";
+
+inline constexpr const char *SUPER_BACKGROUND_SCREEN_PATH = BROOKESIA_SYSTEM_SUPER_PATH_BACKGROUND;
+inline constexpr const char *SUPER_WALLPAPER_PATH = BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER "/wallpaper";
+inline constexpr const char *SUPER_WALLPAPER_IMAGE_ID_PREFIX = "shell.wallpaper.";
+inline constexpr const char *SUPER_DEFAULT_WALLPAPER_PATH = "/littlefs/pictures/aurora.png";
+inline constexpr const char *SUPER_WALLPAPER_CONFIG_PATH = "/littlefs/system/super/wallpaper.txt";
+inline constexpr const char *SUPER_HOME_SCREEN_PATH = BROOKESIA_SYSTEM_SUPER_PATH_HOME;
+inline constexpr const char *SUPER_APP_LAUNCHER_SCREEN_PATH = BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER;
+inline constexpr const char *SUPER_NOTIFICATIONS_SCREEN_PATH = BROOKESIA_SYSTEM_SUPER_PATH_NOTIFICATIONS;
+inline constexpr const char *SUPER_OVERLAY_SCREEN_PATH = BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY;
+inline constexpr const char *SUPER_KEYBOARD_HIDDEN_SCREEN_PATH = BROOKESIA_SYSTEM_SUPER_PATH_KEYBOARD_HIDDEN;
+inline constexpr const char *SUPER_KEYBOARD_INPUT_SCREEN_PATH = BROOKESIA_SYSTEM_SUPER_PATH_KEYBOARD_INPUT;
+inline constexpr const char *SUPER_MESSAGE_DIALOG_HIDDEN_SCREEN_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG_HIDDEN;
+inline constexpr const char *SUPER_MESSAGE_DIALOG_SCREEN_PATH = BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG;
+
+inline constexpr const char *SUPER_STATUS_BAR_PATH = BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS;
+inline constexpr const char *SUPER_SYSTEM_UI_MASK_PATH = BROOKESIA_SYSTEM_SUPER_PATH_SYSTEM_UI_MASK;
+inline constexpr const char *SUPER_STATUS_APP_ICON_PATH = BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS
+        "/status_left/app_icon_0";
+inline constexpr const char *SUPER_STATUS_APP_ICON_PATH_1 = BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS
+        "/status_left/app_icon_1";
+inline constexpr const char *SUPER_STATUS_APP_ICON_PATH_2 = BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS
+        "/status_left/app_icon_2";
+inline constexpr size_t SUPER_STATUS_BACKGROUND_APP_SLOTS = 3;
+inline constexpr const char *SUPER_ACTION_STATUS_BACKGROUND_APPS[SUPER_STATUS_BACKGROUND_APP_SLOTS] = {
+    "super.status.bg.0",
+    "super.status.bg.1",
+    "super.status.bg.2",
+};
+inline constexpr const char *SUPER_STATUS_WIFI_PATH = BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS
+        "/status_right/wifi_icon";
+inline constexpr const char *SUPER_STATUS_BT_PATH = BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS
+        "/status_right/bt_icon";
+inline constexpr const char *SUPER_STATUS_BATTERY_PATH = BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS
+        "/status_right/battery_pill";
+inline constexpr const char *SUPER_STATUS_BATTERY_TEXT_PATH = BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS
+        "/status_right/battery_pill/battery_text";
+inline constexpr const char *SUPER_STATUS_CLOCK_PATH = BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS
+        "/clock/label";
+inline constexpr const char *SUPER_GESTURE_INDICATOR_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/gesture_indicator";
+inline constexpr const char *SUPER_GESTURE_INDICATOR_BAR_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/gesture_indicator/bar";
+inline constexpr const char *SUPER_DEBUG_PANEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel";
+inline constexpr const char *SUPER_DEBUG_MEMORY_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/memory";
+inline constexpr const char *SUPER_DEBUG_MEMORY_SRAM_FREE_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/memory/sram/free";
+inline constexpr const char *SUPER_DEBUG_MEMORY_SRAM_FREE_LABEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/memory/sram/free/label";
+inline constexpr const char *SUPER_DEBUG_MEMORY_SRAM_LARGEST_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/memory/sram/largest";
+inline constexpr const char *SUPER_DEBUG_MEMORY_SRAM_LARGEST_LABEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/memory/sram/largest/label";
+inline constexpr const char *SUPER_DEBUG_MEMORY_PSRAM_FREE_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/memory/psram/free";
+inline constexpr const char *SUPER_DEBUG_MEMORY_PSRAM_FREE_LABEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/memory/psram/free/label";
+inline constexpr const char *SUPER_DEBUG_MEMORY_PSRAM_LARGEST_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/memory/psram/largest";
+inline constexpr const char *SUPER_DEBUG_MEMORY_PSRAM_LARGEST_LABEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/memory/psram/largest/label";
+inline constexpr const char *SUPER_DEBUG_THREAD_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/thread";
+inline constexpr const char *SUPER_DEBUG_THREAD_CORE0_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/thread/core0";
+inline constexpr const char *SUPER_DEBUG_THREAD_CORE0_TASK_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/thread/core0/task";
+inline constexpr const char *SUPER_DEBUG_THREAD_CORE0_CPU_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/thread/core0/cpu";
+inline constexpr const char *SUPER_DEBUG_THREAD_CORE0_CPU_LABEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/thread/core0/cpu/label";
+inline constexpr const char *SUPER_DEBUG_THREAD_CORE0_HWM_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/thread/core0/hwm";
+inline constexpr const char *SUPER_DEBUG_THREAD_CORE0_HWM_LABEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/thread/core0/hwm/label";
+inline constexpr const char *SUPER_DEBUG_THREAD_CORE1_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/thread/core1";
+inline constexpr const char *SUPER_DEBUG_THREAD_CORE1_TASK_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/thread/core1/task";
+inline constexpr const char *SUPER_DEBUG_THREAD_CORE1_CPU_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/thread/core1/cpu";
+inline constexpr const char *SUPER_DEBUG_THREAD_CORE1_CPU_LABEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/thread/core1/cpu/label";
+inline constexpr const char *SUPER_DEBUG_THREAD_CORE1_HWM_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/thread/core1/hwm";
+inline constexpr const char *SUPER_DEBUG_THREAD_CORE1_HWM_LABEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/debug_panel/thread/core1/hwm/label";
+inline constexpr const char *SUPER_APP_MODAL_PATH = BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL;
+inline constexpr const char *SUPER_APP_MODAL_LAUNCH_PATH = BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL_LAUNCH;
+inline constexpr const char *SUPER_APP_MODAL_LOADING_PATH = BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL_LOADING;
+inline constexpr const char *SUPER_APP_MODAL_LAUNCH_SURFACE_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL_LAUNCH "/surface";
+inline constexpr const char *SUPER_APP_MODAL_LAUNCH_ICON_BOX_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL_LAUNCH_ICON_BOX;
+inline constexpr const char *SUPER_APP_MODAL_LAUNCH_ICON_IMAGE_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL_LAUNCH_ICON_BOX "/icon_image";
+inline constexpr const char *SUPER_APP_MODAL_LAUNCH_FALLBACK_LABEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL_LAUNCH_ICON_BOX "/fallback_label";
+inline constexpr const char *SUPER_KEYBOARD_INPUT_PATH = BROOKESIA_SYSTEM_SUPER_PATH_KEYBOARD_INPUT;
+inline constexpr const char *SUPER_KEYBOARD_INPUT_BAR_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_KEYBOARD_INPUT "/input_bar";
+inline constexpr const char *SUPER_KEYBOARD_INPUT_TEXT_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_KEYBOARD_INPUT "/input_bar/input";
+inline constexpr const char *SUPER_KEYBOARD_PASSWORD_TOGGLE_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_KEYBOARD_INPUT "/input_bar/password_toggle";
+inline constexpr const char *SUPER_KEYBOARD_PASSWORD_TOGGLE_ICON_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_KEYBOARD_INPUT "/input_bar/password_toggle/icon";
+inline constexpr const char *SUPER_KEYBOARD_INPUT_KEYBOARD_PANEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_KEYBOARD_INPUT "/keyboard_panel";
+inline constexpr const char *SUPER_KEYBOARD_INPUT_KEYBOARD_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_KEYBOARD_INPUT "/keyboard_panel/keyboard";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_PANEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG "/panel";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_ICON_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG "/panel/icon";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_TEXT_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG "/panel/text";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_INFORMATIVE_TEXT_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG "/panel/informative_text";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_ACTIONS_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG "/panel/actions";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_BUTTON0_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG "/panel/actions/button0";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_BUTTON0_LABEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG "/panel/actions/button0/label";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_BUTTON1_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG "/panel/actions/button1";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_BUTTON1_LABEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG "/panel/actions/button1/label";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_BUTTON2_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG "/panel/actions/button2";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_BUTTON2_LABEL_PATH =
+    BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG "/panel/actions/button2/label";
+
+inline constexpr const char *SUPER_ACTION_HOME = BROOKESIA_SYSTEM_SUPER_ACTION_NAV_PREFIX "home";
+inline constexpr const char *SUPER_ACTION_OPEN_LAUNCHER = BROOKESIA_SYSTEM_SUPER_ACTION_NAV_PREFIX "open_launcher";
+inline constexpr const char *SUPER_ACTION_OPEN_NOTIFICATIONS = BROOKESIA_SYSTEM_SUPER_ACTION_NAV_PREFIX "open_notifications";
+inline constexpr const char *SUPER_ACTION_OPEN_RECENTS = BROOKESIA_SYSTEM_SUPER_ACTION_NAV_PREFIX "recents";
+inline constexpr const char *SUPER_ACTION_RECENTS_OPEN = BROOKESIA_SYSTEM_SUPER_ACTION_RECENTS_PREFIX "open";
+inline constexpr const char *SUPER_ACTION_RECENTS_CLOSE = BROOKESIA_SYSTEM_SUPER_ACTION_RECENTS_PREFIX "close";
+inline constexpr const char *SUPER_ACTION_RECENTS_ALL_APPS = BROOKESIA_SYSTEM_SUPER_ACTION_RECENTS_PREFIX "all_apps";
+inline constexpr const char *SUPER_ACTION_RECENTS_CLEAR_ALL = BROOKESIA_SYSTEM_SUPER_ACTION_RECENTS_PREFIX "clear_all";
+inline constexpr const char *SUPER_ACTION_SYSTEM_UI_MASK_CLICK =
+    BROOKESIA_SYSTEM_SUPER_ACTION_NAV_PREFIX "mask.click";
+inline constexpr const char *SUPER_ACTION_SYSTEM_UI_MASK_GESTURE =
+    BROOKESIA_SYSTEM_SUPER_ACTION_NAV_PREFIX "mask.gesture";
+inline constexpr const char *SUPER_ACTION_BACKGROUND_SHELL =
+    BROOKESIA_SYSTEM_SUPER_ACTION_BACKGROUND_PREFIX "shell";
+inline constexpr const char *SUPER_ACTION_BACKGROUND_APP =
+    BROOKESIA_SYSTEM_SUPER_ACTION_BACKGROUND_PREFIX "app";
+
+inline constexpr const char *SUPER_ACTION_LAUNCH_APP = BROOKESIA_SYSTEM_SUPER_ACTION_LAUNCH_PREFIX;
+inline constexpr const char *SUPER_ACTION_KEYBOARD_TEXT_CHANGED =
+    BROOKESIA_SYSTEM_SUPER_ACTION_KEYBOARD_PREFIX "text_changed";
+inline constexpr const char *SUPER_ACTION_KEYBOARD_SUBMIT_INPUT =
+    BROOKESIA_SYSTEM_SUPER_ACTION_KEYBOARD_PREFIX "submit.input";
+inline constexpr const char *SUPER_ACTION_KEYBOARD_SUBMIT_KEYBOARD =
+    BROOKESIA_SYSTEM_SUPER_ACTION_KEYBOARD_PREFIX "submit.keyboard";
+inline constexpr const char *SUPER_ACTION_KEYBOARD_CANCEL_INPUT =
+    BROOKESIA_SYSTEM_SUPER_ACTION_KEYBOARD_PREFIX "cancel.input";
+inline constexpr const char *SUPER_ACTION_KEYBOARD_CANCEL_KEYBOARD =
+    BROOKESIA_SYSTEM_SUPER_ACTION_KEYBOARD_PREFIX "cancel.keyboard";
+inline constexpr const char *SUPER_ACTION_KEYBOARD_CANCEL_BACKDROP =
+    BROOKESIA_SYSTEM_SUPER_ACTION_KEYBOARD_PREFIX "cancel.backdrop";
+inline constexpr const char *SUPER_ACTION_KEYBOARD_TOGGLE_PASSWORD =
+    BROOKESIA_SYSTEM_SUPER_ACTION_KEYBOARD_PREFIX "toggle_password";
+inline constexpr const char *SUPER_ACTION_KEYBOARD_SHOW =
+    BROOKESIA_SYSTEM_SUPER_ACTION_KEYBOARD_PREFIX "show";
+inline constexpr const char *SUPER_ACTION_KEYBOARD_HIDE =
+    BROOKESIA_SYSTEM_SUPER_ACTION_KEYBOARD_PREFIX "hide";
+inline constexpr const char *SUPER_ACTION_MESSAGE_DIALOG_BUTTON0 =
+    BROOKESIA_SYSTEM_SUPER_ACTION_MESSAGE_DIALOG_PREFIX "button0";
+inline constexpr const char *SUPER_ACTION_MESSAGE_DIALOG_BUTTON1 =
+    BROOKESIA_SYSTEM_SUPER_ACTION_MESSAGE_DIALOG_PREFIX "button1";
+inline constexpr const char *SUPER_ACTION_MESSAGE_DIALOG_BUTTON2 =
+    BROOKESIA_SYSTEM_SUPER_ACTION_MESSAGE_DIALOG_PREFIX "button2";
+inline constexpr const char *SUPER_ACTION_MESSAGE_DIALOG_SHOW =
+    BROOKESIA_SYSTEM_SUPER_ACTION_MESSAGE_DIALOG_PREFIX "show";
+inline constexpr const char *SUPER_ACTION_MESSAGE_DIALOG_HIDE =
+    BROOKESIA_SYSTEM_SUPER_ACTION_MESSAGE_DIALOG_PREFIX "hide";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_TIMEOUT_TIMER_NAME = "super.message_dialog.timeout";
+inline constexpr const char *SUPER_EXPANSION_NOTIFICATION_TIMER_NAME = "super.expansion.notification";
+inline constexpr const char *SUPER_GESTURE_EXIT_HOLD_TIMER_NAME = "super.gesture.exit_hold";
+inline constexpr const char *SUPER_STATUS_PEEK_AUTO_HIDE_TIMER_NAME = "super.status.peek_auto_hide";
+inline constexpr const char *SUPER_STATUS_CLOCK_TIMER_NAME = "super.status.clock";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_INFORMATION_IMAGE_ID = "msg_dialog/information";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_QUESTION_IMAGE_ID = "msg_dialog/question";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_WARNING_IMAGE_ID = "msg_dialog/warning";
+inline constexpr const char *SUPER_MESSAGE_DIALOG_CRITICAL_IMAGE_ID = "msg_dialog/critical";
+
+inline constexpr const char *SUPER_LAUNCHER_BUTTON_TEMPLATE_ID = "launcher_app_button";
+inline constexpr const char *SUPER_LAUNCHER_SLOT_TEMPLATE_ID = "launcher_slot";
+inline constexpr const char *SUPER_LAUNCHER_CONTENT_PATH = BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_CONTENT;
+inline constexpr const char *SUPER_LAUNCHER_GRID_STAGE_PATH = BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_GRID_STAGE;
+inline constexpr const char *SUPER_LAUNCHER_SLOT_GRID_PATH = BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_SLOT_GRID;
+inline constexpr const char *SUPER_LAUNCHER_ITEM_LAYER_PATH = BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_ITEM_LAYER;
+inline constexpr const char *SUPER_LAUNCHER_DRAG_LAYER_PATH = BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_DRAG_LAYER;
+inline constexpr const char *SUPER_LAUNCHER_INSTANCE_PREFIX = BROOKESIA_SYSTEM_SUPER_LAUNCHER_INSTANCE_PREFIX;
+inline constexpr const char *SUPER_LAUNCHER_SLOT_INSTANCE_PREFIX =
+    BROOKESIA_SYSTEM_SUPER_LAUNCHER_SLOT_INSTANCE_PREFIX;
+inline constexpr const char *SUPER_LAUNCHER_PATH_PREFIX =
+    BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_ITEM_LAYER "/" BROOKESIA_SYSTEM_SUPER_LAUNCHER_INSTANCE_PREFIX;
+inline constexpr const char *SUPER_LAUNCHER_SLOT_PATH_PREFIX =
+    BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_SLOT_GRID "/" BROOKESIA_SYSTEM_SUPER_LAUNCHER_SLOT_INSTANCE_PREFIX;
+inline constexpr const char *SUPER_LAUNCHER_LABEL_ID = "title_box/app_name";
+inline constexpr const char *SUPER_LAUNCHER_ICON_BOX_ID = "icon_box";
+inline constexpr const char *SUPER_LAUNCHER_FALLBACK_ICON_ID = "icon_box/icon";
+inline constexpr const char *SUPER_LAUNCHER_IMAGE_ICON_ID = "icon_box/icon_image";
+
+inline constexpr const char *SUPER_RECENTS_CARD_TEMPLATE_ID = "recents_card";
+inline constexpr const char *SUPER_RECENTS_SCREEN_PATH = BROOKESIA_SYSTEM_SUPER_PATH_RECENTS;
+inline constexpr const char *SUPER_RECENTS_CONTENT_PATH = BROOKESIA_SYSTEM_SUPER_PATH_RECENTS_CONTENT;
+inline constexpr const char *SUPER_RECENTS_LIST_PATH = BROOKESIA_SYSTEM_SUPER_PATH_RECENTS_LIST;
+inline constexpr const char *SUPER_RECENTS_ITEM_LAYER_PATH = BROOKESIA_SYSTEM_SUPER_PATH_RECENTS_ITEM_LAYER;
+inline constexpr const char *SUPER_RECENTS_INSTANCE_PREFIX = BROOKESIA_SYSTEM_SUPER_RECENTS_INSTANCE_PREFIX;
+inline constexpr const char *SUPER_RECENTS_PATH_PREFIX =
+    BROOKESIA_SYSTEM_SUPER_PATH_RECENTS_ITEM_LAYER "/" BROOKESIA_SYSTEM_SUPER_RECENTS_INSTANCE_PREFIX;
+inline constexpr const char *SUPER_RECENTS_LABEL_ID = "left/text_box/title";
+inline constexpr const char *SUPER_RECENTS_ICON_BOX_ID = "left/icon_box";
+inline constexpr const char *SUPER_RECENTS_FALLBACK_ICON_ID = "left/icon_box/icon";
+
+#undef BROOKESIA_SYSTEM_SUPER_PATH_HOME
+#undef BROOKESIA_SYSTEM_SUPER_PATH_BACKGROUND
+#undef BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER
+#undef BROOKESIA_SYSTEM_SUPER_PATH_NOTIFICATIONS
+#undef BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY
+#undef BROOKESIA_SYSTEM_SUPER_PATH_KEYBOARD_HIDDEN
+#undef BROOKESIA_SYSTEM_SUPER_PATH_KEYBOARD_INPUT
+#undef BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG_HIDDEN
+#undef BROOKESIA_SYSTEM_SUPER_PATH_MESSAGE_DIALOG
+#undef BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS
+#undef BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL
+#undef BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL_LAUNCH
+#undef BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL_LOADING
+#undef BROOKESIA_SYSTEM_SUPER_PATH_APP_MODAL_LAUNCH_ICON_BOX
+#undef BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_GRID_STAGE
+#undef BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_SLOT_GRID
+#undef BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_ITEM_LAYER
+#undef BROOKESIA_SYSTEM_SUPER_PATH_LAUNCHER_DRAG_LAYER
+#undef BROOKESIA_SYSTEM_SUPER_LAUNCHER_INSTANCE_PREFIX
+#undef BROOKESIA_SYSTEM_SUPER_LAUNCHER_SLOT_INSTANCE_PREFIX
+#undef BROOKESIA_SYSTEM_SUPER_PATH_RECENTS
+#undef BROOKESIA_SYSTEM_SUPER_PATH_RECENTS_CONTENT
+#undef BROOKESIA_SYSTEM_SUPER_PATH_RECENTS_LIST
+#undef BROOKESIA_SYSTEM_SUPER_PATH_RECENTS_ITEM_LAYER
+#undef BROOKESIA_SYSTEM_SUPER_RECENTS_INSTANCE_PREFIX
+#undef BROOKESIA_SYSTEM_SUPER_ACTION_RECENTS_PREFIX
+#undef BROOKESIA_SYSTEM_SUPER_ACTION_NAV_PREFIX
+#undef BROOKESIA_SYSTEM_SUPER_ACTION_BACKGROUND_PREFIX
+#undef BROOKESIA_SYSTEM_SUPER_ACTION_LAUNCH_PREFIX
+#undef BROOKESIA_SYSTEM_SUPER_ACTION_KEYBOARD_PREFIX
+#undef BROOKESIA_SYSTEM_SUPER_ACTION_MESSAGE_DIALOG_PREFIX
+#undef BROOKESIA_SYSTEM_SUPER_STATE_HOME
+#undef BROOKESIA_SYSTEM_SUPER_STATE_BACKGROUND
+#undef BROOKESIA_SYSTEM_SUPER_STATE_LAUNCHER
+#undef BROOKESIA_SYSTEM_SUPER_STATE_NOTIFICATIONS
+#undef BROOKESIA_SYSTEM_SUPER_STATE_OVERLAY
+#undef BROOKESIA_SYSTEM_SUPER_STATE_KEYBOARD_HIDDEN
+#undef BROOKESIA_SYSTEM_SUPER_STATE_KEYBOARD_INPUT
+#undef BROOKESIA_SYSTEM_SUPER_STATE_MESSAGE_DIALOG_HIDDEN
+#undef BROOKESIA_SYSTEM_SUPER_STATE_MESSAGE_DIALOG
+
+inline constexpr int32_t SUPER_STATUS_BAR_EXPANDED_Y = 0;
+inline constexpr int32_t SUPER_STATUS_BAR_COLLAPSED_Y = -44;
+inline constexpr int32_t SUPER_SYSTEM_UI_ANIMATION_MS = 180;
+inline constexpr int32_t SUPER_GESTURE_EXIT_HOLD_MS = 550;
+inline constexpr int32_t SUPER_GESTURE_REBOUND_MS = 180;
+inline constexpr int32_t SUPER_STATUS_PEEK_HOLD_MS = 1500;
+inline constexpr int32_t SUPER_APP_LAUNCH_ANIMATION_MS = 220;
+inline constexpr bool SUPER_APP_LAUNCH_ANIMATION_ENABLED = BROOKESIA_SYSTEM_SUPER_ENABLE_APP_LAUNCH_ANIMATION;
+inline constexpr int32_t SUPER_APP_LAUNCH_POST_COMPLETE_HOLD_MS =
+    BROOKESIA_SYSTEM_SUPER_APP_LAUNCH_POST_COMPLETE_HOLD_MS;
+inline constexpr int32_t SUPER_APP_LAUNCH_NO_ANIMATION_MIN_HOLD_MS = 50;
+inline constexpr int32_t SUPER_APP_LAUNCH_FINAL_ICON_SIZE = 96;
+inline constexpr const char *SUPER_APP_LAUNCH_HOLD_TIMER_NAME = "super.app_launch.hold";
+inline constexpr int32_t SUPER_KEYBOARD_ANIMATION_MS = 280;
+inline constexpr const char *SUPER_KEYBOARD_EYE_HIDE_IMAGE_ID = "icon.eyeHide";
+inline constexpr const char *SUPER_KEYBOARD_EYE_SHOW_IMAGE_ID = "icon.eyeShow";
+
+inline const char *to_screen_path(ShellPage page)
+{
+    switch (page) {
+    case ShellPage::Home:
+        return SUPER_APP_LAUNCHER_SCREEN_PATH;
+    case ShellPage::AppLauncher:
+        return SUPER_APP_LAUNCHER_SCREEN_PATH;
+    case ShellPage::Notifications:
+        return SUPER_APP_LAUNCHER_SCREEN_PATH;
+    case ShellPage::Recents:
+        return SUPER_RECENTS_SCREEN_PATH;
+    }
+    return SUPER_APP_LAUNCHER_SCREEN_PATH;
+}
+
+inline const char *to_page_title(ShellPage page)
+{
+    switch (page) {
+    case ShellPage::Home:
+        return "App Launcher";
+    case ShellPage::AppLauncher:
+        return "App Launcher";
+    case ShellPage::Notifications:
+        return "App Launcher";
+    case ShellPage::Recents:
+        return "Recent Tasks";
+    }
+    return "App Launcher";
+}
+
+inline const char *to_screen_flow_state(ShellPage page)
+{
+    switch (page) {
+    case ShellPage::Home:
+        return "launcher";
+    case ShellPage::AppLauncher:
+        return "launcher";
+    case ShellPage::Notifications:
+        return "launcher";
+    case ShellPage::Recents:
+        return "recents";
+    }
+    return "launcher";
+}
+
+inline const char *to_screen_flow_action(ShellPage page)
+{
+    switch (page) {
+    case ShellPage::Home:
+        return SUPER_ACTION_OPEN_LAUNCHER;
+    case ShellPage::AppLauncher:
+        return SUPER_ACTION_OPEN_LAUNCHER;
+    case ShellPage::Notifications:
+        return SUPER_ACTION_OPEN_LAUNCHER;
+    case ShellPage::Recents:
+        return SUPER_ACTION_OPEN_RECENTS;
+    }
+    return SUPER_ACTION_OPEN_LAUNCHER;
+}
+
+inline std::optional<ShellPage> to_shell_page(std::string_view screen_flow_state)
+{
+    if (screen_flow_state == "launcher") {
+        return ShellPage::AppLauncher;
+    }
+    if (screen_flow_state == "recents") {
+        return ShellPage::Recents;
+    }
+    return std::nullopt;
+}
+
+inline void add_binding_update(
+    std::vector<gui::BindingValueUpdate> &updates,
+    std::string absolute_path,
+    std::string key,
+    std::string value
+)
+{
+    updates.push_back(gui::BindingValueUpdate{
+        .absolute_path = std::move(absolute_path),
+        .key = std::move(key),
+        .value = std::move(value),
+    });
+}
+
+} // namespace esp_brookesia::system::super

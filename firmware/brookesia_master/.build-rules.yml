@@ -1,0 +1,177 @@
+# Note: All operators are binary operators. For more than two operands, you may use the nested parentheses trick.
+# For example:
+#    *  A == 1 or (B == 2 and C in [1,2,3])
+#    *  (A == 1 and B == 2) or (C not in ["3", "4", 5])
+
+# Define common enable condition as anchor
+.general_target_enable: &general_target_enable
+  enable:
+    - if: IDF_TARGET in ["esp32s3", "esp32p4", "esp32c5", "esp32s31"]
+# Define common enable condition for dl test apps as anchor
+.general_target_enable_dl: &general_target_enable_dl
+  enable:
+    - if: IDF_TARGET in ["esp32s3", "esp32p4"]
+
+#
+# Test Apps
+#
+#
+# Hal
+#
+# brookesia_hal_adaptor
+hal/brookesia_hal_adaptor/test_apps:
+  <<: *general_target_enable
+# brookesia_hal_interface
+hal/brookesia_hal_interface/test_apps:
+  <<: *general_target_enable
+#
+# GUI
+#
+# brookesia_gui_interface
+gui/brookesia_gui_interface/test_apps:
+  <<: *general_target_enable
+# brookesia_gui_lvgl
+# gui/brookesia_gui_lvgl/test_apps:
+#   <<: *general_target_enable
+#
+# Runtime
+#
+# brookesia_runtime_manager
+runtime/brookesia_runtime_manager/test_apps:
+  <<: *general_target_enable
+# brookesia_runtime_js
+runtime/brookesia_runtime_js/test_apps:
+  <<: *general_target_enable
+# brookesia_runtime_lua
+runtime/brookesia_runtime_lua/test_apps:
+  <<: *general_target_enable
+# brookesia_runtime_wasm
+runtime/brookesia_runtime_wasm/test_apps:
+  # Disabled in GitLab ESP-IDF CI; keep the test app for PC coverage until
+  # wasm-micro-runtime is compatible with the active IDF 6.2 targets.
+  disable:
+    - if: IDF_TARGET in ["esp32s3", "esp32p4", "esp32c5", "esp32s31"]
+# brookesia_runtime_elf
+runtime/brookesia_runtime_elf/test_apps:
+  # Disabled in GitLab ESP-IDF CI; keep the test app for PC coverage until
+  # elf_loader is compatible with the active IDF 6.2 targets.
+  disable:
+    - if: IDF_TARGET in ["esp32s3", "esp32p4", "esp32c5", "esp32s31"]
+#
+# Services
+#
+# brookesia_service_audio
+service/media/brookesia_service_audio/test_apps:
+  <<: *general_target_enable
+# brookesia_service_bt
+service/network/brookesia_service_bt/test_apps:
+  <<: *general_target_enable
+# brookesia_service_bt_speaker
+service/media/brookesia_service_bt_speaker/test_apps:
+  <<: *general_target_enable
+# brookesia_service_custom
+service/framework/brookesia_service_custom/test_apps:
+  <<: *general_target_enable
+# brookesia_service_device
+service/system/brookesia_service_device/test_apps:
+  <<: *general_target_enable
+# brookesia_service_display
+service/media/brookesia_service_display/test_apps:
+  <<: *general_target_enable
+# brookesia_service_picodet
+service/media/brookesia_service_picodet/test_apps:
+  <<: *general_target_enable_dl
+# brookesia_service_http
+service/network/brookesia_service_http/test_apps:
+  <<: *general_target_enable
+# brookesia_service_helper
+service/framework/brookesia_service_helper/test_apps:
+  <<: *general_target_enable
+# brookesia_service_manager
+service/framework/brookesia_service_manager/test_apps:
+  <<: *general_target_enable
+# brookesia_emulation_nes
+service/emulation/brookesia_emulation_nes/test_apps:
+  <<: *general_target_enable
+# brookesia_service_storage
+service/system/brookesia_service_storage/test_apps:
+  <<: *general_target_enable
+# brookesia_service_sntp
+service/network/brookesia_service_sntp/test_apps:
+  <<: *general_target_enable
+# brookesia_service_wifi
+service/network/brookesia_service_wifi/test_apps:
+  <<: *general_target_enable
+# brookesia_service_video
+service/media/brookesia_service_video/test_apps:
+  <<: *general_target_enable
+#
+# System
+#
+# brookesia_system_core (temporarily disabled)
+# system/brookesia_system_core/test_apps:
+#   <<: *general_target_enable
+# brookesia_system_super (temporarily disabled)
+# system/brookesia_system_super/test_apps:
+#   <<: *general_target_enable
+#
+# Utils
+#
+# brookesia_lib_utils: check
+utils/brookesia_lib_utils/test_apps/check:
+  <<: *general_target_enable
+# brookesia_lib_utils: function_guard
+utils/brookesia_lib_utils/test_apps/function_guard:
+  <<: *general_target_enable
+# brookesia_lib_utils: describe_helpers
+utils/brookesia_lib_utils/test_apps/describe_helpers:
+  <<: *general_target_enable
+# brookesia_lib_utils: log
+utils/brookesia_lib_utils/test_apps/log:
+  <<: *general_target_enable
+# brookesia_lib_utils: memory_profiler
+utils/brookesia_lib_utils/test_apps/memory_profiler:
+  <<: *general_target_enable
+# brookesia_lib_utils: plugin
+utils/brookesia_lib_utils/test_apps/plugin:
+  <<: *general_target_enable
+# brookesia_lib_utils: state_machine
+utils/brookesia_lib_utils/test_apps/state_machine:
+  <<: *general_target_enable
+# brookesia_lib_utils: task_scheduler
+utils/brookesia_lib_utils/test_apps/task_scheduler:
+  <<: *general_target_enable
+# brookesia_lib_utils: thread_config
+utils/brookesia_lib_utils/test_apps/thread_config:
+  <<: *general_target_enable
+# brookesia_lib_utils: thread_profiler
+utils/brookesia_lib_utils/test_apps/thread_profiler:
+  <<: *general_target_enable
+# brookesia_lib_utils: time_profiler
+utils/brookesia_lib_utils/test_apps/time_profiler:
+  <<: *general_target_enable
+
+#
+# Examples
+#
+# agent/chatbot
+examples/agent/chatbot:
+  <<: *general_target_enable
+# service/audio
+examples/service/audio:
+  <<: *general_target_enable
+# service/console
+examples/service/console:
+  <<: *general_target_enable
+# service/http
+examples/service/http:
+  <<: *general_target_enable
+# service/storage
+examples/service/storage:
+  <<: *general_target_enable
+# service/wifi
+examples/service/wifi:
+  <<: *general_target_enable
+# system/super
+examples/system/super:
+  <<: *general_target_enable

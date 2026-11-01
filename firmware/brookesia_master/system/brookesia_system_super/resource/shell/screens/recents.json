@@ -1,0 +1,269 @@
+{
+    "type": "viewScreen",
+    "id": "recents",
+    "commonProps": {
+        "scrollable": false
+    },
+    "style": {
+        "padding": 0
+    },
+    "styleRefs": [
+        "shell.desktop"
+    ],
+    "children": [
+        {
+            "type": "container",
+            "id": "content",
+            "commonProps": {
+                "scrollable": false
+            },
+            "style": {
+                "padding": 0
+            },
+            "styleRefs": [
+                "shell.desktop"
+            ],
+            "placement": {
+                "mode": "absolute",
+                "x": 0,
+                "y": "${constant.ui.content.metric.y}",
+                "width": "${env.widthDp}",
+                "height": "${expr(${env.heightDp} - ${constant.ui.content.metric.y})}"
+            },
+            "children": [
+                {
+                    "type": "container",
+                    "id": "header",
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "row",
+                        "mainAlign": "spaceBetween",
+                        "crossAlign": "center",
+                        "gap": "12dp"
+                    },
+                    "style": {
+                        "padding": 0
+                    },
+                    "placement": {
+                        "mode": "absolute",
+                        "x": "${constant.ui.content.metric.x}",
+                        "y": "6dp",
+                        "width": "${expr(${env.widthDp} - ${constant.ui.content.metric.x} - ${constant.ui.content.metric.x})}",
+                        "height": "54dp"
+                    },
+                    "children": [
+                        {
+                            "type": "label",
+                            "id": "title",
+                            "styleRefs": [
+                                "shell.pageTitle"
+                            ],
+                            "labelProps": {
+                                "text": "Recent Tasks"
+                            },
+                            "placement": {
+                                "mode": "relative",
+                                "width": "wrap",
+                                "height": "wrap"
+                            }
+                        },
+                        {
+                            "type": "container",
+                            "id": "actions",
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "row",
+                                "mainAlign": "end",
+                                "crossAlign": "center",
+                                "gap": "12dp"
+                            },
+                            "style": {
+                                "padding": 0
+                            },
+                            "placement": {
+                                "mode": "relative",
+                                "width": "292dp",
+                                "height": "42dp"
+                            },
+                            "children": [
+                                {
+                                    "type": "button",
+                                    "id": "clear_all",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "effects": [
+                                                {
+                                                    "type": "emitAction",
+                                                    "action": "super.recents.clear_all",
+                                                    "requireValidPress": true
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "styleRefs": [
+                                        "shell.chip"
+                                    ],
+                                    "placement": {
+                                        "mode": "relative",
+                                        "width": "140dp",
+                                        "height": "42dp"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "label",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "CLEAR ALL"
+                                            },
+                                            "style": {
+                                                "fontSize": "13sp"
+                                            },
+                                            "styleRefs": [
+                                                "shell.chipLabel"
+                                            ],
+                                            "placement": {
+                                                "mode": "relative",
+                                                "width": "wrap",
+                                                "height": "wrap"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "all_apps",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "effects": [
+                                                {
+                                                    "type": "emitAction",
+                                                    "action": "super.recents.all_apps",
+                                                    "requireValidPress": true
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "styleRefs": [
+                                        "shell.chip"
+                                    ],
+                                    "placement": {
+                                        "mode": "relative",
+                                        "width": "140dp",
+                                        "height": "42dp"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "label",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "ALL APPS"
+                                            },
+                                            "style": {
+                                                "fontSize": "13sp"
+                                            },
+                                            "styleRefs": [
+                                                "shell.chipLabel"
+                                            ],
+                                            "placement": {
+                                                "mode": "relative",
+                                                "width": "wrap",
+                                                "height": "wrap"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "container",
+                    "id": "list",
+                    "commonProps": {
+                        "scrollable": true,
+                        "clickable": false
+                    },
+                    "style": {
+                        "padding": 0
+                    },
+                    "placement": {
+                        "mode": "absolute",
+                        "x": "${constant.ui.content.metric.x}",
+                        "y": "72dp",
+                        "width": "${expr(${env.widthDp} - ${constant.ui.content.metric.x} - ${constant.ui.content.metric.x})}",
+                        "height": "${expr(${env.heightDp} - ${constant.ui.content.metric.y} - 96dp)}"
+                    },
+                    "children": [
+                        {
+                            "type": "container",
+                            "id": "item_layer",
+                            "commonProps": {
+                                "clickable": false,
+                                "scrollable": false
+                            },
+                            "bindings": {
+                                "placement.height": "content_height"
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "column",
+                                "mainAlign": "start",
+                                "crossAlign": "stretch",
+                                "gap": "12dp"
+                            },
+                            "style": {
+                                "padding": 0
+                            },
+                            "placement": {
+                                "mode": "absolute",
+                                "x": 0,
+                                "y": 0,
+                                "width": "match",
+                                "height": "match"
+                            },
+                            "children": []
+                        },
+                        {
+                            "type": "label",
+                            "id": "empty",
+                            "bindings": {
+                                "commonProps.hidden": "empty_hidden"
+                            },
+                            "labelProps": {
+                                "text": "No recent tasks yet. Open an app first."
+                            },
+                            "styleRefs": [
+                                "shell.bodyMuted"
+                            ],
+                            "placement": {
+                                "mode": "absolute",
+                                "x": 0,
+                                "y": "24dp",
+                                "width": "match",
+                                "height": "wrap"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

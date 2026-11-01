@@ -1,0 +1,59 @@
+## IDF Component Manager Manifest File
+#
+# This project lives INSIDE the esp-brookesia clone (examples/system_monitor),
+# so override_path values use the same ../../../../ relative layout as the
+# upstream examples/system/super.
+#
+dependencies:
+  # Hal
+  espressif/brookesia_hal_adaptor:
+    version: "0.8.*"
+    override_path: ../../../hal/brookesia_hal_adaptor
+  espressif/brookesia_hal_boards:
+    version: "0.8.*"
+    override_path: ../../../hal/brookesia_hal_boards
+
+  # Services (minimal set for the system shell + WiFi for the UDP link)
+  espressif/brookesia_service_device:
+    version: "0.8.*"
+    override_path: ../../../service/system/brookesia_service_device
+  espressif/brookesia_service_storage:
+    version: "0.8.*"
+    override_path: ../../../service/system/brookesia_service_storage
+  espressif/brookesia_service_wifi:
+    version: "0.8.*"
+    override_path: ../../../service/network/brookesia_service_wifi
+  espressif/brookesia_service_display:
+    version: "0.8.*"
+    override_path: ../../../service/media/brookesia_service_display
+
+  # Audio playback service (Settings volume) + SNTP (Settings time zone / status clock)
+  espressif/brookesia_service_audio:
+    version: "0.8.*"
+    override_path: ../../../service/media/brookesia_service_audio
+  espressif/brookesia_service_sntp:
+    version: "0.8.*"
+    override_path: ../../../service/network/brookesia_service_sntp
+
+  # GUI
+  espressif/brookesia_gui_lvgl:
+    version: "0.8.*"
+    override_path: ../../../gui/brookesia_gui_lvgl
+
+  # Runtime manager (required by system_core; no runtime kernels needed 鈥?  # the only app is a native one)
+  espressif/brookesia_runtime_manager:
+    version: "0.8.*"
+    override_path: ../../../runtime/brookesia_runtime_manager
+    require: public
+
+  # System
+  espressif/brookesia_system_super:
+    version: "0.8.*"
+    override_path: ../../../system/brookesia_system_super
+    require: public
+
+  # Native apps
+  espressif/brookesia_app_settings:
+    version: "0.8.*"
+    override_path: ../../../app/brookesia_app_settings
+    require: public

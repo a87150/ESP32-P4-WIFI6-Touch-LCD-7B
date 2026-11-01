@@ -1,0 +1,12 @@
+
+# Physical chip on the Waveshare 7B is ESP32-P4 rev v1.3; the factory
+# bootloader rejects images built for rev >=3.0 (IDF 6.1 default).
+CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y
+CONFIG_ESP32P4_REV_MIN_100=y
+
+
+# rev<3 P4 supports max 360MHz CPU (400MHz is rev>=3.0 only).
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_360=y
+
+# The factory table names the littlefs partition "storage".
+CONFIG_BROOKESIA_HAL_ADAPTOR_STORAGE_FILE_SYSTEM_LITTLEFS_PARTITION_LABEL="storage"

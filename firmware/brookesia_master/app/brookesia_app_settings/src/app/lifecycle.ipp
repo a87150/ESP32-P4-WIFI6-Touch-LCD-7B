@@ -1,0 +1,745 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+system::core::AppManifest SettingsApp::get_manifest() const
+{
+    return {
+        .id = APP_ID,
+        .name = localized_manifest_text(LOCALE_EN, APP_NAME_I18N_KEY, APP_NAME),
+        .localized_names = {
+            {LOCALE_EN, localized_manifest_text(LOCALE_EN, APP_NAME_I18N_KEY, APP_NAME)},
+            {LOCALE_ZH_CN, localized_manifest_text(LOCALE_ZH_CN, APP_NAME_I18N_KEY, APP_NAME_ZH_CN)},
+        },
+        .version = make_app_version(),
+        .kind = system::core::AppKind::Native,
+        .visible = true,
+        // Keep the JSON UI DOM warm by default; Kconfig lets PSRAM-constrained builds opt out.
+        .preload_dom = BROOKESIA_APP_SETTINGS_ENABLE_PRELOAD_DOM,
+        .icon_id = APP_ICON_ID,
+        .supported_systems = {},
+        .icon_path = APP_ICON_PATH,
+        .runtime_type = runtime::BackendType::Unknown,
+        .app_path = "",
+        .entry = "",
+        .resource_dir = BROOKESIA_APP_SETTINGS_RESOURCE_DIR,
+        .arguments = {},
+    };
+}
+
+system::core::AppGuiDescriptor SettingsApp::get_gui_descriptor() const
+{
+    return {
+        .root_kind = system::core::GuiRootKind::File,
+        .root = GUI_ROOT,
+        .resources = {},
+        .screen_flows = {
+            system::core::GuiScreenFlowEntry{
+                .screen_flow = CONTENT_FLOW_ID,
+                .layer = system::core::GuiAppLayer::AppDefault,
+            },
+            system::core::GuiScreenFlowEntry{
+                .screen_flow = HEADER_FLOW_ID,
+                .layer = system::core::GuiAppLayer::AppTop,
+            },
+        },
+    };
+}
+
+std::expected<void, std::string> SettingsApp::on_install(system::core::AppContext &)
+{
+    BROOKESIA_LOG_TRACE_GUARD_WITH_THIS();
+    bind_storage_service();
+    bind_wifi_service();
+    wifi_ui_state_.enabled = load_wifi_enabled_preference();
+    apply_wifi_enabled_preference_to_service();
+    refresh_utils_debug_capabilities();
+    debug_ui_state_ = load_debug_preferences();
+    if (auto push_result = push_debug_config_to_utils(); !push_result) {
+        BROOKESIA_LOGD("Failed to push Settings debug preferences on install: %1%", push_result.error());
+    }
+    return {};
+}
+
+void SettingsApp::on_uninstall(system::core::AppContext &)
+{
+    BROOKESIA_LOG_TRACE_GUARD_WITH_THIS();
+    disconnect_sntp_events();
+    disconnect_wifi_events();
+    release_sntp_service();
+    release_utils_debug_service();
+    release_wifi_service();
+    release_device_service();
+    release_storage_service();
+}
+
+std::expected<void, std::string> SettingsApp::on_start(system::core::AppContext &context)
+{
+    BROOKESIA_LOG_TRACE_GUARD_WITH_THIS();
+    const auto start_profile_started_at = SteadyClock::now();
+    bool start_profile_succeeded = false;
+    lib_utils::FunctionGuard start_profile_guard([&]() {
+        APP_SETTINGS_PROFILE_LOGI(
+            "Settings start profile: result(%1%), total_ms(%2%)",
+            start_profile_succeeded ? "ok" : "failed",
+            elapsed_ms_since(start_profile_started_at)
+        );
+    });
+
+    auto stage_started_at = SteadyClock::now();
+    context_ = &context;
+    const auto active_gui = context.gui().get_theme_language();
+    current_locale_ = normalize_locale(active_gui.language);
+    current_theme_id_ = active_gui.theme_id == THEME_DARK ? THEME_DARK : THEME_LIGHT;
+    restart_iface_ = hal::acquire_first_interface<hal::system::GeneralIface>();
+    if (restart_iface_ == nullptr) {
+        BROOKESIA_LOGW("Settings restart interface is unavailable");
+    }
+    pending_language_locale_.clear();
+    const auto supported_languages = normalize_language_list(context.gui().list_supported_languages());
+    if (const auto stored_language = context.gui().get_stored_language_preference();
+            stored_language.has_value()) {
+        const auto stored_locale = normalize_locale(*stored_language);
+        if (std::find(supported_languages.begin(), supported_languages.end(), stored_locale) ==
+                supported_languages.end()) {
+            BROOKESIA_LOGW("Ignore unsupported stored GUI language preference: %1%", stored_locale);
+        } else if (stored_locale != current_locale_) {
+            pending_language_locale_ = stored_locale;
+        }
+    }
+    pending_theme_id_.clear();
+    if (const auto stored_theme = context.gui().get_stored_theme_preference();
+            stored_theme.has_value()) {
+        if (*stored_theme != THEME_LIGHT && *stored_theme != THEME_DARK) {
+            BROOKESIA_LOGW("Ignore unsupported stored GUI theme preference: %1%", *stored_theme);
+        } else if (*stored_theme != current_theme_id_) {
+            pending_theme_id_ = *stored_theme;
+        }
+    }
+    restart_prompt_kind_ = RestartPromptKind::None;
+    restart_in_progress_ = false;
+    current_page_ = PAGE_HOME;
+    ++wifi_operation_generation_;
+    log_start_profile("init_state", stage_started_at, start_profile_started_at);
+
+    stage_started_at = SteadyClock::now();
+    auto result = subscribe_actions(context);
+    log_start_profile("subscribe_actions", stage_started_at, start_profile_started_at);
+    if (!result) {
+        return result;
+    }
+    stage_started_at = SteadyClock::now();
+    result = apply_locale(context);
+    log_start_profile("apply_locale", stage_started_at, start_profile_started_at);
+    if (!result) {
+        return result;
+    }
+    stage_started_at = SteadyClock::now();
+    result = refresh_header(context);
+    log_start_profile("refresh_header", stage_started_at, start_profile_started_at);
+    if (!result) {
+        return result;
+    }
+    stage_started_at = SteadyClock::now();
+    result = refresh_theme_state(context);
+    log_start_profile("refresh_theme_state", stage_started_at, start_profile_started_at);
+    if (!result) {
+        return result;
+    }
+    stage_started_at = SteadyClock::now();
+    result = refresh_language_state(context);
+    log_start_profile("refresh_language_state", stage_started_at, start_profile_started_at);
+    if (!result) {
+        return result;
+    }
+
+    stage_started_at = SteadyClock::now();
+    bind_storage_service();
+    bind_wifi_service();
+    bind_sntp_service();
+    log_start_profile("bind_services", stage_started_at, start_profile_started_at);
+
+    stage_started_at = SteadyClock::now();
+    refresh_utils_debug_capabilities();
+    debug_ui_state_ = load_debug_preferences();
+    auto gui_debug_result = context.gui().set_view_debug_enabled(debug_ui_state_.gui_view_debug_enabled);
+    if (!gui_debug_result) {
+        return std::unexpected("Failed to restore GUI debug preference: " + gui_debug_result.error());
+    }
+    if (auto push_result = push_debug_config_to_utils(); !push_result) {
+        BROOKESIA_LOGD("Failed to push Settings debug preferences on start: %1%", push_result.error());
+    }
+    log_start_profile("debug_preferences", stage_started_at, start_profile_started_at);
+
+    stage_started_at = SteadyClock::now();
+    wifi_ui_state_.enabled = load_wifi_enabled_preference();
+    apply_wifi_enabled_preference_to_service();
+    log_start_profile("wifi_preference", stage_started_at, start_profile_started_at);
+
+    stage_started_at = SteadyClock::now();
+    result = refresh_device_state(context);
+    log_start_profile("refresh_device_state", stage_started_at, start_profile_started_at);
+    if (!result) {
+        BROOKESIA_LOGW("Failed to refresh Device service state: %1%", result.error());
+    }
+    wifi_ui_state_.service_ready = wifi_service_binding_.is_valid() && WifiHelper::is_running();
+    if (wifi_ui_state_.enabled) {
+        stage_started_at = SteadyClock::now();
+        result = refresh_wifi_service_state(context);
+        log_start_profile("refresh_wifi_service_state", stage_started_at, start_profile_started_at);
+        if (!result) {
+            return result;
+        }
+    } else {
+        stage_started_at = SteadyClock::now();
+        available_wifi_networks_.clear();
+        last_wifi_scan_ap_infos_.clear();
+        reset_available_wifi_scan_visibility();
+        log_start_profile("reset_wifi_lists", stage_started_at, start_profile_started_at);
+
+        stage_started_at = SteadyClock::now();
+        result = refresh_wifi_page_state(context);
+        log_start_profile("refresh_wifi_page_state", stage_started_at, start_profile_started_at);
+        if (!result) {
+            return result;
+        }
+        stage_started_at = SteadyClock::now();
+        result = refresh_wifi_lists(context);
+        log_start_profile("refresh_wifi_lists", stage_started_at, start_profile_started_at);
+        if (!result) {
+            return result;
+        }
+        stage_started_at = SteadyClock::now();
+        result = refresh_wifi_summary_state(context);
+        log_start_profile("refresh_wifi_summary_state", stage_started_at, start_profile_started_at);
+        if (!result) {
+            return result;
+        }
+    }
+    stage_started_at = SteadyClock::now();
+    subscribe_wifi_events();
+    log_start_profile("subscribe_wifi_events", stage_started_at, start_profile_started_at);
+
+    stage_started_at = SteadyClock::now();
+    if (auto time_zone_result = refresh_time_zone_state(context); !time_zone_result) {
+        log_start_profile("refresh_time_zone_state", stage_started_at, start_profile_started_at);
+        BROOKESIA_LOGW("Failed to refresh Settings time zone state: %1%", time_zone_result.error());
+    } else {
+        log_start_profile("refresh_time_zone_state", stage_started_at, start_profile_started_at);
+    }
+    stage_started_at = SteadyClock::now();
+    subscribe_sntp_events();
+    log_start_profile("subscribe_sntp_events", stage_started_at, start_profile_started_at);
+    start_profile_succeeded = true;
+    return {};
+}
+
+std::expected<void, std::string> SettingsApp::on_stop(system::core::AppContext &context)
+{
+    BROOKESIA_LOG_TRACE_GUARD_WITH_THIS();
+    ++wifi_operation_generation_;
+    cancel_wifi_scan_retry_timer(context);
+    cancel_bluetooth_refresh_timer(context);
+    bt_service_scan_stop();
+    if (pending_wifi_connected_hide_timer_id_ != system::core::INVALID_TIMER_ID) {
+        if (!context.timer().stop(pending_wifi_connected_hide_timer_id_)) {
+            BROOKESIA_LOGW(
+                "Failed to stop pending Settings Wi-Fi connected hide timer: %1%",
+                pending_wifi_connected_hide_timer_id_
+            );
+        }
+        pending_wifi_connected_hide_timer_id_ = system::core::INVALID_TIMER_ID;
+    }
+    if (pending_wifi_connected_scroll_timer_id_ != system::core::INVALID_TIMER_ID) {
+        if (!context.timer().stop(pending_wifi_connected_scroll_timer_id_)) {
+            BROOKESIA_LOGW(
+                "Failed to stop pending Settings Wi-Fi connected scroll timer: %1%",
+                pending_wifi_connected_scroll_timer_id_
+            );
+        }
+        pending_wifi_connected_scroll_timer_id_ = system::core::INVALID_TIMER_ID;
+    }
+    restart_prompt_kind_ = RestartPromptKind::None;
+    restart_in_progress_ = false;
+    reset_debug_entry_click_state();
+    hide_message_dialog_if_visible(context);
+    cancel_wifi_keyboard_if_active(context);
+    if (wifi_refresh_animation_id_ != 0) {
+        (void)context.gui().stop_animation(wifi_refresh_animation_id_);
+        wifi_refresh_animation_id_ = 0;
+    }
+    action_handler_connections_.clear();
+    disconnect_device_events();
+    disconnect_wifi_events();
+    disconnect_sntp_events();
+    clear_hardware_groups(context);
+    release_device_service();
+    release_display_service();
+    release_audio_service();
+    restart_iface_ = {};
+    release_sntp_service();
+    release_utils_debug_service();
+    clear_language_options(context);
+    clear_wifi_networks(context);
+    selected_wifi_network_.reset();
+    wifi_connect_password_.clear();
+    wifi_forget_click_suppression_id_.clear();
+    wifi_forget_click_suppression_ssid_.clear();
+    saved_wifi_networks_.clear();
+    available_wifi_networks_.clear();
+    last_wifi_scan_ap_infos_.clear();
+    reset_available_wifi_scan_visibility();
+    wifi_scan_stop_after_first_result_ = false;
+    wifi_scan_retry_remaining_ = 0;
+    saved_wifi_networks_loaded_ = false;
+    saved_wifi_networks_refreshing_ = false;
+    context_ = nullptr;
+    current_page_ = PAGE_HOME;
+    device_ui_state_ = DeviceUiState{};
+    wifi_ui_state_ = WifiUiState{};
+    debug_ui_state_ = DebugUiState{};
+    return {};
+}
+
+std::expected<void, std::string> SettingsApp::on_timer(
+    system::core::AppContext &context,
+    system::core::TimerId timer_id,
+    std::string_view name
+)
+{
+    BROOKESIA_LOG_TRACE_GUARD_WITH_THIS();
+    if (name == BLUETOOTH_REFRESH_TIMER_NAME) {
+        if (timer_id != bluetooth_refresh_timer_id_) {
+            return {};
+        }
+        if (current_page_ != PAGE_BLUETOOTH) {
+            cancel_bluetooth_refresh_timer(context);
+            return {};
+        }
+        return refresh_bluetooth_page(context);
+    }
+    if (name == WIFI_SCAN_RETRY_TIMER_NAME) {
+        if (timer_id != pending_wifi_scan_retry_timer_id_) {
+            BROOKESIA_LOGW(
+                "Ignore stale Settings Wi-Fi scan retry timer: timer_id(%1%), pending(%2%)",
+                timer_id, pending_wifi_scan_retry_timer_id_
+            );
+            return {};
+        }
+        const auto retry_generation = pending_wifi_scan_retry_generation_;
+        pending_wifi_scan_retry_timer_id_ = system::core::INVALID_TIMER_ID;
+        pending_wifi_scan_retry_generation_ = 0;
+        if (retry_generation != wifi_operation_generation_ || !wifi_ui_state_.service_ready ||
+                !wifi_ui_state_.enabled || available_wifi_scan_results_ready_) {
+            return {};
+        }
+        BROOKESIA_LOGI("Retry Settings Wi-Fi scan after interrupted scan state");
+        return start_wifi_scan(context, false);
+    }
+    if (name == WIFI_CONNECTED_HIDE_TIMER_NAME) {
+        if (timer_id != pending_wifi_connected_hide_timer_id_) {
+            BROOKESIA_LOGW(
+                "Ignore stale Settings Wi-Fi connected hide timer: timer_id(%1%), pending(%2%)",
+                timer_id, pending_wifi_connected_hide_timer_id_
+            );
+            return {};
+        }
+        pending_wifi_connected_hide_timer_id_ = system::core::INVALID_TIMER_ID;
+        if (wifi_ui_state_.connected_card_state == WifiConnectedCardState::DisconnectedGrace) {
+            hide_wifi_connected_card();
+            return refresh_wifi_page_state(context);
+        }
+        return {};
+    }
+    if (name == WIFI_CONNECTED_SCROLL_TIMER_NAME) {
+        if (timer_id != pending_wifi_connected_scroll_timer_id_) {
+            BROOKESIA_LOGW(
+                "Ignore stale Settings Wi-Fi connected scroll timer: timer_id(%1%), pending(%2%)",
+                timer_id, pending_wifi_connected_scroll_timer_id_
+            );
+            return {};
+        }
+        pending_wifi_connected_scroll_timer_id_ = system::core::INVALID_TIMER_ID;
+        if (current_page_ != PAGE_WIFI || !is_wifi_connected_card_visible()) {
+            return {};
+        }
+        if (auto page_result = refresh_wifi_page_state(context); !page_result) {
+            BROOKESIA_LOGW("Failed to refresh Wi-Fi page before connected card scroll: %1%", page_result.error());
+            return {};
+        }
+        if (!is_wifi_connected_card_visible()) {
+            return {};
+        }
+        if (auto scroll_result = scroll_wifi_connected_card_to_top(context); !scroll_result) {
+            BROOKESIA_LOGW("Failed to scroll Wi-Fi connected card to top: %1%", scroll_result.error());
+        }
+        return {};
+    }
+    return {};
+}
+
+std::expected<void, std::string> SettingsApp::on_action(
+    system::core::AppContext &context,
+    std::string_view action
+)
+{
+    BROOKESIA_LOGD("Settings action: %1%", action);
+    std::string effective_action_storage;
+    std::string_view effective_action = action;
+    if (action == ACTION_HEADER_BACK) {
+        effective_action = get_header_back_action_for_page(current_page_);
+    }
+    if (action == ACTION_OPEN_HOME && current_page_ == PAGE_WIFI_CONNECT) {
+        effective_action_storage = ACTION_BACK_WIFI_CONNECT;
+        effective_action = effective_action_storage;
+    }
+
+    if (effective_action == ACTION_WIFI_PASSWORD_EDIT) {
+        return show_wifi_password_keyboard(context);
+    }
+    if (effective_action == ACTION_WIFI_CONNECT_SUBMIT) {
+        return submit_wifi_connect(context);
+    }
+    if (effective_action == ACTION_WIFI_CONNECT_CANCEL) {
+        effective_action_storage = ACTION_BACK_WIFI_CONNECT;
+        effective_action = effective_action_storage;
+    }
+    if (effective_action == ACTION_DEBUG_DEVICE_NAME_CLICK) {
+        handle_debug_device_name_click(context);
+        return {};
+    }
+    if (effective_action == ACTION_BLUETOOTH_SCAN) {
+        return handle_bluetooth_action(context, effective_action);
+    }
+    if (effective_action == WIFI_TOGGLE_ACTION) {
+        if (wifi_ui_state_.enabled) {
+            return disconnect_wifi(context);
+        }
+        const auto generation = ++wifi_operation_generation_;
+        const auto save_handler = [this, generation](service::FunctionResult && result) {
+            if (context_ == nullptr || generation != wifi_operation_generation_) {
+                return;
+            }
+            if (result.success) {
+                return;
+            }
+            BROOKESIA_LOGW("Failed to save Settings Wi-Fi enabled preference: %1%", result.error_message);
+            if (context_ == nullptr) {
+                return;
+            }
+            wifi_ui_state_.enabled = false;
+            wifi_ui_state_.scanning = false;
+            wifi_ui_state_.connecting = false;
+            available_wifi_networks_.clear();
+            last_wifi_scan_ap_infos_.clear();
+            reset_available_wifi_scan_visibility();
+            if (auto page_result = refresh_wifi_page_state(*context_); !page_result) {
+                BROOKESIA_LOGW("Failed to restore Wi-Fi page after preference save failure: %1%", page_result.error());
+            }
+            if (auto list_result = refresh_wifi_lists(*context_); !list_result) {
+                BROOKESIA_LOGW("Failed to restore Wi-Fi lists after preference save failure: %1%", list_result.error());
+            }
+            if (auto summary_result = refresh_wifi_summary_state(*context_); !summary_result) {
+                BROOKESIA_LOGW(
+                    "Failed to restore Wi-Fi summary after preference save failure: %1%",
+                    summary_result.error()
+                );
+            }
+            apply_wifi_enabled_preference_to_service();
+        };
+        auto save_result = submit_wifi_enabled_preference_save(true, save_handler);
+        if (!save_result) {
+            if (auto refresh_result = refresh_wifi_page_state(context); !refresh_result) {
+                BROOKESIA_LOGW(
+                    "Failed to restore Wi-Fi page after preference save failure: %1%",
+                    refresh_result.error()
+                );
+            }
+            return save_result;
+        }
+        wifi_ui_state_.enabled = true;
+        if (!saved_wifi_networks_loaded_) {
+            request_saved_wifi_networks_refresh();
+        }
+        auto result = start_wifi_scan(context);
+        if (!result) {
+            wifi_ui_state_.enabled = false;
+            if (auto rollback_save = submit_wifi_enabled_preference_save(false); !rollback_save) {
+                BROOKESIA_LOGW("Failed to roll back Settings Wi-Fi preference: %1%", rollback_save.error());
+            }
+            if (auto refresh_result = refresh_wifi_page_state(context); !refresh_result) {
+                BROOKESIA_LOGW("Failed to roll back Wi-Fi page after start failure: %1%", refresh_result.error());
+            }
+            return result;
+        }
+        return {};
+    }
+    if (effective_action == WIFI_SCAN_ACTION) {
+        return start_wifi_scan(context);
+    }
+    if (effective_action == WIFI_DISCONNECT_ACTION) {
+        return disconnect_current_wifi(context);
+    }
+    if (effective_action == WIFI_SAVED_PREV_ACTION) {
+        if (saved_wifi_page_ > 0) {
+            --saved_wifi_page_;
+        }
+        return refresh_wifi_lists(context);
+    }
+    if (effective_action == WIFI_SAVED_NEXT_ACTION) {
+        const auto page_count = get_page_count(saved_wifi_networks_.size());
+        if (saved_wifi_page_ + 1 < page_count) {
+            ++saved_wifi_page_;
+        }
+        return refresh_wifi_lists(context);
+    }
+    if (effective_action == WIFI_AVAILABLE_PREV_ACTION) {
+        if (available_wifi_page_ > 0) {
+            --available_wifi_page_;
+        }
+        return refresh_wifi_lists(context);
+    }
+    if (effective_action == WIFI_AVAILABLE_NEXT_ACTION) {
+        const auto page_count = get_page_count(available_wifi_networks_.size());
+        if (available_wifi_page_ + 1 < page_count) {
+            ++available_wifi_page_;
+        }
+        return refresh_wifi_lists(context);
+    }
+    if (const auto timezone = get_time_zone_for_action(effective_action); timezone.has_value()) {
+        return set_time_zone(context, *timezone);
+    }
+
+    if (is_navigation_action(effective_action)) {
+        const auto previous_page = current_page_;
+        auto result = context.gui().trigger_screen_flow(CONTENT_FLOW_ID, effective_action);
+        if (!result) {
+            return result;
+        }
+        if (const auto page = get_navigation_page(effective_action); page.has_value()) {
+            current_page_ = *page;
+        }
+        if (current_page_ != PAGE_DEVICE) {
+            reset_debug_entry_click_state();
+        }
+        if (previous_page == PAGE_WIFI && current_page_ != PAGE_WIFI) {
+            clear_wifi_networks(context);
+        }
+        if (current_page_ != PAGE_WIFI) {
+            update_wifi_refresh_animation(context);
+        }
+        if (effective_action == "settings.open.wifi") {
+            wifi_ui_state_.service_ready = wifi_service_binding_.is_valid() && WifiHelper::is_running();
+            if (wifi_ui_state_.enabled) {
+                if (auto wifi_result = refresh_wifi_service_state(context); !wifi_result) {
+                    BROOKESIA_LOGW("Failed to refresh Wi-Fi state: %1%", wifi_result.error());
+                }
+            } else {
+                if (auto page_result = refresh_wifi_page_state(context); !page_result) {
+                    BROOKESIA_LOGW("Failed to refresh Wi-Fi page: %1%", page_result.error());
+                }
+                if (auto list_result = refresh_wifi_lists(context); !list_result) {
+                    BROOKESIA_LOGW("Failed to refresh Wi-Fi lists: %1%", list_result.error());
+                }
+                if (auto summary_result = refresh_wifi_summary_state(context); !summary_result) {
+                    BROOKESIA_LOGW("Failed to refresh Wi-Fi summary: %1%", summary_result.error());
+                }
+            }
+            if (wifi_ui_state_.service_ready && wifi_ui_state_.enabled && previous_page != PAGE_WIFI_CONNECT) {
+                if (auto scan_result = start_wifi_scan(context); !scan_result) {
+                    BROOKESIA_LOGW("Failed to start Wi-Fi scan: %1%", scan_result.error());
+                }
+            }
+        }
+        if (previous_page == PAGE_WIFI_CONNECT && current_page_ == PAGE_WIFI) {
+            if (auto page_result = refresh_wifi_page_state(context); !page_result) {
+                BROOKESIA_LOGW("Failed to refresh Wi-Fi page after returning from connect page: %1%",
+                               page_result.error());
+            }
+            if (auto list_result = refresh_wifi_lists(context); !list_result) {
+                BROOKESIA_LOGW("Failed to refresh Wi-Fi lists after returning from connect page: %1%",
+                               list_result.error());
+            }
+            if (auto summary_result = refresh_wifi_summary_state(context); !summary_result) {
+                BROOKESIA_LOGW("Failed to refresh Wi-Fi summary after returning from connect page: %1%",
+                               summary_result.error());
+            }
+        }
+        if (current_page_ == PAGE_DEVICE) {
+            if (auto device_result = refresh_my_device_state(context); !device_result) {
+                BROOKESIA_LOGW("Failed to refresh My Device page: %1%", device_result.error());
+            }
+        }
+        if (previous_page == PAGE_BLUETOOTH && current_page_ != PAGE_BLUETOOTH) {
+            cancel_bluetooth_refresh_timer(context);
+            bt_service_scan_stop();
+        }
+        if (current_page_ == PAGE_BLUETOOTH) {
+            if (auto bluetooth_result = refresh_bluetooth_page(context); !bluetooth_result) {
+                BROOKESIA_LOGW("Failed to refresh Bluetooth page: %1%", bluetooth_result.error());
+            }
+            schedule_bluetooth_refresh(context);
+        }
+        if (current_page_ == PAGE_LANGUAGE) {
+            if (auto language_result = populate_language_options(context); !language_result) {
+                BROOKESIA_LOGW("Failed to populate Language page: %1%", language_result.error());
+                return language_result;
+            }
+            if (auto language_result = refresh_language_state(context); !language_result) {
+                BROOKESIA_LOGW("Failed to refresh Language page: %1%", language_result.error());
+                return language_result;
+            }
+        }
+        if (current_page_ == PAGE_TIME_ZONE) {
+            if (auto time_zone_result = refresh_time_zone_state(context); !time_zone_result) {
+                BROOKESIA_LOGW("Failed to refresh Time zone page: %1%", time_zone_result.error());
+            }
+        }
+        if (current_page_ == PAGE_DEBUG) {
+            refresh_utils_debug_capabilities();
+            debug_ui_state_ = load_debug_preferences();
+            if (auto gui_debug_result =
+                    context.gui().set_view_debug_enabled(debug_ui_state_.gui_view_debug_enabled);
+                    !gui_debug_result) {
+                BROOKESIA_LOGW("Failed to restore GUI debug preference: %1%", gui_debug_result.error());
+            }
+            if (auto push_result = push_debug_config_to_utils(); !push_result) {
+                BROOKESIA_LOGD("Failed to push Settings debug preferences after opening Debug page: %1%",
+                               push_result.error());
+            }
+            if (auto debug_result = refresh_debug_state(context); !debug_result) {
+                BROOKESIA_LOGW("Failed to refresh Debug page: %1%", debug_result.error());
+            }
+        }
+        auto header_result = refresh_header(context);
+        if (!header_result) {
+            return header_result;
+        }
+        if (previous_page == PAGE_WIFI_CONNECT && current_page_ == PAGE_WIFI) {
+            schedule_wifi_connected_card_scroll(context);
+        }
+        return {};
+    }
+
+    if (is_theme_action(effective_action)) {
+        const std::string next_theme_id = effective_action == "settings.display.dark" ? THEME_DARK : THEME_LIGHT;
+        return schedule_theme_switch(context, next_theme_id);
+    }
+
+    return {};
+}
+
+system::core::AppManifest SettingsAppProvider::get_manifest() const
+{
+    return SettingsApp().get_manifest();
+}
+
+std::shared_ptr<system::core::IApp> SettingsAppProvider::create_app()
+{
+    return std::make_shared<SettingsApp>();
+}
+
+BROOKESIA_SYSTEM_CORE_APP_PROVIDER_REGISTER_WITH_SYMBOL(
+    SettingsAppProvider,
+    "brookesia.general.settings",
+    app_settings_provider_symbol
+);
+
+std::expected<void, std::string> SettingsApp::subscribe_actions(system::core::AppContext &context)
+{
+    auto result = context.gui().subscribe_actions(make_default_action_subscriptions());
+    if (!result) {
+        return result;
+    }
+
+    std::vector<system::core::GuiActionHandlerSubscription> subscriptions;
+    subscriptions.reserve(19);
+    subscriptions.push_back({
+        .action = ACTION_DEBUG_DEVICE_NAME_CLICK,
+        .handler = [this](const gui::Event &) {
+            if (context_ != nullptr) {
+                handle_debug_device_name_click(*context_);
+            }
+        },
+    });
+    subscriptions.push_back({
+        .action = LANGUAGE_SELECT_ACTION,
+        .handler = [this](const gui::Event & event) {
+            handle_language_event(event);
+        },
+    });
+    subscriptions.push_back({
+        .action = WIFI_SELECT_ACTION,
+        .handler = [this](const gui::Event & event) {
+            handle_wifi_select_event(event);
+        },
+    });
+    subscriptions.push_back({
+        .action = WIFI_SAVED_FORGET_ACTION,
+        .handler = [this](const gui::Event & event) {
+            handle_wifi_forget_event(event);
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_DISPLAY_BRIGHTNESS,
+        .handler = [this](const gui::Event & event) {
+            handle_brightness_event(event);
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_SOUND_VOLUME,
+        .handler = [this](const gui::Event & event) {
+            handle_volume_event(event);
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_SOUND_MUTE,
+        .handler = [this](const gui::Event & event) {
+            handle_mute_event(event);
+        },
+    });
+    for (const auto *action : {
+                ACTION_DEBUG_MEMORY_TOGGLE,
+                ACTION_DEBUG_THREAD_TOGGLE,
+                ACTION_DEBUG_GUI_TOGGLE,
+            }) {
+        subscriptions.push_back({
+            .action = action,
+            .handler = [this](const gui::Event & event) {
+                handle_debug_switch_event(event);
+            },
+        });
+    }
+    for (const auto *action : {
+                ACTION_DEBUG_MEMORY_SAMPLE_INTERVAL,
+                ACTION_DEBUG_MEMORY_INTERNAL_FREE_PERCENT,
+                ACTION_DEBUG_MEMORY_INTERNAL_LARGEST,
+                ACTION_DEBUG_MEMORY_EXTERNAL_FREE_PERCENT,
+                ACTION_DEBUG_MEMORY_EXTERNAL_LARGEST,
+                ACTION_DEBUG_THREAD_PROFILING_INTERVAL,
+                ACTION_DEBUG_THREAD_SAMPLING_DURATION,
+                ACTION_DEBUG_THREAD_IDLE_CPU,
+                ACTION_DEBUG_THREAD_STACK_HWM,
+            }) {
+        subscriptions.push_back({
+            .action = action,
+            .handler = [this](const gui::Event & event) {
+                handle_debug_slider_event(event);
+            },
+        });
+    }
+
+    auto connections = context.gui().subscribe_actions(subscriptions);
+    if (connections.size() != subscriptions.size()) {
+        return std::unexpected("Failed to subscribe Settings action handlers");
+    }
+    for (size_t i = 0; i < connections.size(); ++i) {
+        if (!connections[i].connected()) {
+            return std::unexpected("Failed to subscribe Settings action handler: " + subscriptions[i].action);
+        }
+    }
+    action_handler_connections_ = std::move(connections);
+    return {};
+}

@@ -1,0 +1,27 @@
+{
+    "type": "constant",
+    "data": {
+        "gallery": {
+            "layout": {
+                "pageX": "40dp",
+                "pageY": "92dp",
+                "pageWidth": "${expr(${env.widthDp} - 80dp)}",
+                "pageHeight": "${expr(${env.heightDp} - 124dp)}",
+                "panelWidth": "248dp",
+                "panelX": "${expr(${env.widthDp} - 328dp)}",
+                "gap": "18dp",
+                "previewWidth": "${expr(${env.widthDp} - 358dp)}",
+                "cardRadius": "22dp",
+                "buttonHeight": "54dp",
+                "buttonRadius": "16dp"
+            },
+            "font": {
+                "title": "26sp",
+                "name": "20sp",
+                "meta": "15sp",
+                "button": "20sp",
+                "status": "14sp"
+            }
+        }
+    }
+}

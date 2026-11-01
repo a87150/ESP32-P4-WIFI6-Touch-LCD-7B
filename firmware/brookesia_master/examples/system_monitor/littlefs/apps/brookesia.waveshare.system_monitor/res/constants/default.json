@@ -1,0 +1,33 @@
+{
+    "type": "constant",
+    "data": {
+        "sysmon": {
+            "layout": {
+                "pageX": "40dp",
+                "pageY": "92dp",
+                "pageWidth": "${expr(${env.widthDp} - 80dp)}",
+                "pageHeight": "${expr(${env.heightDp} - 124dp)}",
+                "sectionGap": "12dp",
+                "headerHeight": "44dp",
+                "gaugesHeight": "300dp",
+                "bottomHeight": "100dp",
+                "cardWidth": "200dp",
+                "cardHeight": "300dp",
+                "cardRadius": "20dp",
+                "cardGap": "12dp",
+                "arcSize": "140dp",
+                "netCardWidth": "560dp",
+                "hintCardWidth": "320dp"
+            },
+            "font": {
+                "title": "28sp",
+                "name": "16sp",
+                "value": "28sp",
+                "detail": "14sp",
+                "status": "16sp",
+                "net": "24sp",
+                "caption": "13sp"
+            }
+        }
+    }
+}
