@@ -12,6 +12,7 @@ ESP32-P4-WIFI6-Touch-LCD-7B.
 | `examples/arduino/` | Arduino sketches and bundled board libraries |
 | `firmware/` | Inventoried delivery source and prebuilt factory firmware |
 | `firmware/brookesia/` | ESP-Brookesia factory-style firmware project |
+| `firmware/brookesia_master/` | Vendored ESP-Brookesia 0.8 tree and the 7B desktop firmware project (this customisation) |
 | `config/` | Shared ESP32-P4 revision overlays |
 | `docs/` | Maintainer and user documentation |
 | `.github/` | CI workflows, discovery, and Markdown audit scripts |
@@ -51,3 +52,16 @@ do not initialize the display.
 enter default example CI. The factory BIN is an immutable delivery artifact.
 Firmware-source changes and validation require an explicitly scoped
 firmware-maintenance workflow.
+
+## Brookesia Desktop System
+
+`firmware/brookesia_master/` vendors ESP-Brookesia 0.8 as source and adds the
+7B board package plus the desktop firmware project in
+`examples/system_monitor/`. It is an independent ESP-IDF project (ESP-IDF 6.1,
+`esp32p4` target) that owns its own partition table, littlefs image, and
+components. Build it with `idf.py` from that directory; see
+[BROOKESIA_7B.md](BROOKESIA_7B.md) for the full description. Unlike
+`firmware/brookesia`, it does not use the managed
+`waveshare/esp32_p4_wifi6_touch_lcd_7b` component: the board support lives in
+the vendored HAL board package so the newer ESP-Brookesia version can be used.
+

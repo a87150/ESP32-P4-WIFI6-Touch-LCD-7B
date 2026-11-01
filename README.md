@@ -18,6 +18,15 @@
 
 ---
 
+> [!IMPORTANT]
+> **This repository also contains a second-development ESP-Brookesia desktop system.**
+> On top of the official BSP, `firmware/brookesia_master/` builds a 7-inch desktop with
+> ESP-IDF 6.1 + ESP-Brookesia 0.8 + LVGL 9: status bar, system monitor, music player,
+> gallery, video player and Settings (Wi-Fi / BLE), with a reworked partition table.
+> Build, flashing, media formats and known limitations are documented in
+> [`docs/BROOKESIA_7B.md`](docs/BROOKESIA_7B.md).
+
+
 ## ✨ Overview
 
 This repository provides first-party ESP-IDF and Arduino examples, GitHub

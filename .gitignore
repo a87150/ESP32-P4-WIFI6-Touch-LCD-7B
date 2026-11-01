@@ -64,3 +64,14 @@ dist/
 
 # Prebuilt factory firmware packages
 !firmware/factory_firmware/**/*.zip
+
+# Vendored upstream repository metadata (kept locally, not published).
+# `firmware/brookesia_master` is a clone of espressif/esp-brookesia; its .git is
+# renamed to .git-upstream so the parent repository can track the source tree.
+**/.git-upstream/
+
+# Local editor / tool configuration
+.clangd
+
+# Local sdkconfig snapshots
+**/sdkconfig.*.bak

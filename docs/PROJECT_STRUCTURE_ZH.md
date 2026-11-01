@@ -11,6 +11,7 @@
 | `examples/arduino/` | Arduino 草图和随仓库板级库 |
 | `firmware/` | 仅盘点的交付源码与预编译出厂固件 |
 | `firmware/brookesia/` | ESP-Brookesia 出厂风格固件工程 |
+| `firmware/brookesia_master/` | 内置的 ESP-Brookesia 0.8 源码树与 7B 桌面系统固件工程（本项目主线） |
 | `config/` | 共享 ESP32-P4 芯片版本叠加配置 |
 | `docs/` | 维护者与用户文档 |
 | `.github/` | CI 工作流、发现与 Markdown 审计脚本 |
@@ -43,3 +44,13 @@ TWAI 示例刻意保持独立，不初始化显示。
 
 `firmware/brookesia` 是单独盘点的交付源码工程，不进入默认示例 CI。出厂 BIN 是
 不可变的交付工件。只有在明确限定的固件维护流程中，才会修改和验证固件源码。
+
+## Brookesia 桌面系统
+
+`firmware/brookesia_master/` 以源码形式内置 ESP-Brookesia 0.8，并加入 7B 板级包与
+`examples/system_monitor/` 桌面固件工程。它是一个独立的 ESP-IDF 工程（ESP-IDF 6.1，
+`esp32p4` 目标），自带分区表、littlefs 镜像与组件；在该目录下用 `idf.py` 编译即可，
+完整说明见 [BROOKESIA_7B_ZH.md](BROOKESIA_7B_ZH.md)。与 `firmware/brookesia` 不同，
+它不使用托管组件 `waveshare/esp32_p4_wifi6_touch_lcd_7b`：板级支持放在内置 HAL
+板级包里，以便使用更新的 ESP-Brookesia 版本。
+

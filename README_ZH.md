@@ -18,6 +18,14 @@
 
 ---
 
+> [!IMPORTANT]
+> **本仓库已包含一套二次开发的 ESP-Brookesia 桌面系统。**
+> 在官方 BSP 之上，`firmware/brookesia_master/` 使用 ESP-IDF 6.1 + ESP-Brookesia 0.8 + LVGL 9
+> 实现了 7 英寸桌面：状态栏、系统监视器、音乐、相册、视频播放器与设置（Wi-Fi / BLE），
+> 并调整分区表腾出空间。构建、烧录、素材格式与已知限制见
+> [`docs/BROOKESIA_7B_ZH.md`](docs/BROOKESIA_7B_ZH.md)。
+
+
 ## ✨ 产品概述
 
 本仓库为微雪 ESP32-P4-WIFI6-Touch-LCD-7B 提供官方 ESP-IDF 与 Arduino 示例、
