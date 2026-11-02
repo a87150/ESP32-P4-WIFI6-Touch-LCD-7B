@@ -3,6 +3,7 @@
  */
 #pragma once
 
+#include <atomic>
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
@@ -73,7 +74,13 @@ private:
         std::condition_variable cv;
         bool quit = false;
         bool paused = true;
-        bool reload = false;
+        // Playback worker requests. Switching movies (or rescanning the folder)
+        // touches the file system, the JPEG codec and the frame buffers, so it is
+        // always executed by the playback worker instead of the GUI/app-input
+        // task: the caller only posts a request.
+        bool request_scan = false;
+        bool request_load = false;
+        size_t pending_index = 0;
         uint32_t cursor = 0;
         uint32_t seek_request = UINT32_MAX;
         uint32_t current_frame = 0;
@@ -82,9 +89,16 @@ private:
         std::string error_text;
     };
 
-    /* ---- source handling (app task) ---- */
+    /* ---- source handling (app task / playback worker) ---- */
     void scan_movies();
     bool load_source(size_t index);
+    /**
+     * @brief Load a movie without stopping the playback worker.
+     *
+     * Must be called by the task that owns the decoder (the playback worker, or
+     * the app task before the worker has been started).
+     */
+    bool load_source_impl(size_t index);
     void release_source();
     bool ensure_decode_buffers(const Source &source);
     void register_frame_images(const Source &source);
@@ -111,7 +125,7 @@ private:
     std::vector<std::string> movies_;
     size_t movie_index_ = 0;
     bool paused_ui_ = false;
-    bool playing_ = false;
+    std::atomic<bool> playing_{false};
 
     Source source_;
     jpeg_decoder_handle_t decoder_ = nullptr;

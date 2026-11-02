@@ -7,18 +7,23 @@
                 "pageY": "0dp",
                 "pageWidth": "${env.widthDp}",
                 "pageHeight": "${env.heightDp}",
-                "barHeight": "76dp",
+                "stageHeight": "${expr(${env.heightDp} - 76dp)}",
                 "barY": "${expr(${env.heightDp} - 76dp)}",
+                "barHeight": "76dp",
+                "barPadding": "6dp",
+                "barGap": "4dp",
                 "hintX": "16dp",
-                "hintY": "12dp",
-                "buttonHeight": "46dp",
-                "buttonRadius": "14dp"
+                "hintY": "14dp",
+                "buttonHeight": "40dp",
+                "buttonGap": "10dp",
+                "buttonRadius": "12dp",
+                "progressHeight": "20dp"
             },
             "font": {
                 "title": "18sp",
-                "meta": "14sp",
-                "button": "18sp",
-                "time": "15sp"
+                "meta": "13sp",
+                "button": "16sp",
+                "time": "14sp"
             }
         }
     }

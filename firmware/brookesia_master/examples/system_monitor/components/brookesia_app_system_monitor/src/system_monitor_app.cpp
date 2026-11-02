@@ -657,7 +657,7 @@ std::expected<void, std::string> SystemMonitorApp::on_timer(
     // The ring center shows the PC CPU temperature reported by LibreHardwareMonitor
     // through the agent. It is left blank (rather than falling back to the SoC
     // sensor) so the value always describes the PC.
-    constexpr float TEMP_ALARM_C = 85.0F;
+    constexpr float TEMP_ALARM_C = 90.0F;
     const bool cpu_temp_alarm = snapshot.cpu_temp >= TEMP_ALARM_C;
     const bool gpu_temp_alarm = gpu_present && snapshot.gpu_temp >= TEMP_ALARM_C;
     auto cpu_temp_text = (snapshot.cpu_temp >= 0.0F)

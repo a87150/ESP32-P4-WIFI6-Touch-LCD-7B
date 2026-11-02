@@ -43,12 +43,12 @@ constexpr const char *PLAYBACK_TIMER_NAME = "music_playback";
 constexpr int32_t PLAYBACK_PERIOD_MS = 500;
 
 // Absolute paths inside the music screen document.
-constexpr const char *PATH_TRACK_NAME = "/music/page/player_card/track_name";
-constexpr const char *PATH_TRACK_META = "/music/page/player_card/track_meta";
-constexpr const char *PATH_PROGRESS = "/music/page/player_card/progress";
-constexpr const char *PATH_TIME_LABEL = "/music/page/player_card/time_label";
-constexpr const char *PATH_VOLUME_SLIDER = "/music/page/player_card/volume/volume_slider";
-constexpr const char *PATH_VOLUME_TEXT = "/music/page/player_card/volume/volume_text";
+constexpr const char *PATH_TRACK_NAME = "/music/page/player_card/info/track_name";
+constexpr const char *PATH_TRACK_META = "/music/page/player_card/info/track_meta";
+constexpr const char *PATH_PROGRESS = "/music/page/player_card/info/progress";
+constexpr const char *PATH_TIME_LABEL = "/music/page/player_card/info/time_label";
+constexpr const char *PATH_VOLUME_SLIDER = "/music/page/player_card/info/volume/volume_slider";
+constexpr const char *PATH_VOLUME_TEXT = "/music/page/player_card/info/volume/volume_text";
 constexpr const char *PATH_TOGGLE_TEXT = "/music/page/controls/toggle/text";
 constexpr const char *PATH_STATUS = "/music/page/status";
 
@@ -587,7 +587,7 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
         (void)context.gui().set_binding_value(PATH_TOGGLE_TEXT, "toggle_text", "播放");
         (void)context.gui().set_value(PATH_VOLUME_SLIDER, volume_);
         (void)context.gui().set_binding_value(
-            PATH_VOLUME_TEXT, "volume_text", "音量 " + std::to_string(volume_) + "%"
+            PATH_VOLUME_TEXT, "volume_text", std::to_string(volume_) + "%"
         );
         return;
     }
@@ -643,7 +643,7 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
     }
 
     (void)context.gui().set_binding_value(
-        PATH_VOLUME_TEXT, "volume_text", "音量 " + std::to_string(volume) + "%"
+        PATH_VOLUME_TEXT, "volume_text", std::to_string(volume) + "%"
     );
     if (volume != last_programmed_volume_) {
         last_programmed_volume_ = volume;

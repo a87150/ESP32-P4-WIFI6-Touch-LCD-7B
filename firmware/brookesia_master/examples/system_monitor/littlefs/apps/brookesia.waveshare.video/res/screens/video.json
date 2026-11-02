@@ -27,28 +27,50 @@
             },
             "children": [
                 {
-                    "type": "image",
-                    "id": "frame",
+                    "type": "container",
+                    "id": "stage",
                     "commonProps": {
-                        "clickable": false
+                        "clickable": false,
+                        "scrollable": false
                     },
-                    "imageProps": {
-                        "src": "",
-                        "innerAlign": "contain"
-                    },
-                    "bindings": {
-                        "placement.x": "frame_x",
-                        "placement.y": "frame_y",
-                        "placement.width": "frame_width",
-                        "placement.height": "frame_height"
+                    "style": {
+                        "bgColor": "#000000",
+                        "padding": "0dp",
+                        "clipCorner": true
                     },
                     "placement": {
                         "mode": "absolute",
                         "x": 0,
                         "y": 0,
                         "width": "${constant.video.layout.pageWidth}",
-                        "height": "${constant.video.layout.barY}"
-                    }
+                        "height": "${constant.video.layout.stageHeight}"
+                    },
+                    "children": [
+                        {
+                            "type": "image",
+                            "id": "frame",
+                            "commonProps": {
+                                "clickable": false
+                            },
+                            "bindings": {
+                                "placement.x": "frame_x",
+                                "placement.y": "frame_y",
+                                "placement.width": "frame_width",
+                                "placement.height": "frame_height"
+                            },
+                            "imageProps": {
+                                "src": "",
+                                "innerAlign": "contain"
+                            },
+                            "placement": {
+                                "mode": "absolute",
+                                "x": 0,
+                                "y": 0,
+                                "width": "match",
+                                "height": "match"
+                            }
+                        }
+                    ]
                 },
                 {
                     "type": "container",
@@ -61,14 +83,14 @@
                         "flexFlow": "column",
                         "mainAlign": "start",
                         "crossAlign": "start",
-                        "gap": "4dp"
+                        "gap": "2dp"
                     },
                     "style": {
-                        "bgColor": "#0b0f16",
+                        "bgColor": "#0b1220",
                         "radius": "12dp",
-                        "padding": "10dp",
+                        "padding": "8dp",
                         "borderWidth": "1dp",
-                        "borderColor": "#1b2230"
+                        "borderColor": "#1b2740"
                     },
                     "placement": {
                         "mode": "absolute",
@@ -85,7 +107,7 @@
                                 "text": "视频"
                             },
                             "style": {
-                                "textColor": "#e6edf7",
+                                "textColor": "#eef3fb",
                                 "fontSize": "${constant.video.font.title}"
                             },
                             "bindings": {
@@ -104,7 +126,7 @@
                                 "text": "MJPEG 播放器"
                             },
                             "style": {
-                                "textColor": "#8fa3bf",
+                                "textColor": "#93a4bc",
                                 "fontSize": "${constant.video.font.meta}"
                             },
                             "bindings": {
@@ -127,14 +149,14 @@
                     },
                     "layout": {
                         "type": "flex",
-                        "flexFlow": "row",
-                        "mainAlign": "start",
-                        "crossAlign": "center",
-                        "gap": "10dp"
+                        "flexFlow": "column",
+                        "mainAlign": "center",
+                        "crossAlign": "stretch",
+                        "gap": "${constant.video.layout.barGap}"
                     },
                     "style": {
-                        "bgColor": "#0b0f16",
-                        "padding": "0dp"
+                        "bgColor": "#0a1019",
+                        "padding": "${constant.video.layout.barPadding}"
                     },
                     "placement": {
                         "mode": "absolute",
@@ -145,127 +167,224 @@
                     },
                     "children": [
                         {
-                            "type": "button",
-                            "id": "prev",
-                            "events": [
-                                {
-                                    "type": "clicked",
-                                    "action": "video.prev"
-                                }
-                            ],
-                            "style": {
-                                "bgColor": "#1f2a44",
-                                "radius": "${constant.video.layout.buttonRadius}",
-                                "borderWidth": "0dp"
+                            "type": "container",
+                            "id": "row",
+                            "commonProps": {
+                                "clickable": false
                             },
                             "layout": {
                                 "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
+                                "flexFlow": "row",
+                                "mainAlign": "start",
+                                "crossAlign": "center",
+                                "gap": "${constant.video.layout.buttonGap}"
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "108dp",
+                                "width": "match",
                                 "height": "${constant.video.layout.buttonHeight}"
                             },
                             "children": [
                                 {
-                                    "type": "label",
-                                    "id": "text",
+                                    "type": "button",
+                                    "id": "prev",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "video.prev"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#18223a",
+                                        "radius": "${constant.video.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "92dp",
+                                        "height": "match"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "上一部"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.video.font.button}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "toggle",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "video.toggle"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#6366f1",
+                                        "radius": "${constant.video.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "116dp",
+                                        "height": "match"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "暂停"
+                                            },
+                                            "style": {
+                                                "textColor": "#ffffff",
+                                                "fontSize": "${constant.video.font.button}"
+                                            },
+                                            "bindings": {
+                                                "labelProps.text": "toggle_text"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "next",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "video.next"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#18223a",
+                                        "radius": "${constant.video.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "92dp",
+                                        "height": "match"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "下一部"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.video.font.button}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "refresh",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "video.refresh"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#14251f",
+                                        "radius": "${constant.video.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "76dp",
+                                        "height": "match"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "刷新"
+                                            },
+                                            "style": {
+                                                "textColor": "#c8e8d9",
+                                                "fontSize": "${constant.video.font.button}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "container",
+                                    "id": "spacer",
                                     "commonProps": {
                                         "clickable": false
                                     },
-                                    "labelProps": {
-                                        "text": "上一部"
-                                    },
                                     "style": {
-                                        "textColor": "#e2e8f0",
-                                        "fontSize": "${constant.video.font.button}"
+                                        "padding": "0dp"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "wrap",
+                                        "height": "wrap",
+                                        "flexGrow": 1
                                     }
-                                }
-                            ]
-                        },
-                        {
-                            "type": "button",
-                            "id": "toggle",
-                            "events": [
-                                {
-                                    "type": "clicked",
-                                    "action": "video.toggle"
-                                }
-                            ],
-                            "style": {
-                                "bgColor": "#6366f1",
-                                "radius": "${constant.video.layout.buttonRadius}",
-                                "borderWidth": "0dp"
-                            },
-                            "layout": {
-                                "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "128dp",
-                                "height": "${constant.video.layout.buttonHeight}"
-                            },
-                            "children": [
+                                },
                                 {
                                     "type": "label",
-                                    "id": "text",
-                                    "commonProps": {
-                                        "clickable": false
-                                    },
+                                    "id": "time",
                                     "labelProps": {
-                                        "text": "暂停"
+                                        "text": "00:00 / 00:00"
                                     },
                                     "style": {
-                                        "textColor": "#ffffff",
-                                        "fontSize": "${constant.video.font.button}"
+                                        "textColor": "#a9b8cd",
+                                        "fontSize": "${constant.video.font.time}"
                                     },
                                     "bindings": {
-                                        "labelProps.text": "toggle_text"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "type": "button",
-                            "id": "next",
-                            "events": [
-                                {
-                                    "type": "clicked",
-                                    "action": "video.next"
-                                }
-                            ],
-                            "style": {
-                                "bgColor": "#1f2a44",
-                                "radius": "${constant.video.layout.buttonRadius}",
-                                "borderWidth": "0dp"
-                            },
-                            "layout": {
-                                "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "108dp",
-                                "height": "${constant.video.layout.buttonHeight}"
-                            },
-                            "children": [
-                                {
-                                    "type": "label",
-                                    "id": "text",
-                                    "commonProps": {
-                                        "clickable": false
+                                        "labelProps.text": "time_text"
                                     },
-                                    "labelProps": {
-                                        "text": "下一部"
-                                    },
-                                    "style": {
-                                        "textColor": "#e2e8f0",
-                                        "fontSize": "${constant.video.font.button}"
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "wrap",
+                                        "height": "wrap"
                                     }
                                 }
                             ]
@@ -285,7 +404,7 @@
                                 }
                             ],
                             "style": {
-                                "bgColor": "#1b2230",
+                                "bgColor": "#1a2334",
                                 "radius": "6dp"
                             },
                             "partStyles": {
@@ -302,69 +421,9 @@
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "300dp",
-                                "height": "22dp"
+                                "width": "match",
+                                "height": "${constant.video.layout.progressHeight}"
                             }
-                        },
-                        {
-                            "type": "label",
-                            "id": "time",
-                            "labelProps": {
-                                "text": "00:00 / 00:00"
-                            },
-                            "style": {
-                                "textColor": "#9fb2cc",
-                                "fontSize": "${constant.video.font.time}"
-                            },
-                            "bindings": {
-                                "labelProps.text": "time_text"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "wrap",
-                                "height": "wrap"
-                            }
-                        },
-                        {
-                            "type": "button",
-                            "id": "refresh",
-                            "events": [
-                                {
-                                    "type": "clicked",
-                                    "action": "video.refresh"
-                                }
-                            ],
-                            "style": {
-                                "bgColor": "#16203a",
-                                "radius": "${constant.video.layout.buttonRadius}",
-                                "borderWidth": "0dp"
-                            },
-                            "layout": {
-                                "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "84dp",
-                                "height": "${constant.video.layout.buttonHeight}"
-                            },
-                            "children": [
-                                {
-                                    "type": "label",
-                                    "id": "text",
-                                    "commonProps": {
-                                        "clickable": false
-                                    },
-                                    "labelProps": {
-                                        "text": "刷新"
-                                    },
-                                    "style": {
-                                        "textColor": "#c7d2e3",
-                                        "fontSize": "${constant.video.font.button}"
-                                    }
-                                }
-                            ]
                         }
                     ]
                 }

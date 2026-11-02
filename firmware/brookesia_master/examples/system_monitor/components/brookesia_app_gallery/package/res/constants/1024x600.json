@@ -7,20 +7,22 @@
                 "pageY": "92dp",
                 "pageWidth": "${expr(${env.widthDp} - 80dp)}",
                 "pageHeight": "${expr(${env.heightDp} - 124dp)}",
-                "panelWidth": "248dp",
-                "panelX": "${expr(${env.widthDp} - 328dp)}",
-                "gap": "18dp",
-                "previewWidth": "${expr(${env.widthDp} - 358dp)}",
+                "gap": "12dp",
+                "bodyGap": "16dp",
+                "headerHeight": "34dp",
+                "panelWidth": "280dp",
+                "panelPadding": "16dp",
+                "panelGap": "12dp",
                 "cardRadius": "22dp",
-                "buttonHeight": "54dp",
+                "navHeight": "50dp",
                 "buttonRadius": "16dp"
             },
             "font": {
                 "title": "26sp",
-                "name": "20sp",
-                "meta": "15sp",
-                "button": "20sp",
-                "status": "14sp"
+                "name": "18sp",
+                "meta": "13sp",
+                "button": "17sp",
+                "status": "12sp"
             }
         }
     }

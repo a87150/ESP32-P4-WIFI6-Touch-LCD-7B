@@ -4,6 +4,7 @@
 #include "brookesia/app_video/video_app.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <chrono>
 #include <cstdio>
@@ -38,12 +39,12 @@ constexpr const char *UI_TIMER_NAME = "video_ui";
 constexpr int32_t UI_PERIOD_MS = 250;
 
 // Absolute paths inside the video screen document.
-constexpr const char *PATH_FRAME = "/video/page/frame";
+constexpr const char *PATH_FRAME = "/video/page/stage/frame";
 constexpr const char *PATH_TITLE = "/video/page/hint/title";
 constexpr const char *PATH_STATUS = "/video/page/hint/status";
-constexpr const char *PATH_TIME = "/video/page/bar/time";
+constexpr const char *PATH_TIME = "/video/page/bar/row/time";
 constexpr const char *PATH_PROGRESS = "/video/page/bar/progress";
-constexpr const char *PATH_TOGGLE_TEXT = "/video/page/bar/toggle/text";
+constexpr const char *PATH_TOGGLE_TEXT = "/video/page/bar/row/toggle/text";
 
 constexpr const char *ACTION_PREV = "video.prev";
 constexpr const char *ACTION_TOGGLE = "video.toggle";
@@ -356,9 +357,11 @@ std::expected<void, std::string> VideoApp::on_pause(system::core::AppContext &)
 std::expected<void, std::string> VideoApp::on_resume(system::core::AppContext &context)
 {
     paused_ui_ = false;
-    if (playing_ && !source_.frames.empty()) {
+    {
         std::lock_guard<std::mutex> lock(state_.mutex);
-        state_.paused = false;
+        if (playing_ && !source_.frames.empty()) {
+            state_.paused = false;
+        }
     }
     notify_worker();
     refresh_ui(context);
@@ -396,14 +399,27 @@ std::expected<void, std::string> VideoApp::on_timer(
         playing_ = false;
         set_status(error_text.empty() ? "无法解码这个视频" : error_text);
     } else if (finished) {
-        // Auto advance to the next movie.
-        if (!movies_.empty()) {
-            movie_index_ = (movie_index_ + 1) % movies_.size();
-            if (load_source(movie_index_)) {
-                request_play();
-            } else {
-                playing_ = false;
+        // Auto advance to the next movie. The switch is queued for the playback
+        // worker: loading a movie reads the file, re-arms the decoder and swaps
+        // the frame buffers, which must not run on the timer task.
+        bool queued = false;
+        {
+            std::lock_guard<std::mutex> lock(state_.mutex);
+            if (!movies_.empty()) {
+                state_.pending_index = (movie_index_ + 1) % movies_.size();
+                state_.request_load = true;
+                state_.seek_request = UINT32_MAX;
+                state_.finished = false;
+                state_.paused = false;
+                queued = true;
             }
+        }
+        if (!queued) {
+            playing_ = false;
+        } else if (!worker_started_) {
+            start_worker();
+        } else {
+            notify_worker();
         }
     }
 
@@ -415,7 +431,7 @@ std::expected<void, std::string> VideoApp::on_timer(
 
 void VideoApp::scan_movies()
 {
-    movies_.clear();
+    std::vector<std::string> movies;
     for (const auto *dir_path : MOVIE_DIRS) {
         auto *dir = opendir(dir_path);
         if (dir == nullptr) {
@@ -431,27 +447,42 @@ void VideoApp::scan_movies()
             if (stat(full_path.c_str(), &st) != 0 || !S_ISREG(st.st_mode)) {
                 continue;
             }
-            movies_.push_back(full_path);
+            movies.push_back(full_path);
         }
         closedir(dir);
     }
-    std::sort(movies_.begin(), movies_.end());
-    movies_.erase(std::unique(movies_.begin(), movies_.end()), movies_.end());
-    BROOKESIA_LOGI("Video found %1% movie(s)", movies_.size());
+    std::sort(movies.begin(), movies.end());
+    movies.erase(std::unique(movies.begin(), movies.end()), movies.end());
+    BROOKESIA_LOGI("Video found %1% movie(s)", movies.size());
+    std::lock_guard<std::mutex> lock(state_.mutex);
+    movies_ = std::move(movies);
+    if (movies_.empty()) {
+        movie_index_ = 0;
+    } else if (movie_index_ >= movies_.size()) {
+        movie_index_ = 0;
+    }
 }
 
 bool VideoApp::load_source(size_t index)
 {
     stop_worker();
-    release_source();
+    return load_source_impl(index);
+}
 
-    if (movies_.empty()) {
+bool VideoApp::load_source_impl(size_t index)
+{
+    std::string path;
+    {
+        std::lock_guard<std::mutex> lock(state_.mutex);
+        if (!movies_.empty()) {
+            index %= movies_.size();
+            path = movies_[index];
+        }
+    }
+    if (path.empty()) {
         set_status("没有找到视频文件");
         return false;
     }
-    index %= movies_.size();
-    const std::string &path = movies_[index];
-    movie_index_ = index;
 
     struct stat st {};
     if (stat(path.c_str(), &st) != 0 || st.st_size <= 0) {
@@ -499,17 +530,38 @@ bool VideoApp::load_source(size_t index)
         return false;
     }
 
-    source_.data = data;
-    source_.size = file_size;
-    source_.frames.reserve(frames.size());
+    Source next;
+    next.data = data;
+    next.size = file_size;
+    next.frames.reserve(frames.size());
     for (const auto &frame : frames) {
-        source_.frames.push_back(FrameSpan{ .offset = frame.first, .length = frame.second });
+        next.frames.push_back(FrameSpan{ .offset = frame.first, .length = frame.second });
     }
-    source_.width = static_cast<int32_t>(info.width);
-    source_.height = static_cast<int32_t>(info.height);
-    source_.padded_width = static_cast<int32_t>((info.width + 15U) & ~15U);
-    source_.padded_height = static_cast<int32_t>((info.height + 15U) & ~15U);
-    source_.path = path;
+    next.width = static_cast<int32_t>(info.width);
+    next.height = static_cast<int32_t>(info.height);
+    next.padded_width = static_cast<int32_t>((info.width + 15U) & ~15U);
+    next.padded_height = static_cast<int32_t>((info.height + 15U) & ~15U);
+    next.path = path;
+
+    // Publish the new movie description in one step: the UI timer reads the
+    // frame count, the picture size and the file name together, and must never
+    // observe a half-updated source while the next movie is being loaded.
+    Source previous;
+    {
+        std::lock_guard<std::mutex> lock(state_.mutex);
+        previous = std::move(source_);
+        source_ = std::move(next);
+        movie_index_ = index;
+        state_.cursor = 0;
+        state_.current_frame = 0;
+        state_.seek_request = UINT32_MAX;
+        state_.finished = false;
+        state_.error = false;
+        state_.paused = true;
+    }
+    if (previous.data != nullptr) {
+        heap_caps_free(previous.data);
+    }
 
     size_t largest_frame = 0;
     for (const auto &frame : source_.frames) {
@@ -539,37 +591,33 @@ bool VideoApp::load_source(size_t index)
     apply_frame_geometry();
 
     BROOKESIA_LOGI(
-        "Video loaded: %1% (%2%x%3%, %4% frame(s), %5% bytes)", file_name_of(path), source_.width,
+        "Video loaded: %1% (%2%x%3%, %4% frame(s), %5% bytes)", file_name_of(source_.path), source_.width,
         source_.height, source_.frames.size(), source_.size
     );
 
-    {
-        std::lock_guard<std::mutex> lock(state_.mutex);
-        state_.cursor = 0;
-        state_.current_frame = 0;
-        state_.seek_request = UINT32_MAX;
-        state_.finished = false;
-        state_.error = false;
-        state_.paused = true;
-    }
     shown_width_ = 0;
     shown_height_ = 0;
     first_frame_logged_ = false;
+    decode_error_logged_ = false;
     last_programmed_permille_ = -1;
     return true;
 }
 
 void VideoApp::release_source()
 {
-    if (source_.data != nullptr) {
-        heap_caps_free(source_.data);
-        source_.data = nullptr;
+    // Take the source out under the lock so the UI timer never reads fields of a
+    // half-released source, then free the (large) movie buffer outside of it.
+    Source previous;
+    {
+        std::lock_guard<std::mutex> lock(state_.mutex);
+        previous = std::move(source_);
+        source_ = Source{};
+        state_.cursor = 0;
+        state_.current_frame = 0;
     }
-    source_.size = 0;
-    source_.frames.clear();
-    source_.width = 0;
-    source_.height = 0;
-    source_.path.clear();
+    if (previous.data != nullptr) {
+        heap_caps_free(previous.data);
+    }
     decode_error_logged_ = false;
 }
 
@@ -745,20 +793,21 @@ void VideoApp::subscribe_actions(system::core::AppContext &context)
             if (context_ == nullptr) {
                 return;
             }
-            scan_movies();
-            playing_ = false;
-            stop_worker();
-            release_source();
-            if (movies_.empty()) {
-                set_status("没有找到视频文件");
-                refresh_ui(*context_);
-                return;
+            {
+                std::lock_guard<std::mutex> lock(state_.mutex);
+                state_.request_scan = true;
+                state_.pending_index = 0;
+                state_.request_load = true;
+                state_.seek_request = UINT32_MAX;
+                state_.finished = false;
+                state_.error = false;
+                state_.paused = false;
             }
-            movie_index_ = 0;
-            if (load_source(movie_index_)) {
-                request_play();
+            if (!worker_started_) {
+                start_worker();
+            } else {
+                notify_worker();
             }
-            refresh_ui(*context_);
         },
     });
 
@@ -814,15 +863,15 @@ void VideoApp::notify_worker()
 
 void VideoApp::request_play()
 {
-    if (source_.frames.empty()) {
-        return;
-    }
-    start_worker();
     {
         std::lock_guard<std::mutex> lock(state_.mutex);
+        if (source_.frames.empty()) {
+            return;
+        }
         state_.paused = false;
         state_.error = false;
     }
+    start_worker();
     playing_ = true;
     set_status("");
     notify_worker();
@@ -830,55 +879,92 @@ void VideoApp::request_play()
 
 void VideoApp::toggle_playback()
 {
-    if (source_.frames.empty() || context_ == nullptr) {
-        set_status("没有可播放的视频");
+    if (context_ == nullptr) {
         return;
     }
-    if (!worker_started_) {
-        request_play();
-        refresh_ui(*context_);
-        return;
-    }
+    bool has_frames = false;
     bool now_playing = false;
     {
         std::lock_guard<std::mutex> lock(state_.mutex);
-        state_.paused = !state_.paused;
-        now_playing = !state_.paused;
+        if (state_.request_load || state_.request_scan) {
+            // A movie switch is already in flight: just make sure it starts
+            // playing once the worker has loaded it.
+            state_.paused = false;
+            now_playing = true;
+        } else {
+            has_frames = !source_.frames.empty();
+            if (has_frames) {
+                state_.paused = !state_.paused;
+                now_playing = !state_.paused;
+            }
+        }
+    }
+    if (!has_frames && !now_playing) {
+        set_status("没有可播放的视频");
+        return;
     }
     playing_ = now_playing;
-    notify_worker();
+    if (!worker_started_) {
+        request_play();
+    } else {
+        notify_worker();
+    }
     refresh_ui(*context_);
 }
 
 void VideoApp::step_movie(int direction)
 {
-    if (movies_.empty() || context_ == nullptr) {
+    if (context_ == nullptr) {
+        return;
+    }
+    bool queued = false;
+    {
+        std::lock_guard<std::mutex> lock(state_.mutex);
+        if (!movies_.empty()) {
+            const int count = static_cast<int>(movies_.size());
+            int next = (static_cast<int>(movie_index_) + direction) % count;
+            if (next < 0) {
+                next += count;
+            }
+            state_.pending_index = static_cast<size_t>(next);
+            state_.request_load = true;
+            state_.seek_request = UINT32_MAX;
+            state_.finished = false;
+            state_.error = false;
+            state_.paused = false;
+            queued = true;
+        }
+    }
+    if (!queued) {
         set_status("没有找到视频文件");
         return;
     }
-    const int count = static_cast<int>(movies_.size());
-    int next = (static_cast<int>(movie_index_) + direction) % count;
-    if (next < 0) {
-        next += count;
+    playing_ = true;
+    // Loading happens on the playback worker: the action handler only queues the
+    // request, so the app-input task never blocks on the file system/decoder.
+    if (!worker_started_) {
+        start_worker();
+    } else {
+        notify_worker();
     }
-    if (load_source(static_cast<size_t>(next))) {
-        request_play();
-    }
-    refresh_ui(*context_);
 }
 
 void VideoApp::seek_to_permille(int32_t permille)
 {
-    if (source_.frames.empty()) {
-        return;
-    }
     permille = std::clamp<int32_t>(permille, 0, 1000);
     if (permille == last_programmed_permille_) {
         // Echo of the position painted by the UI timer, not a user request:
         // treating it as a seek would rewind every few frames.
         return;
     }
-    const auto total = static_cast<uint32_t>(source_.frames.size());
+    uint32_t total = 0;
+    {
+        std::lock_guard<std::mutex> lock(state_.mutex);
+        total = static_cast<uint32_t>(source_.frames.size());
+    }
+    if (total == 0) {
+        return;
+    }
     uint32_t frame = static_cast<uint32_t>((static_cast<uint64_t>(permille) * total) / 1000U);
     if (frame >= total) {
         frame = total - 1;
@@ -888,6 +974,7 @@ void VideoApp::seek_to_permille(int32_t permille)
         std::lock_guard<std::mutex> lock(state_.mutex);
         state_.seek_request = frame;
         state_.finished = false;
+        state_.paused = false;
     }
     notify_worker();
 }
@@ -948,16 +1035,38 @@ void VideoApp::worker_loop()
     while (true) {
         uint32_t frame_index = 0;
         int32_t buffer_index = 0;
+        bool need_scan = false;
+        bool need_load = false;
+        size_t load_index = 0;
         {
             std::unique_lock<std::mutex> lock(state_.mutex);
             state_.cv.wait(lock, [this]() {
-                return state_.quit || state_.seek_request != UINT32_MAX ||
+                return state_.quit || state_.request_scan || state_.request_load ||
+                       state_.seek_request != UINT32_MAX ||
                        (!state_.paused && !source_.frames.empty());
             });
             if (state_.quit) {
                 break;
             }
-            if (state_.seek_request != UINT32_MAX) {
+            if (state_.request_scan) {
+                state_.request_scan = false;
+                need_scan = true;
+            }
+            if (state_.request_load) {
+                state_.request_load = false;
+                need_load = true;
+                load_index = state_.pending_index;
+            }
+            if (need_scan || need_load) {
+                // Freeze the position while the source is swapped, so a finished
+                // movie does not immediately re-trigger "finished" on the old
+                // frame list.
+                state_.paused = true;
+                state_.cursor = 0;
+                state_.current_frame = 0;
+                state_.seek_request = UINT32_MAX;
+                state_.finished = false;
+            } else if (state_.seek_request != UINT32_MAX) {
                 state_.cursor = state_.seek_request;
                 state_.seek_request = UINT32_MAX;
                 next_deadline = std::chrono::steady_clock::now();
@@ -965,14 +1074,52 @@ void VideoApp::worker_loop()
                 // A seek may wake the worker while paused (to show the target
                 // frame); otherwise it goes straight back to waiting.
                 continue;
-            }
-            if (state_.cursor >= source_.frames.size()) {
+            } else if (state_.cursor >= source_.frames.size()) {
                 state_.paused = true;
                 state_.finished = true;
                 continue;
+            } else {
+                frame_index = state_.cursor;
+                buffer_index = front_buffer_;
             }
-            frame_index = state_.cursor;
-            buffer_index = front_buffer_;
+        }
+
+        if (need_scan || need_load) {
+            // The playback worker owns every source transition: scanning the
+            // folder, reading a file and switching frame buffers never run on the
+            // GUI/timer/app-input tasks (that used to freeze the UI when the user
+            // tapped "next").
+            if (need_scan) {
+                scan_movies();
+            }
+            bool play = false;
+            size_t count = 0;
+            {
+                std::lock_guard<std::mutex> lock(state_.mutex);
+                count = movies_.size();
+            }
+            if (count == 0) {
+                playing_ = false;
+                set_status("没有找到视频文件");
+            } else if (load_source_impl(load_index)) {
+                {
+                    std::lock_guard<std::mutex> lock(state_.mutex);
+                    state_.paused = false;
+                    state_.error = false;
+                }
+                playing_ = true;
+                play = true;
+                next_deadline = std::chrono::steady_clock::now();
+            } else {
+                playing_ = false;
+            }
+            if (play) {
+                set_status("");
+                if (context_ != nullptr) {
+                    refresh_ui(*context_);
+                }
+            }
+            continue;
         }
 
         const bool decoded = decode_frame(frame_index, buffer_index);
@@ -1019,7 +1166,27 @@ void VideoApp::worker_loop()
 
 void VideoApp::refresh_ui(system::core::AppContext &context)
 {
-    if (movies_.empty()) {
+    size_t movie_count = 0;
+    size_t movie_index = 0;
+    uint32_t current_frame = 0;
+    uint32_t total_frames = 0;
+    bool paused = true;
+    int32_t width = 0;
+    int32_t height = 0;
+    std::string path;
+    {
+        std::lock_guard<std::mutex> lock(state_.mutex);
+        movie_count = movies_.size();
+        movie_index = movie_index_;
+        current_frame = state_.current_frame;
+        total_frames = static_cast<uint32_t>(source_.frames.size());
+        paused = state_.paused || state_.quit;
+        width = source_.width;
+        height = source_.height;
+        path = source_.path;
+    }
+
+    if (movie_count == 0) {
         (void)context.gui().set_binding_value(PATH_TITLE, "title_text", "视频");
         (void)context.gui().set_binding_value(PATH_TOGGLE_TEXT, "toggle_text", "播放");
         (void)context.gui().set_binding_value(PATH_TIME, "time_text", "00:00 / 00:00");
@@ -1028,20 +1195,10 @@ void VideoApp::refresh_ui(system::core::AppContext &context)
         return;
     }
 
-    uint32_t current_frame = 0;
-    uint32_t total_frames = 0;
-    bool paused = true;
-    {
-        std::lock_guard<std::mutex> lock(state_.mutex);
-        current_frame = state_.current_frame;
-        total_frames = static_cast<uint32_t>(source_.frames.size());
-        paused = state_.paused || state_.quit;
-    }
-
     (void)context.gui().set_binding_value(
         PATH_TITLE, "title_text",
-        file_name_of(source_.path) + "  (" + std::to_string(movie_index_ + 1) + "/" +
-        std::to_string(movies_.size()) + ")"
+        (path.empty() ? std::string("视频") : file_name_of(path)) + "  (" +
+        std::to_string(movie_index + 1) + "/" + std::to_string(movie_count) + ")"
     );
 
     const uint32_t total_seconds = (total_frames + PLAYBACK_FPS - 1) / PLAYBACK_FPS;
@@ -1049,7 +1206,7 @@ void VideoApp::refresh_ui(system::core::AppContext &context)
     (void)context.gui().set_binding_value(
         PATH_TIME, "time_text",
         format_time(elapsed_seconds) + " / " + format_time(total_seconds) +
-        "  " + std::to_string(source_.width) + "x" + std::to_string(source_.height)
+        "  " + std::to_string(width) + "x" + std::to_string(height)
     );
 
     int32_t permille = 0;

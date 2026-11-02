@@ -82,7 +82,7 @@ docs/
 - Disk usage aggregated over all volumes; turns red and raises an alarm above 90 %.
 - Ring gauges show **CPU and GPU temperature** in the centre.
 - Network card also reports **DISK I/O**.
-- `TEMP_ALARM_C = 85.0`; above the limit the value is suffixed with `HIGH!`.
+- `TEMP_ALARM_C = 90.0`; above the limit the value is suffixed with `HIGH!`.
 - Data sources: on-board sensors plus `scripts/pc_agent.py`, which broadcasts
   CPU / memory / disk / GPU / network stats to UDP **9999** once per second.
 
@@ -109,12 +109,15 @@ docs/
 
 - Format: **concatenated JPEG pictures** (`.mjpeg` / `.mjpg` / `.mjp`), no container, no audio.
 - Fixed **12 fps** pacing (MJPEG carries no timestamps), auto-advance, pause, previous/next,
-  and draggable seek.
+  and draggable seek. Movie switching is performed asynchronously by the playback thread, so
+  tapping next/previous never blocks the UI.
 - Hardware JPEG decode (`esp_driver_jpeg`) into RGB565 double buffers, one `set_view_src`
   per frame.
 - Display policy: a movie **smaller than the video area is shown 1:1 and centred** (no LVGL
-  scaling, which is what keeps the frame rate); larger movies are scaled down to 1024 x 524.
-  Authoring at **1024 x 524** gives full-screen playback at a steady 12 fps.
+  scaling, which is what keeps the frame rate); larger movies are scaled down to fit the
+  1024 x 524 video area. A 76dp control bar (progress, buttons, duration) sits below it
+  instead of covering the picture.
+  Authoring at **1024 x 524** gives 1:1 full-area playback at a steady 12 fps.
 - Directories: `/littlefs/videos`, `/sdcard/videos`, `/sdcard`.
 
 ### 3.6 Settings (`brookesia.general.settings`)
@@ -239,6 +242,8 @@ Console: USB-Serial/JTAG, 115200 baud.
 - **WAV (PCM)** only. Copy files into `/littlefs/sounds` (requires reflashing `storage`) or
   into `/music` / the SD card root, which work as soon as a card is inserted.
 - Sample rate / channels / bit depth are shown in the UI; 44.1 kHz / 16-bit is recommended.
+- The cover tile is a generated PNG; regenerate or restyle it with
+  `python tools/make_app_art.py`.
 
 ### 7.3 Video
 

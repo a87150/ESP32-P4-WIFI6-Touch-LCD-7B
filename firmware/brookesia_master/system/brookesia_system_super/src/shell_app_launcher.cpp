@@ -215,7 +215,12 @@ std::expected<void, std::string> ShellApp::populate_launcher(core::AppContext &c
 
     launcher_slot_count_ = 0;
 
-    int32_t content_height = content_frame.has_value() ? std::max<int32_t>(content_frame->height, 1) : 1;
+    // The scroll range must be measured against the scroll viewport (the grid
+    // stage), not the outer content container: the stage is inset by
+    // `launcherGridTop`, so using the taller content frame left a permanent
+    // ~22px scroll range that clipped the top of the first icon row.
+    const auto stage_frame = context.gui().get_view_frame(SUPER_LAUNCHER_GRID_STAGE_PATH);
+    int32_t content_height = stage_frame.has_value() ? std::max<int32_t>(stage_frame->height, 1) : 1;
     for (size_t i = 0; i < visible_apps.size(); ++i) {
         const auto &app = visible_apps[i];
         const auto column = static_cast<int32_t>(i % static_cast<size_t>(launcher_columns));

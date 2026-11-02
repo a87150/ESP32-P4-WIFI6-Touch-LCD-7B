@@ -31,12 +31,12 @@ constexpr const char *GUI_ROOT = "res/root.json";
 constexpr const char *GALLERY_FLOW_ID = "gallery_flow";
 
 // Absolute paths inside the gallery screen document.
-constexpr const char *PATH_PHOTO = "/gallery/page/preview/photo";
-constexpr const char *PATH_FILE_NAME = "/gallery/page/panel/file_name";
-constexpr const char *PATH_PHOTO_INDEX = "/gallery/page/panel/photo_index";
-constexpr const char *PATH_PHOTO_INFO = "/gallery/page/panel/photo_info";
-constexpr const char *PATH_SLIDE_TEXT = "/gallery/page/panel/actions_row/slideshow/text";
-constexpr const char *PATH_STATUS = "/gallery/page/panel/status";
+constexpr const char *PATH_PHOTO = "/gallery/page/body/preview/photo";
+constexpr const char *PATH_FILE_NAME = "/gallery/page/body/panel/file_name";
+constexpr const char *PATH_PHOTO_INDEX = "/gallery/page/header/index_chip/photo_index";
+constexpr const char *PATH_PHOTO_INFO = "/gallery/page/body/panel/photo_info";
+constexpr const char *PATH_SLIDE_TEXT = "/gallery/page/body/panel/actions_row/slideshow/text";
+constexpr const char *PATH_STATUS = "/gallery/page/body/panel/status";
 
 constexpr const char *ACTION_PREV = "gallery.prev";
 constexpr const char *ACTION_NEXT = "gallery.next";

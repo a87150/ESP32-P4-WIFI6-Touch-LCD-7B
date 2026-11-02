@@ -12,12 +12,19 @@
         {
             "type": "container",
             "id": "page",
+            "commonProps": {
+                "clickable": false,
+                "scrollable": false
+            },
             "layout": {
                 "type": "flex",
                 "flexFlow": "column",
                 "mainAlign": "start",
                 "crossAlign": "stretch",
                 "gap": "${constant.music.layout.gap}"
+            },
+            "style": {
+                "padding": "0dp"
             },
             "placement": {
                 "mode": "absolute",
@@ -28,130 +35,36 @@
             },
             "children": [
                 {
-                    "type": "label",
-                    "id": "title",
-                    "labelProps": {
-                        "text": "音乐"
-                    },
-                    "style": {
-                        "textColor": "#e5e7eb",
-                        "fontSize": "${constant.music.font.title}"
-                    },
-                    "placement": {
-                        "mode": "flow",
-                        "width": "wrap",
-                        "height": "wrap"
-                    }
-                },
-                {
                     "type": "container",
-                    "id": "player_card",
-                    "style": {
-                        "bgColor": "#131c2e",
-                        "radius": "${constant.music.layout.cardRadius}",
-                        "padding": "${constant.music.layout.cardPadding}"
+                    "id": "header",
+                    "commonProps": {
+                        "clickable": false
                     },
                     "layout": {
                         "type": "flex",
-                        "flexFlow": "column",
-                        "mainAlign": "start",
-                        "crossAlign": "stretch",
+                        "flexFlow": "row",
+                        "mainAlign": "spaceBetween",
+                        "crossAlign": "center",
                         "gap": "12dp"
+                    },
+                    "style": {
+                        "padding": "0dp"
                     },
                     "placement": {
                         "mode": "flow",
                         "width": "match",
-                        "height": "wrap",
-                        "alignSelf": "stretch"
+                        "height": "${constant.music.layout.headerHeight}"
                     },
                     "children": [
                         {
                             "type": "label",
-                            "id": "track_name",
+                            "id": "title",
                             "labelProps": {
-                                "text": "未在播放"
+                                "text": "音乐"
                             },
                             "style": {
-                                "textColor": "#f8fafc",
-                                "fontSize": "${constant.music.font.name}"
-                            },
-                            "bindings": {
-                                "labelProps.text": "track_name"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "match",
-                                "height": "wrap"
-                            }
-                        },
-                        {
-                            "type": "label",
-                            "id": "track_meta",
-                            "labelProps": {
-                                "text": "没有找到 WAV 文件"
-                            },
-                            "style": {
-                                "textColor": "#94a3b8",
-                                "fontSize": "${constant.music.font.meta}"
-                            },
-                            "bindings": {
-                                "labelProps.text": "track_meta"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "match",
-                                "height": "wrap"
-                            }
-                        },
-                        {
-                            "type": "slider",
-                            "id": "progress",
-                            "rangeProps": {
-                                "min": 0,
-                                "max": 1000,
-                                "value": 0
-                            },
-                            "events": [
-                                {
-                                    "type": "valueChanged",
-                                    "action": "music.seek"
-                                }
-                            ],
-                            "style": {
-                                "bgColor": "#1b2230",
-                                "radius": "6dp"
-                            },
-                            "partStyles": {
-                                "indicator": {
-                                    "bgColor": "#22d3ee",
-                                    "bgGradientColor": "#6366f1",
-                                    "bgGradientDirection": "horizontal",
-                                    "radius": "6dp"
-                                },
-                                "knob": {
-                                    "bgColor": "#f8fafc",
-                                    "radius": "9dp"
-                                }
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "match",
-                                "height": "22dp",
-                                "alignSelf": "stretch"
-                            }
-                        },
-                        {
-                            "type": "label",
-                            "id": "time_label",
-                            "labelProps": {
-                                "text": "00:00 / 00:00"
-                            },
-                            "style": {
-                                "textColor": "#94a3b8",
-                                "fontSize": "${constant.music.font.meta}"
-                            },
-                            "bindings": {
-                                "labelProps.text": "time_label"
+                                "textColor": "#eef3fb",
+                                "fontSize": "${constant.music.font.title}"
                             },
                             "placement": {
                                 "mode": "flow",
@@ -160,77 +73,292 @@
                             }
                         },
                         {
-                            "type": "container",
-                            "id": "volume",
-                            "layout": {
-                                "type": "flex",
-                                "flexFlow": "row",
-                                "mainAlign": "start",
-                                "crossAlign": "center",
-                                "gap": "12dp"
+                            "type": "label",
+                            "id": "subtitle",
+                            "labelProps": {
+                                "text": "WAV · 后台播放"
+                            },
+                            "style": {
+                                "textColor": "#7d8ba2",
+                                "fontSize": "${constant.music.font.meta}"
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "match",
-                                "height": "wrap",
-                                "alignSelf": "stretch"
+                                "width": "wrap",
+                                "height": "wrap"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "container",
+                    "id": "player_card",
+                    "commonProps": {
+                        "clickable": false
+                    },
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "row",
+                        "mainAlign": "start",
+                        "crossAlign": "center",
+                        "gap": "${constant.music.layout.cardGap}"
+                    },
+                    "style": {
+                        "bgColor": "#0d1626",
+                        "radius": "${constant.music.layout.cardRadius}",
+                        "borderWidth": "1dp",
+                        "borderColor": "#1b2740",
+                        "padding": "${constant.music.layout.cardPadding}"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "wrap",
+                        "flexGrow": 1
+                    },
+                    "children": [
+                        {
+                            "type": "image",
+                            "id": "cover",
+                            "commonProps": {
+                                "clickable": false
+                            },
+                            "imageProps": {
+                                "src": "${image.music_cover}",
+                                "innerAlign": "contain"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "${constant.music.layout.coverSize}",
+                                "height": "${constant.music.layout.coverSize}"
+                            }
+                        },
+                        {
+                            "type": "container",
+                            "id": "info",
+                            "commonProps": {
+                                "clickable": false
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "column",
+                                "mainAlign": "center",
+                                "crossAlign": "stretch",
+                                "gap": "${constant.music.layout.infoGap}"
+                            },
+                            "style": {
+                                "padding": "0dp"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "wrap",
+                                "height": "match",
+                                "flexGrow": 1
                             },
                             "children": [
                                 {
                                     "type": "label",
-                                    "id": "volume_text",
-                                    "commonProps": {
-                                        "clickable": false
-                                    },
+                                    "id": "track_name",
                                     "labelProps": {
-                                        "text": "音量 75%"
+                                        "text": "音乐播放器"
                                     },
                                     "style": {
-                                        "textColor": "#94a3b8",
-                                        "fontSize": "${constant.music.font.meta}"
+                                        "textColor": "#f4f7fd",
+                                        "fontSize": "${constant.music.font.name}"
                                     },
                                     "bindings": {
-                                        "labelProps.text": "volume_text"
+                                        "labelProps.text": "track_name"
                                     },
                                     "placement": {
                                         "mode": "flow",
-                                        "width": "150dp",
+                                        "width": "match",
+                                        "height": "wrap"
+                                    }
+                                },
+                                {
+                                    "type": "label",
+                                    "id": "track_meta",
+                                    "labelProps": {
+                                        "text": "把 WAV 文件放到 /littlefs/music"
+                                    },
+                                    "style": {
+                                        "textColor": "#8fa3bf",
+                                        "fontSize": "${constant.music.font.meta}"
+                                    },
+                                    "bindings": {
+                                        "labelProps.text": "track_meta"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
+                                        "height": "wrap"
+                                    }
+                                },
+                                {
+                                    "type": "label",
+                                    "id": "time_label",
+                                    "labelProps": {
+                                        "text": "00:00 / 00:00"
+                                    },
+                                    "style": {
+                                        "textColor": "#7f8ea3",
+                                        "fontSize": "${constant.music.font.status}"
+                                    },
+                                    "bindings": {
+                                        "labelProps.text": "time_label"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
                                         "height": "wrap"
                                     }
                                 },
                                 {
                                     "type": "slider",
-                                    "id": "volume_slider",
+                                    "id": "progress",
                                     "rangeProps": {
                                         "min": 0,
-                                        "max": 100,
-                                        "value": 75
+                                        "max": 1000,
+                                        "value": 0
                                     },
                                     "events": [
                                         {
                                             "type": "valueChanged",
-                                            "action": "music.volume"
+                                            "action": "music.seek"
                                         }
                                     ],
                                     "style": {
-                                        "bgColor": "#1b2230",
+                                        "bgColor": "#1a2334",
                                         "radius": "6dp"
                                     },
                                     "partStyles": {
                                         "indicator": {
-                                            "bgColor": "#34d399",
+                                            "bgColor": "#22d3ee",
+                                            "bgGradientColor": "#6366f1",
+                                            "bgGradientDirection": "horizontal",
                                             "radius": "6dp"
                                         },
                                         "knob": {
                                             "bgColor": "#f8fafc",
-                                            "radius": "9dp"
+                                            "radius": "8dp"
                                         }
                                     },
                                     "placement": {
                                         "mode": "flow",
-                                        "width": "740dp",
-                                        "height": "22dp"
+                                        "width": "match",
+                                        "height": "${constant.music.layout.progressHeight}"
                                     }
+                                },
+                                {
+                                    "type": "container",
+                                    "id": "divider",
+                                    "commonProps": {
+                                        "clickable": false
+                                    },
+                                    "style": {
+                                        "bgColor": "#1b2740",
+                                        "padding": "0dp"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
+                                        "height": "1dp"
+                                    }
+                                },
+                                {
+                                    "type": "container",
+                                    "id": "volume",
+                                    "commonProps": {
+                                        "clickable": false
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "flexFlow": "row",
+                                        "mainAlign": "start",
+                                        "crossAlign": "center",
+                                        "gap": "10dp"
+                                    },
+                                    "style": {
+                                        "padding": "0dp"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
+                                        "height": "${constant.music.layout.volumeHeight}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "volume_label",
+                                            "labelProps": {
+                                                "text": "音量"
+                                            },
+                                            "style": {
+                                                "textColor": "#7f8ea3",
+                                                "fontSize": "${constant.music.font.status}"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "wrap"
+                                            }
+                                        },
+                                        {
+                                            "type": "slider",
+                                            "id": "volume_slider",
+                                            "rangeProps": {
+                                                "min": 0,
+                                                "max": 100,
+                                                "value": 70
+                                            },
+                                            "events": [
+                                                {
+                                                    "type": "valueChanged",
+                                                    "action": "music.volume"
+                                                }
+                                            ],
+                                            "style": {
+                                                "bgColor": "#1a2334",
+                                                "radius": "5dp"
+                                            },
+                                            "partStyles": {
+                                                "indicator": {
+                                                    "bgColor": "#3ddc97",
+                                                    "radius": "5dp"
+                                                },
+                                                "knob": {
+                                                    "bgColor": "#f8fafc",
+                                                    "radius": "7dp"
+                                                }
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "18dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "label",
+                                            "id": "volume_text",
+                                            "labelProps": {
+                                                "text": "70%"
+                                            },
+                                            "style": {
+                                                "textColor": "#a9b8cd",
+                                                "fontSize": "${constant.music.font.status}",
+                                                "textAlign": "right"
+                                            },
+                                            "bindings": {
+                                                "labelProps.text": "volume_text"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "${constant.music.layout.volumeTextWidth}",
+                                                "height": "wrap"
+                                            }
+                                        }
+                                    ]
                                 }
                             ]
                         }
@@ -239,18 +367,23 @@
                 {
                     "type": "container",
                     "id": "controls",
+                    "commonProps": {
+                        "clickable": false
+                    },
                     "layout": {
                         "type": "flex",
                         "flexFlow": "row",
-                        "mainAlign": "start",
+                        "mainAlign": "center",
                         "crossAlign": "center",
-                        "gap": "12dp"
+                        "gap": "${constant.music.layout.buttonGap}"
+                    },
+                    "style": {
+                        "padding": "0dp"
                     },
                     "placement": {
                         "mode": "flow",
                         "width": "match",
-                        "height": "${constant.music.layout.buttonHeight}",
-                        "alignSelf": "stretch"
+                        "height": "${constant.music.layout.buttonHeight}"
                     },
                     "children": [
                         {
@@ -263,7 +396,7 @@
                                 }
                             ],
                             "style": {
-                                "bgColor": "#1f2a44",
+                                "bgColor": "#18223a",
                                 "radius": "${constant.music.layout.buttonRadius}",
                                 "borderWidth": "0dp"
                             },
@@ -274,7 +407,7 @@
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "160dp",
+                                "width": "${constant.music.layout.smallButtonWidth}",
                                 "height": "match"
                             },
                             "children": [
@@ -288,7 +421,7 @@
                                         "text": "上一首"
                                     },
                                     "style": {
-                                        "textColor": "#e2e8f0",
+                                        "textColor": "#dbe4f2",
                                         "fontSize": "${constant.music.font.button}"
                                     }
                                 }
@@ -315,7 +448,7 @@
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "200dp",
+                                "width": "${constant.music.layout.mainButtonWidth}",
                                 "height": "match"
                             },
                             "children": [
@@ -348,7 +481,7 @@
                                 }
                             ],
                             "style": {
-                                "bgColor": "#1f2a44",
+                                "bgColor": "#18223a",
                                 "radius": "${constant.music.layout.buttonRadius}",
                                 "borderWidth": "0dp"
                             },
@@ -359,7 +492,7 @@
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "160dp",
+                                "width": "${constant.music.layout.smallButtonWidth}",
                                 "height": "match"
                             },
                             "children": [
@@ -373,7 +506,7 @@
                                         "text": "下一首"
                                     },
                                     "style": {
-                                        "textColor": "#e2e8f0",
+                                        "textColor": "#dbe4f2",
                                         "fontSize": "${constant.music.font.button}"
                                     }
                                 }
@@ -400,7 +533,7 @@
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "160dp",
+                                "width": "${constant.music.layout.smallButtonWidth}",
                                 "height": "match"
                             },
                             "children": [
@@ -411,10 +544,10 @@
                                         "clickable": false
                                     },
                                     "labelProps": {
-                                        "text": "刷新列表"
+                                        "text": "重新扫描"
                                     },
                                     "style": {
-                                        "textColor": "#d1fae5",
+                                        "textColor": "#c8e8d9",
                                         "fontSize": "${constant.music.font.button}"
                                     }
                                 }
@@ -426,10 +559,10 @@
                     "type": "label",
                     "id": "status",
                     "labelProps": {
-                        "text": "把 WAV 文件放到 SD 卡或 /littlefs/sounds"
+                        "text": ""
                     },
                     "style": {
-                        "textColor": "#94a3b8",
+                        "textColor": "#6f8098",
                         "fontSize": "${constant.music.font.status}"
                     },
                     "bindings": {
