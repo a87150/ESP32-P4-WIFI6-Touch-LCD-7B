@@ -4,6 +4,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
@@ -148,6 +149,8 @@ private:
     bool first_frame_logged_ = false;
     bool decode_error_logged_ = false;
     int32_t last_programmed_permille_ = -1;
+    /// Timestamp of the first tap on the picture area (double tap detection).
+    std::chrono::steady_clock::time_point last_tap_{};
 
     std::vector<gui::ScopedConnection> action_connections_;
 };

@@ -18,6 +18,7 @@
                 "volumeHeight": "26dp",
                 "volumeTextWidth": "46dp",
                 "buttonHeight": "54dp",
+                "barHeight": "76dp",
                 "buttonGap": "10dp",
                 "buttonRadius": "16dp",
                 "smallButtonWidth": "126dp",

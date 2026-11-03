@@ -90,11 +90,13 @@ docs/
 - 独立 **音量滑条 0–100**，实时生效。
 - 元信息显示采样率 / 声道 / 位深；显示当前曲目序号与总数。
 - 一首播完自动下一首；重新进入 App 保留上一首与播放位置。
+- 底部为独立控制栏，播放 / 上一首 / 下一首 / 重新扫描四个按钮水平居中。
 - 目录：`/littlefs/sounds`、`/sdcard/music`、`/sdcard`。
 
 ### 3.4 图片（`brookesia.waveshare.gallery`）
 
 - 目录：`/littlefs/pictures`、`/littlefs/wallpapers`、`/sdcard/pictures`、`/sdcard`。
+- 布局：上方为整幅预览，底部为信息栏（文件名、分辨率与大小）+ 居中的操作按钮 + 状态行。
 - 上一张 / 下一张浏览；显示文件名、序号、**分辨率与文件大小**。
 - **自动播放**：每 4 秒切一张（按钮与"刷新"并排）。
 - **设为壁纸**：写入 `/littlefs/system/super/wallpaper.txt`，返回桌面即生效。
@@ -104,10 +106,12 @@ docs/
 
 - 格式：**纯 JPEG 串接**的 `.mjpeg` / `.mjpg` / `.mjp`，**无容器、无音轨**。
 - 固定 **12 fps** 定速播放（MJPEG 不含时间戳），播完自动下一部，支持暂停 / 上一部 / 下一部 / 拖动进度。
+- **双击画面暂停 / 继续**（GUI 没有双击事件，由 `video.tap` 在 400 ms 窗口内合并两次点击）。
 - 硬件 JPEG 解码（`esp_driver_jpeg`）输出 RGB565，双缓冲逐帧切换。
 - 切换影片由播放线程异步完成，点击「上一部 / 下一部」只投递请求，不会卡住界面。
 - 显示策略：视频**小于画面区时按原始尺寸 1:1 居中显示**（LVGL 不做缩放，帧率有保证）；
-  画面区为 1024 × 524，超出才等比缩小。底部 76dp 为独立控制栏（进度条 + 按钮 + 时长），不遮挡画面。
+  画面区为 1024 × 524，超出才等比缩小。底部 76dp 为独立控制栏：上一行是居中的操作按钮，
+  下一行是进度条与时长，不遮挡画面。
   建议素材直接做成 **1024 × 524**，可 1:1 满幅播放且 12 fps 稳定。
 - 目录：`/littlefs/videos`、`/sdcard/videos`、`/sdcard`。
 - 生成工具见第 7 节。
@@ -160,7 +164,7 @@ docs/
 
 ```powershell
 # 1) 进入 IDF 环境（示例：Windows 安装路径）
-C:\esp\v6.1\esp-idf\export.ps1
+<ESP-IDF>/export.ps1
 
 # 2) 进入固件工程
 cd firmware\brookesia_master\examples\system_monitor
@@ -196,10 +200,10 @@ idf.py build
 
 ```powershell
 # 一次烧 app + storage（脚本已内置上面的地址）
-.\flash_app.ps1 -Port COM3
+.\flash_app.ps1 -Port COMx
 
 # 或者手动执行
-python -m esptool --chip esp32p4 -p COM3 -b 460800 `
+python -m esptool --chip esp32p4 -p COMx -b 460800 `
     --before default-reset --after hard-reset `
     write-flash 0x110000 build\system_monitor.bin 0x1000000 build\storage.bin
 ```

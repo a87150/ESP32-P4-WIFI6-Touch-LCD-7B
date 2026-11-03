@@ -42,15 +42,19 @@ constexpr int32_t UI_PERIOD_MS = 250;
 constexpr const char *PATH_FRAME = "/video/page/stage/frame";
 constexpr const char *PATH_TITLE = "/video/page/hint/title";
 constexpr const char *PATH_STATUS = "/video/page/hint/status";
-constexpr const char *PATH_TIME = "/video/page/bar/row/time";
-constexpr const char *PATH_PROGRESS = "/video/page/bar/progress";
-constexpr const char *PATH_TOGGLE_TEXT = "/video/page/bar/row/toggle/text";
+constexpr const char *PATH_TIME = "/video/page/bar/row_progress/time";
+constexpr const char *PATH_PROGRESS = "/video/page/bar/row_progress/progress";
+constexpr const char *PATH_TOGGLE_TEXT = "/video/page/bar/row_buttons/toggle/text";
 
 constexpr const char *ACTION_PREV = "video.prev";
 constexpr const char *ACTION_TOGGLE = "video.toggle";
 constexpr const char *ACTION_NEXT = "video.next";
 constexpr const char *ACTION_SEEK = "video.seek";
 constexpr const char *ACTION_REFRESH = "video.refresh";
+// Emitted when the picture area is tapped. Two taps inside the window toggle
+// playback, which is the usual "double click on the video" gesture.
+constexpr const char *ACTION_TAP = "video.tap";
+constexpr auto DOUBLE_TAP_WINDOW = std::chrono::milliseconds(400);
 
 constexpr const char *MOVIE_DIRS[] = {
     "/littlefs/videos",
@@ -784,6 +788,24 @@ void VideoApp::subscribe_actions(system::core::AppContext &context)
             auto value = event.get_int64("value");
             if (value.has_value()) {
                 seek_to_permille(static_cast<int32_t>(*value));
+            }
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_TAP,
+        .handler = [this](const gui::Event &) {
+            if (context_ == nullptr) {
+                return;
+            }
+            // The GUI has no dedicated double-click event, so two taps inside a
+            // short window are folded into a play/pause toggle.
+            const auto now = std::chrono::steady_clock::now();
+            if (last_tap_ != std::chrono::steady_clock::time_point{} &&
+                    (now - last_tap_) <= DOUBLE_TAP_WINDOW) {
+                last_tap_ = std::chrono::steady_clock::time_point{};
+                toggle_playback();
+            } else {
+                last_tap_ = now;
             }
         },
     });

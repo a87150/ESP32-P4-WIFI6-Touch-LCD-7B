@@ -30,9 +30,15 @@
                     "type": "container",
                     "id": "stage",
                     "commonProps": {
-                        "clickable": false,
+                        "clickable": true,
                         "scrollable": false
                     },
+                    "events": [
+                        {
+                            "type": "clicked",
+                            "action": "video.tap"
+                        }
+                    ],
                     "style": {
                         "bgColor": "#000000",
                         "padding": "0dp",
@@ -168,14 +174,14 @@
                     "children": [
                         {
                             "type": "container",
-                            "id": "row",
+                            "id": "row_buttons",
                             "commonProps": {
                                 "clickable": false
                             },
                             "layout": {
                                 "type": "flex",
                                 "flexFlow": "row",
-                                "mainAlign": "start",
+                                "mainAlign": "center",
                                 "crossAlign": "center",
                                 "gap": "${constant.video.layout.buttonGap}"
                             },
@@ -351,20 +357,62 @@
                                             }
                                         }
                                     ]
-                                },
+                                }
+                            ]
+                        },
+                        {
+                            "type": "container",
+                            "id": "row_progress",
+                            "commonProps": {
+                                "clickable": false
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "row",
+                                "mainAlign": "start",
+                                "crossAlign": "center",
+                                "gap": "10dp"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "match",
+                                "height": "${constant.video.layout.progressHeight}"
+                            },
+                            "children": [
                                 {
-                                    "type": "container",
-                                    "id": "spacer",
-                                    "commonProps": {
-                                        "clickable": false
+                                    "type": "slider",
+                                    "id": "progress",
+                                    "rangeProps": {
+                                        "min": 0,
+                                        "max": 1000,
+                                        "value": 0
                                     },
+                                    "events": [
+                                        {
+                                            "type": "valueChanged",
+                                            "action": "video.seek"
+                                        }
+                                    ],
                                     "style": {
-                                        "padding": "0dp"
+                                        "bgColor": "#1a2334",
+                                        "radius": "6dp"
+                                    },
+                                    "partStyles": {
+                                        "indicator": {
+                                            "bgColor": "#22d3ee",
+                                            "bgGradientColor": "#6366f1",
+                                            "bgGradientDirection": "horizontal",
+                                            "radius": "6dp"
+                                        },
+                                        "knob": {
+                                            "bgColor": "#f8fafc",
+                                            "radius": "8dp"
+                                        }
                                     },
                                     "placement": {
                                         "mode": "flow",
                                         "width": "wrap",
-                                        "height": "wrap",
+                                        "height": "match",
                                         "flexGrow": 1
                                     }
                                 },
@@ -388,42 +436,6 @@
                                     }
                                 }
                             ]
-                        },
-                        {
-                            "type": "slider",
-                            "id": "progress",
-                            "rangeProps": {
-                                "min": 0,
-                                "max": 1000,
-                                "value": 0
-                            },
-                            "events": [
-                                {
-                                    "type": "valueChanged",
-                                    "action": "video.seek"
-                                }
-                            ],
-                            "style": {
-                                "bgColor": "#1a2334",
-                                "radius": "6dp"
-                            },
-                            "partStyles": {
-                                "indicator": {
-                                    "bgColor": "#22d3ee",
-                                    "bgGradientColor": "#6366f1",
-                                    "bgGradientDirection": "horizontal",
-                                    "radius": "6dp"
-                                },
-                                "knob": {
-                                    "bgColor": "#f8fafc",
-                                    "radius": "8dp"
-                                }
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "match",
-                                "height": "${constant.video.layout.progressHeight}"
-                            }
                         }
                     ]
                 }

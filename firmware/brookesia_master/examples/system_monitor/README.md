@@ -45,7 +45,7 @@ Only the `factory` app and the `storage` (littlefs) data partition are written;
 bootloader, partition table, NVS and the factory assets are never touched.
 
 ```powershell
-.\flash_app.ps1 -Port COM3
+.\flash_app.ps1 -Port COMx
 # equals: write-flash 0x110000 build\system_monitor.bin 0x1000000 build\storage.bin
 ```
 

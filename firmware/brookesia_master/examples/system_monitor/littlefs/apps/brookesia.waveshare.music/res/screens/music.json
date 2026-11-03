@@ -378,12 +378,16 @@
                         "gap": "${constant.music.layout.buttonGap}"
                     },
                     "style": {
+                        "bgColor": "#0d1626",
+                        "radius": "18dp",
+                        "borderWidth": "1dp",
+                        "borderColor": "#1b2740",
                         "padding": "0dp"
                     },
                     "placement": {
                         "mode": "flow",
                         "width": "match",
-                        "height": "${constant.music.layout.buttonHeight}"
+                        "height": "${constant.music.layout.barHeight}"
                     },
                     "children": [
                         {
@@ -408,7 +412,7 @@
                             "placement": {
                                 "mode": "flow",
                                 "width": "${constant.music.layout.smallButtonWidth}",
-                                "height": "match"
+                                "height": "${constant.music.layout.buttonHeight}"
                             },
                             "children": [
                                 {
@@ -449,7 +453,7 @@
                             "placement": {
                                 "mode": "flow",
                                 "width": "${constant.music.layout.mainButtonWidth}",
-                                "height": "match"
+                                "height": "${constant.music.layout.buttonHeight}"
                             },
                             "children": [
                                 {
@@ -493,7 +497,7 @@
                             "placement": {
                                 "mode": "flow",
                                 "width": "${constant.music.layout.smallButtonWidth}",
-                                "height": "match"
+                                "height": "${constant.music.layout.buttonHeight}"
                             },
                             "children": [
                                 {
@@ -534,7 +538,7 @@
                             "placement": {
                                 "mode": "flow",
                                 "width": "${constant.music.layout.smallButtonWidth}",
-                                "height": "match"
+                                "height": "${constant.music.layout.buttonHeight}"
                             },
                             "children": [
                                 {

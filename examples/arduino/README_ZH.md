@@ -81,5 +81,5 @@ RGB565。`07_Camera_ISP_Tuning` 支持串口命令 `g`、`e`、`a`、`v`、`h`�
 - `GFX_Library_for_Arduino`：支持 ESP32-P4 MIPI-DSI 的 Arduino_GFX
 - `lvgl` 与 `lv_conf.h`：供 `04_LVGLV9_Arduino` 使用的 LVGL 9
 
-硬件详情请参阅[主 README](../README_ZH.md)和[官方产品文档]
+硬件详情请参阅[主 README](../../README.md)和[官方产品文档]
 (https://docs.waveshare.com/ESP32-P4-WIFI6-Touch-LCD-7B)。

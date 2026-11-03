@@ -94,11 +94,14 @@ docs/
 - Separate **volume slider 0-100** that takes effect immediately.
 - Metadata shows sample rate / channels / bit depth, plus track index and count.
 - Auto-advance to the next track; reopening the app keeps the last track and position.
+- A dedicated bottom bar centres the play / previous / next / rescan buttons.
 - Directories: `/littlefs/sounds`, `/sdcard/music`, `/sdcard`.
 
 ### 3.4 Gallery (`brookesia.waveshare.gallery`)
 
 - Directories: `/littlefs/pictures`, `/littlefs/wallpapers`, `/sdcard/pictures`, `/sdcard`.
+- Layout: full-width preview on top, then a bottom card with file name / resolution / size,
+  centred action buttons and a status line.
 - Previous / next browsing with file name, index, **resolution and file size**.
 - **Slideshow**: advances every 4 seconds (button sits next to "refresh").
 - **Set wallpaper**: writes `/littlefs/system/super/wallpaper.txt`, applied on the next launch.
@@ -111,12 +114,14 @@ docs/
 - Fixed **12 fps** pacing (MJPEG carries no timestamps), auto-advance, pause, previous/next,
   and draggable seek. Movie switching is performed asynchronously by the playback thread, so
   tapping next/previous never blocks the UI.
+- **Double tap the picture to pause / resume**: the GUI has no double-click event, so
+  `video.tap` folds two taps within 400 ms into one play/pause toggle.
 - Hardware JPEG decode (`esp_driver_jpeg`) into RGB565 double buffers, one `set_view_src`
   per frame.
 - Display policy: a movie **smaller than the video area is shown 1:1 and centred** (no LVGL
   scaling, which is what keeps the frame rate); larger movies are scaled down to fit the
-  1024 x 524 video area. A 76dp control bar (progress, buttons, duration) sits below it
-  instead of covering the picture.
+  1024 x 524 video area. The 76dp bottom bar keeps the control buttons centred on its first
+  row and the progress slider plus duration on the second row, so the picture is never covered.
   Authoring at **1024 x 524** gives 1:1 full-area playback at a steady 12 fps.
 - Directories: `/littlefs/videos`, `/sdcard/videos`, `/sdcard`.
 
@@ -169,7 +174,7 @@ To restore the factory demo, flash `firmware/ESP32-P4-WIFI6-Touch-LCD-7B-Factory
 
 ```bash
 # 1) Enter the IDF environment (example path on Windows)
-. C:\esp\v6.1\esp-idf\export.ps1
+. <ESP-IDF>/export.ps1
 
 # 2) Enter the firmware project
 cd firmware/brookesia_master/examples/system_monitor
@@ -208,10 +213,10 @@ want to restore the factory demo:
 
 ```powershell
 # App + storage in one go (addresses are baked into the script)
-.\flash_app.ps1 -Port COM3
+.\flash_app.ps1 -Port COMx
 
 # Or manually
-python -m esptool --chip esp32p4 -p COM3 -b 460800 `
+python -m esptool --chip esp32p4 -p COMx -b 460800 `
     --before default-reset --after hard-reset `
     write-flash 0x110000 build\system_monitor.bin 0x1000000 build\storage.bin
 ```

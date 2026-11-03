@@ -12,12 +12,20 @@
   ],
   "exclude_patterns": [],
   "pair_exempt_patterns": [
+    "README.md",
+    "README_EN.md",
+    "README_ZH.md",
     "README_CN.md",
-    "**/README_CN.md"
+    "**/README_CN.md",
+    "firmware/brookesia_master/examples/system_monitor/README.md"
   ],
   "language_link_exempt_patterns": [
+    "README.md",
+    "README_EN.md",
+    "README_ZH.md",
     "README_CN.md",
-    "**/README_CN.md"
+    "**/README_CN.md",
+    "firmware/brookesia_master/examples/system_monitor/README.md"
   ],
   "relative_link_ignore_patterns": [],
   "docs_only_allowed_patterns": [],
@@ -40,8 +48,8 @@
   "homepage_h3_emoji_allow_patterns": [],
   "homepage_pairs": [
     {
-      "english": "README.md",
-      "chinese": "README_ZH.md",
+      "english": "README_EN.md",
+      "chinese": "README.md",
       "profile": "single-product",
       "required_components": ["hero_image"],
       "required_quick_links": [

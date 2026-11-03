@@ -121,20 +121,18 @@
                 },
                 {
                     "type": "container",
-                    "id": "body",
+                    "id": "preview",
                     "commonProps": {
                         "clickable": false,
                         "scrollable": false
                     },
-                    "layout": {
-                        "type": "flex",
-                        "flexFlow": "row",
-                        "mainAlign": "start",
-                        "crossAlign": "stretch",
-                        "gap": "${constant.gallery.layout.bodyGap}"
-                    },
                     "style": {
-                        "padding": "0dp"
+                        "bgColor": "#0b0f16",
+                        "borderWidth": "1dp",
+                        "borderColor": "#1b2230",
+                        "radius": "${constant.gallery.layout.cardRadius}",
+                        "padding": "0dp",
+                        "clipCorner": true
                     },
                     "placement": {
                         "mode": "flow",
@@ -144,75 +142,75 @@
                     },
                     "children": [
                         {
-                            "type": "container",
-                            "id": "preview",
+                            "type": "image",
+                            "id": "photo",
                             "commonProps": {
-                                "clickable": false,
-                                "scrollable": false
+                                "clickable": false
                             },
-                            "style": {
-                                "bgColor": "#0b0f16",
-                                "borderWidth": "1dp",
-                                "borderColor": "#1b2230",
-                                "radius": "${constant.gallery.layout.cardRadius}",
-                                "padding": "0dp",
-                                "clipCorner": true
+                            "bindings": {
+                                "imageProps.src": "photo_src"
+                            },
+                            "imageProps": {
+                                "src": "",
+                                "innerAlign": "contain"
                             },
                             "placement": {
-                                "mode": "flow",
-                                "width": "wrap",
-                                "height": "match",
-                                "flexGrow": 1
-                            },
-                            "children": [
-                                {
-                                    "type": "image",
-                                    "id": "photo",
-                                    "commonProps": {
-                                        "clickable": false
-                                    },
-                                    "bindings": {
-                                        "imageProps.src": "photo_src"
-                                    },
-                                    "imageProps": {
-                                        "src": "",
-                                        "innerAlign": "contain"
-                                    },
-                                    "placement": {
-                                        "mode": "absolute",
-                                        "x": 0,
-                                        "y": 0,
-                                        "width": "match",
-                                        "height": "match"
-                                    }
-                                }
-                            ]
-                        },
+                                "mode": "absolute",
+                                "x": 0,
+                                "y": 0,
+                                "width": "match",
+                                "height": "match"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "container",
+                    "id": "bar",
+                    "commonProps": {
+                        "clickable": false,
+                        "scrollable": false
+                    },
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "column",
+                        "mainAlign": "start",
+                        "crossAlign": "stretch",
+                        "gap": "${constant.gallery.layout.barGap}"
+                    },
+                    "style": {
+                        "bgColor": "#0c1320",
+                        "borderWidth": "1dp",
+                        "borderColor": "#1b2230",
+                        "radius": "${constant.gallery.layout.cardRadius}",
+                        "padding": "${constant.gallery.layout.barPadding}"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "${constant.gallery.layout.barHeight}"
+                    },
+                    "children": [
                         {
                             "type": "container",
-                            "id": "panel",
+                            "id": "info",
                             "commonProps": {
-                                "clickable": false,
-                                "scrollable": false
+                                "clickable": false
                             },
                             "layout": {
                                 "type": "flex",
-                                "flexFlow": "column",
-                                "mainAlign": "start",
-                                "crossAlign": "stretch",
-                                "gap": "${constant.gallery.layout.panelGap}"
+                                "flexFlow": "row",
+                                "mainAlign": "spaceBetween",
+                                "crossAlign": "center",
+                                "gap": "12dp"
                             },
                             "style": {
-                                "bgColor": "#0c1320",
-                                "borderWidth": "1dp",
-                                "borderColor": "#1b2230",
-                                "radius": "${constant.gallery.layout.cardRadius}",
-                                "padding": "${constant.gallery.layout.panelPadding}"
+                                "padding": "0dp"
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "${constant.gallery.layout.panelWidth}",
-                                "height": "match"
+                                "width": "match",
+                                "height": "${constant.gallery.layout.infoHeight}"
                             },
                             "children": [
                                 {
@@ -230,7 +228,7 @@
                                     },
                                     "placement": {
                                         "mode": "flow",
-                                        "width": "match",
+                                        "width": "wrap",
                                         "height": "wrap"
                                     }
                                 },
@@ -249,153 +247,119 @@
                                     },
                                     "placement": {
                                         "mode": "flow",
-                                        "width": "match",
+                                        "width": "wrap",
                                         "height": "wrap"
                                     }
-                                },
+                                }
+                            ]
+                        },
+                        {
+                            "type": "container",
+                            "id": "buttons",
+                            "commonProps": {
+                                "clickable": false
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "row",
+                                "mainAlign": "center",
+                                "crossAlign": "center",
+                                "gap": "${constant.gallery.layout.buttonGap}"
+                            },
+                            "style": {
+                                "padding": "0dp"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "match",
+                                "height": "${constant.gallery.layout.buttonHeight}"
+                            },
+                            "children": [
                                 {
-                                    "type": "container",
-                                    "id": "divider",
-                                    "commonProps": {
-                                        "clickable": false
-                                    },
+                                    "type": "button",
+                                    "id": "prev",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "gallery.prev"
+                                        }
+                                    ],
                                     "style": {
-                                        "bgColor": "#1b2740",
-                                        "padding": "0dp"
-                                    },
-                                    "placement": {
-                                        "mode": "flow",
-                                        "width": "match",
-                                        "height": "1dp"
-                                    }
-                                },
-                                {
-                                    "type": "container",
-                                    "id": "spacer",
-                                    "commonProps": {
-                                        "clickable": false
-                                    },
-                                    "style": {
-                                        "padding": "0dp"
-                                    },
-                                    "placement": {
-                                        "mode": "flow",
-                                        "width": "match",
-                                        "height": "wrap",
-                                        "flexGrow": 1
-                                    }
-                                },
-                                {
-                                    "type": "container",
-                                    "id": "nav_row",
-                                    "commonProps": {
-                                        "clickable": false
+                                        "bgColor": "#18223a",
+                                        "radius": "${constant.gallery.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
                                     },
                                     "layout": {
                                         "type": "flex",
-                                        "flexFlow": "row",
-                                        "mainAlign": "start",
-                                        "crossAlign": "center",
-                                        "gap": "10dp"
-                                    },
-                                    "style": {
-                                        "padding": "0dp"
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
                                     },
                                     "placement": {
                                         "mode": "flow",
-                                        "width": "match",
-                                        "height": "${constant.gallery.layout.navHeight}"
+                                        "width": "100dp",
+                                        "height": "match"
                                     },
                                     "children": [
                                         {
-                                            "type": "button",
-                                            "id": "prev",
-                                            "events": [
-                                                {
-                                                    "type": "clicked",
-                                                    "action": "gallery.prev"
-                                                }
-                                            ],
-                                            "style": {
-                                                "bgColor": "#18223a",
-                                                "radius": "${constant.gallery.layout.buttonRadius}",
-                                                "borderWidth": "0dp"
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
                                             },
-                                            "layout": {
-                                                "type": "flex",
-                                                "mainAlign": "center",
-                                                "crossAlign": "center"
+                                            "labelProps": {
+                                                "text": "上一张"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.gallery.font.button}"
                                             },
                                             "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "match",
-                                                "flexGrow": 1
-                                            },
-                                            "children": [
-                                                {
-                                                    "type": "label",
-                                                    "id": "text",
-                                                    "commonProps": {
-                                                        "clickable": false
-                                                    },
-                                                    "labelProps": {
-                                                        "text": "上一张"
-                                                    },
-                                                    "style": {
-                                                        "textColor": "#dbe4f2",
-                                                        "fontSize": "${constant.gallery.font.button}"
-                                                    },
-                                                    "placement": {
-                                                        "mode": "flow"
-                                                    }
-                                                }
-                                            ]
-                                        },
+                                                "mode": "flow"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "next",
+                                    "events": [
                                         {
-                                            "type": "button",
-                                            "id": "next",
-                                            "events": [
-                                                {
-                                                    "type": "clicked",
-                                                    "action": "gallery.next"
-                                                }
-                                            ],
-                                            "style": {
-                                                "bgColor": "#18223a",
-                                                "radius": "${constant.gallery.layout.buttonRadius}",
-                                                "borderWidth": "0dp"
+                                            "type": "clicked",
+                                            "action": "gallery.next"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#18223a",
+                                        "radius": "${constant.gallery.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "100dp",
+                                        "height": "match"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
                                             },
-                                            "layout": {
-                                                "type": "flex",
-                                                "mainAlign": "center",
-                                                "crossAlign": "center"
+                                            "labelProps": {
+                                                "text": "下一张"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.gallery.font.button}"
                                             },
                                             "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "match",
-                                                "flexGrow": 1
-                                            },
-                                            "children": [
-                                                {
-                                                    "type": "label",
-                                                    "id": "text",
-                                                    "commonProps": {
-                                                        "clickable": false
-                                                    },
-                                                    "labelProps": {
-                                                        "text": "下一张"
-                                                    },
-                                                    "style": {
-                                                        "textColor": "#dbe4f2",
-                                                        "fontSize": "${constant.gallery.font.button}"
-                                                    },
-                                                    "placement": {
-                                                        "mode": "flow"
-                                                    }
-                                                }
-                                            ]
+                                                "mode": "flow"
+                                            }
                                         }
                                     ]
                                 },
@@ -421,8 +385,8 @@
                                     },
                                     "placement": {
                                         "mode": "flow",
-                                        "width": "match",
-                                        "height": "${constant.gallery.layout.navHeight}"
+                                        "width": "124dp",
+                                        "height": "match"
                                     },
                                     "children": [
                                         {
@@ -445,142 +409,116 @@
                                     ]
                                 },
                                 {
-                                    "type": "container",
-                                    "id": "actions_row",
-                                    "commonProps": {
-                                        "clickable": false
+                                    "type": "button",
+                                    "id": "slideshow",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "gallery.slideshow"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#14251f",
+                                        "radius": "${constant.gallery.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
                                     },
                                     "layout": {
                                         "type": "flex",
-                                        "flexFlow": "row",
-                                        "mainAlign": "start",
-                                        "crossAlign": "center",
-                                        "gap": "10dp"
-                                    },
-                                    "style": {
-                                        "padding": "0dp"
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
                                     },
                                     "placement": {
                                         "mode": "flow",
-                                        "width": "match",
-                                        "height": "${constant.gallery.layout.navHeight}"
+                                        "width": "116dp",
+                                        "height": "match"
                                     },
                                     "children": [
                                         {
-                                            "type": "button",
-                                            "id": "refresh",
-                                            "events": [
-                                                {
-                                                    "type": "clicked",
-                                                    "action": "gallery.refresh"
-                                                }
-                                            ],
-                                            "style": {
-                                                "bgColor": "#14251f",
-                                                "radius": "${constant.gallery.layout.buttonRadius}",
-                                                "borderWidth": "0dp"
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
                                             },
-                                            "layout": {
-                                                "type": "flex",
-                                                "mainAlign": "center",
-                                                "crossAlign": "center"
+                                            "labelProps": {
+                                                "text": "自动播放"
+                                            },
+                                            "style": {
+                                                "textColor": "#c8e8d9",
+                                                "fontSize": "${constant.gallery.font.button}"
+                                            },
+                                            "bindings": {
+                                                "labelProps.text": "slide_text"
                                             },
                                             "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "match",
-                                                "flexGrow": 1
-                                            },
-                                            "children": [
-                                                {
-                                                    "type": "label",
-                                                    "id": "text",
-                                                    "commonProps": {
-                                                        "clickable": false
-                                                    },
-                                                    "labelProps": {
-                                                        "text": "刷新"
-                                                    },
-                                                    "style": {
-                                                        "textColor": "#c8e8d9",
-                                                        "fontSize": "${constant.gallery.font.button}"
-                                                    },
-                                                    "placement": {
-                                                        "mode": "flow"
-                                                    }
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            "type": "button",
-                                            "id": "slideshow",
-                                            "events": [
-                                                {
-                                                    "type": "clicked",
-                                                    "action": "gallery.slideshow"
-                                                }
-                                            ],
-                                            "style": {
-                                                "bgColor": "#14251f",
-                                                "radius": "${constant.gallery.layout.buttonRadius}",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "layout": {
-                                                "type": "flex",
-                                                "mainAlign": "center",
-                                                "crossAlign": "center"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "match",
-                                                "flexGrow": 1
-                                            },
-                                            "children": [
-                                                {
-                                                    "type": "label",
-                                                    "id": "text",
-                                                    "commonProps": {
-                                                        "clickable": false
-                                                    },
-                                                    "labelProps": {
-                                                        "text": "自动播放"
-                                                    },
-                                                    "style": {
-                                                        "textColor": "#c8e8d9",
-                                                        "fontSize": "${constant.gallery.font.button}"
-                                                    },
-                                                    "bindings": {
-                                                        "labelProps.text": "slide_text"
-                                                    },
-                                                    "placement": {
-                                                        "mode": "flow"
-                                                    }
-                                                }
-                                            ]
+                                                "mode": "flow"
+                                            }
                                         }
                                     ]
                                 },
                                 {
-                                    "type": "label",
-                                    "id": "status",
-                                    "bindings": {
-                                        "labelProps.text": "status_text"
-                                    },
-                                    "labelProps": {
-                                        "text": ""
-                                    },
+                                    "type": "button",
+                                    "id": "refresh",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "gallery.refresh"
+                                        }
+                                    ],
                                     "style": {
-                                        "textColor": "#6f8098",
-                                        "fontSize": "${constant.gallery.font.status}"
+                                        "bgColor": "#14251f",
+                                        "radius": "${constant.gallery.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
                                     },
                                     "placement": {
                                         "mode": "flow",
-                                        "width": "match",
-                                        "height": "wrap"
-                                    }
+                                        "width": "92dp",
+                                        "height": "match"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "刷新"
+                                            },
+                                            "style": {
+                                                "textColor": "#c8e8d9",
+                                                "fontSize": "${constant.gallery.font.button}"
+                                            },
+                                            "placement": {
+                                                "mode": "flow"
+                                            }
+                                        }
+                                    ]
                                 }
                             ]
+                        },
+                        {
+                            "type": "label",
+                            "id": "status",
+                            "bindings": {
+                                "labelProps.text": "status_text"
+                            },
+                            "labelProps": {
+                                "text": ""
+                            },
+                            "style": {
+                                "textColor": "#6f8098",
+                                "fontSize": "${constant.gallery.font.status}"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "match",
+                                "height": "wrap"
+                            }
                         }
                     ]
                 }
