@@ -13,10 +13,10 @@ Full description (features, partition layout, media formats, known limitations):
 | --- | --- | --- |
 | `brookesia.system.super.shell` | vendored `system/brookesia_system_super` | Desktop, status bar, recents (CLEAR ALL), wallpaper, gestures |
 | `brookesia.general.settings` | vendored `app/brookesia_app_settings` | Wi-Fi (IP/MAC, auto-reconnect), Bluetooth (BLE scan), display, sound, time zone, language |
-| `brookesia.waveshare.system_monitor` | `components/brookesia_app_system_monitor` | Disk aggregate + 90 % alarm, CPU/GPU temperature in the ring centres, DISK I/O, `TEMP_ALARM_C = 85.0` → `HIGH!` |
-| `brookesia.waveshare.music` | `components/brookesia_app_music` | WAV only, background playback, seek + volume + metadata |
-| `brookesia.waveshare.gallery` | `components/brookesia_app_gallery` | Browsing, slideshow (4 s), file info, set wallpaper |
-| `brookesia.waveshare.video` | `components/brookesia_app_video` | MJPEG (concatenated JPEG), hardware decode, 12 fps, no audio |
+| `brookesia.waveshare.system_monitor` | `components/brookesia_app_system_monitor` | Disk aggregate + 90 % alarm, CPU/GPU temperature in the ring centres, DISK I/O, `TEMP_ALARM_C = 90.0` → `HIGH!` |
+| `brookesia.waveshare.music` | `components/brookesia_app_music` | WAV only, background playback, seek + volume + sample rate / bit depth / bitrate / size |
+| `brookesia.waveshare.gallery` | `components/brookesia_app_gallery` | Browsing, slideshow (4 s), resolution / size / format / depth, set wallpaper |
+| `brookesia.waveshare.video` | `components/brookesia_app_video` | MJPEG (concatenated JPEG), hardware decode, 12 fps, no audio, double-tap pause |
 
 ## Board support
 

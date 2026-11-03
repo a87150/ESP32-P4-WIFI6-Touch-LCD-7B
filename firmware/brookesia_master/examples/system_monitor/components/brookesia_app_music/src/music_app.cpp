@@ -45,6 +45,7 @@ constexpr int32_t PLAYBACK_PERIOD_MS = 500;
 // Absolute paths inside the music screen document.
 constexpr const char *PATH_TRACK_NAME = "/music/page/player_card/info/track_name";
 constexpr const char *PATH_TRACK_META = "/music/page/player_card/info/track_meta";
+constexpr const char *PATH_TRACK_DETAIL = "/music/page/player_card/info/track_detail";
 constexpr const char *PATH_PROGRESS = "/music/page/player_card/info/progress";
 constexpr const char *PATH_TIME_LABEL = "/music/page/player_card/info/time_label";
 constexpr const char *PATH_VOLUME_SLIDER = "/music/page/player_card/info/volume/volume_slider";
@@ -184,6 +185,19 @@ std::string format_time(uint32_t seconds)
     return buffer;
 }
 
+std::string format_size(uint64_t bytes)
+{
+    char text[32] = {};
+    if (bytes >= 1024ULL * 1024ULL) {
+        std::snprintf(text, sizeof(text), "%.1f MB", static_cast<double>(bytes) / (1024.0 * 1024.0));
+    } else if (bytes >= 1024ULL) {
+        std::snprintf(text, sizeof(text), "%.0f KB", static_cast<double>(bytes) / 1024.0);
+    } else {
+        std::snprintf(text, sizeof(text), "%llu B", static_cast<unsigned long long>(bytes));
+    }
+    return text;
+}
+
 } // namespace
 
 MusicApp::MusicApp() = default;
@@ -258,6 +272,9 @@ std::expected<void, std::string> MusicApp::on_start(system::core::AppContext &co
 
     if (tracks_.empty()) {
         (void)context.gui().set_binding_value(PATH_TRACK_META, "track_meta", "没有找到 WAV 文件");
+        (void)context.gui().set_binding_value(
+            PATH_TRACK_DETAIL, "track_detail", "把 WAV 放进 /littlefs/sounds 或 SD 卡后点「重新扫描」"
+        );
         (void)context.gui().set_binding_value(
             PATH_STATUS, "status_text", "把 WAV 文件放到 SD 卡或 /littlefs/sounds 后点刷新列表"
         );
@@ -438,6 +455,11 @@ void MusicApp::play_index(size_t index, bool start_playback)
     }
     index_ = index % tracks_.size();
     requested_seek_ = -1;
+    track_bytes_ = 0;
+    struct stat st {};
+    if (stat(tracks_[index_].c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
+        track_bytes_ = static_cast<uint32_t>(st.st_size);
+    }
     {
         std::lock_guard<std::mutex> lock(state_.mutex);
         state_.path = tracks_[index_];
@@ -582,6 +604,9 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
     if (tracks_.empty()) {
         (void)context.gui().set_binding_value(PATH_TRACK_NAME, "track_name", "未在播放");
         (void)context.gui().set_binding_value(PATH_TRACK_META, "track_meta", "没有找到 WAV 文件");
+        (void)context.gui().set_binding_value(
+            PATH_TRACK_DETAIL, "track_detail", "把 WAV 放进 /littlefs/sounds 或 SD 卡后点「重新扫描」"
+        );
         (void)context.gui().set_binding_value(PATH_TIME_LABEL, "time_label", "00:00 / 00:00");
         (void)context.gui().set_value(PATH_PROGRESS, 0);
         (void)context.gui().set_binding_value(PATH_TOGGLE_TEXT, "toggle_text", "播放");
@@ -613,16 +638,30 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
     }
 
     (void)context.gui().set_binding_value(PATH_TRACK_NAME, "track_name", file_name_of(tracks_[index_]));
-    std::string meta = "第 " + std::to_string(index_ + 1) + " / " + std::to_string(tracks_.size()) + " 首";
+    std::string meta = "第 " + std::to_string(index_ + 1) + " / " + std::to_string(tracks_.size()) +
+                       " 首 · WAV";
+    std::string detail;
     if (sample_rate > 0) {
-        char detail[64] = {};
-        std::snprintf(
-            detail, sizeof(detail), " · %.1f kHz · %s · %u-bit", sample_rate / 1000.0,
-            (channels >= 2) ? "立体声" : "单声道", static_cast<unsigned>(bits)
-        );
-        meta += detail;
+        char text[96] = {};
+        const auto kbps = static_cast<unsigned>(
+                              (static_cast<uint64_t>(sample_rate) * channels * bits) / 1000U
+                          );
+        const char *layout = (channels >= 2) ? "立体声" : "单声道";
+        if (track_bytes_ > 0) {
+            std::snprintf(
+                text, sizeof(text), "%.1f kHz · %s · %u-bit · %u kbps · %s", sample_rate / 1000.0,
+                layout, static_cast<unsigned>(bits), kbps, format_size(track_bytes_).c_str()
+            );
+        } else {
+            std::snprintf(
+                text, sizeof(text), "%.1f kHz · %s · %u-bit · %u kbps", sample_rate / 1000.0,
+                layout, static_cast<unsigned>(bits), kbps
+            );
+        }
+        detail = text;
     }
     (void)context.gui().set_binding_value(PATH_TRACK_META, "track_meta", meta);
+    (void)context.gui().set_binding_value(PATH_TRACK_DETAIL, "track_detail", detail);
 
     const uint32_t bytes_per_second = sample_rate * channels * (bits / 8U);
     const uint32_t elapsed = (bytes_per_second > 0) ? (byte_pos / bytes_per_second) : 0;

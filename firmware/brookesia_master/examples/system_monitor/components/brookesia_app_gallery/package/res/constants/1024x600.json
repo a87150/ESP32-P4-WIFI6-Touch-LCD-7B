@@ -3,22 +3,21 @@
     "data": {
         "gallery": {
             "layout": {
-                "pageX": "40dp",
-                "pageY": "92dp",
-                "pageWidth": "${expr(${env.widthDp} - 80dp)}",
-                "pageHeight": "${expr(${env.heightDp} - 124dp)}",
+                "pageX": "16dp",
+                "pageY": "88dp",
+                "pageWidth": "${expr(${env.widthDp} - 32dp)}",
+                "pageHeight": "${expr(${env.heightDp} - 116dp)}",
                 "gap": "12dp",
-                "bodyGap": "16dp",
-                "headerHeight": "34dp",
-                "panelWidth": "280dp",
-                "panelPadding": "16dp",
-                "panelGap": "12dp",
-                "cardRadius": "22dp",
-                "navHeight": "50dp",
+                "cardRadius": "20dp",
+                "barPadding": "8dp",
+                "barGap": "6dp",
+                "barHeight": "120dp",
+                "infoHeight": "24dp",
+                "buttonHeight": "50dp",
+                "buttonGap": "8dp",
                 "buttonRadius": "16dp"
             },
             "font": {
-                "title": "26sp",
                 "name": "18sp",
                 "meta": "13sp",
                 "button": "17sp",

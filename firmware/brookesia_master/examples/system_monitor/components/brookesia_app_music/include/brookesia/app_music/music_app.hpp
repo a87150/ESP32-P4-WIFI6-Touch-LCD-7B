@@ -91,6 +91,9 @@ private:
     system::core::AppContext *context_ = nullptr;
     std::vector<std::string> tracks_;
     size_t index_ = 0;
+    // Size of the current WAV file, cached when the track changes so the UI
+    // timer never stats the filesystem.
+    uint32_t track_bytes_ = 0;
     bool paused_ui_ = false;
 
     // Last values written to the sliders. LVGL emits a value-changed event for

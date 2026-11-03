@@ -16,7 +16,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-SIZE = 200
+SIZE = 240
 OUTPUT = (
     Path(__file__).resolve().parent.parent
     / "firmware/brookesia_master/examples/system_monitor/components"
@@ -41,8 +41,12 @@ def gradient(size: int) -> Image.Image:
 
 
 def draw_disc(draw: ImageDraw.ImageDraw, size: int) -> None:
+    # The artwork was designed on a 200 px tile; scale every radius so a larger
+    # tile keeps the same proportions.
+    scale = size / 200.0
     center = size / 2.0
     for index, radius in enumerate(range(76, 7, -7)):
+        radius = round(radius * scale)
         shade = 12 + index * 2
         draw.ellipse(
             [center - radius, center - radius, center + radius, center + radius],
@@ -50,18 +54,19 @@ def draw_disc(draw: ImageDraw.ImageDraw, size: int) -> None:
             outline=(shade * 2, shade * 3, shade * 4 + 20),
             width=1,
         )
-    label = 30
+    label = round(30 * scale)
     draw.ellipse(
         [center - label, center - label, center + label, center + label],
         fill=(16, 22, 38),
         outline=(80, 96, 140),
         width=1,
     )
-    draw.ellipse([center - 8, center - 8, center + 8, center + 8], fill=(34, 211, 238))
+    hole = round(8 * scale)
+    draw.ellipse([center - hole, center - hole, center + hole, center + hole], fill=(34, 211, 238))
     # A soft highlight makes the disc read as a physical record rather than a
     # flat circle at small sizes.
     for step in range(3):
-        radius = 68 - step * 6
+        radius = round((68 - step * 6) * scale)
         start_angle = math.radians(-140 + step * 4)
         end_angle = math.radians(-60 + step * 4)
         draw.arc(
@@ -78,7 +83,9 @@ def main() -> None:
     draw_disc(ImageDraw.Draw(image), SIZE)
     # Re-apply the rounded alpha corner mask so the tile blends with the card.
     mask = Image.new("L", (SIZE, SIZE), 0)
-    ImageDraw.Draw(mask).rounded_rectangle([0, 0, SIZE - 1, SIZE - 1], radius=36, fill=255)
+    ImageDraw.Draw(mask).rounded_rectangle(
+        [0, 0, SIZE - 1, SIZE - 1], radius=round(SIZE * 0.18), fill=255
+    )
     image.putalpha(mask)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     image.save(OUTPUT)

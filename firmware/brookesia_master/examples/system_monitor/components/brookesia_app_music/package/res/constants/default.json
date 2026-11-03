@@ -8,7 +8,6 @@
                 "pageWidth": "${expr(${env.widthDp} - 80dp)}",
                 "pageHeight": "${expr(${env.heightDp} - 124dp)}",
                 "gap": "14dp",
-                "headerHeight": "34dp",
                 "cardRadius": "22dp",
                 "cardPadding": "18dp",
                 "cardGap": "20dp",
@@ -25,7 +24,6 @@
                 "mainButtonWidth": "168dp"
             },
             "font": {
-                "title": "26sp",
                 "name": "24sp",
                 "meta": "14sp",
                 "button": "18sp",

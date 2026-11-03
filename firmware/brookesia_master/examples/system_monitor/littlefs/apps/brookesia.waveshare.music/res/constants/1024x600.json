@@ -1,0 +1,34 @@
+{
+    "type": "constant",
+    "data": {
+        "music": {
+            "layout": {
+                "pageX": "40dp",
+                "pageY": "88dp",
+                "pageWidth": "${expr(${env.widthDp} - 80dp)}",
+                "pageHeight": "${expr(${env.heightDp} - 116dp)}",
+                "gap": "14dp",
+                "cardRadius": "22dp",
+                "cardPadding": "18dp",
+                "cardGap": "20dp",
+                "infoGap": "8dp",
+                "coverSize": "240dp",
+                "progressHeight": "24dp",
+                "volumeHeight": "26dp",
+                "volumeTextWidth": "46dp",
+                "buttonHeight": "54dp",
+                "barHeight": "76dp",
+                "buttonGap": "10dp",
+                "buttonRadius": "16dp",
+                "smallButtonWidth": "126dp",
+                "mainButtonWidth": "168dp"
+            },
+            "font": {
+                "name": "26sp",
+                "meta": "15sp",
+                "button": "18sp",
+                "status": "13sp"
+            }
+        }
+    }
+}

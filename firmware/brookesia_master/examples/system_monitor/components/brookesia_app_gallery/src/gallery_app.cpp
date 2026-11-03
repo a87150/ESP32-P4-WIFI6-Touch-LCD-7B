@@ -33,7 +33,7 @@ constexpr const char *GALLERY_FLOW_ID = "gallery_flow";
 // Absolute paths inside the gallery screen document.
 constexpr const char *PATH_PHOTO = "/gallery/page/preview/photo";
 constexpr const char *PATH_FILE_NAME = "/gallery/page/bar/info/file_name";
-constexpr const char *PATH_PHOTO_INDEX = "/gallery/page/header/index_chip/photo_index";
+constexpr const char *PATH_PHOTO_INDEX = "/gallery/page/bar/info/photo_index";
 constexpr const char *PATH_PHOTO_INFO = "/gallery/page/bar/info/photo_info";
 constexpr const char *PATH_SLIDE_TEXT = "/gallery/page/bar/buttons/slideshow/text";
 constexpr const char *PATH_STATUS = "/gallery/page/bar/status";
@@ -137,10 +137,17 @@ std::string format_size(uint64_t bytes)
     return text;
 }
 
+struct ImageProbe {
+    int32_t width = 0;
+    int32_t height = 0;
+    const char *format = "";
+    int32_t bits_per_pixel = 0;
+};
+
 /**
- * @brief Read the picture size from the PNG or JPEG header.
+ * @brief Read the picture size, format and colour depth from the PNG or JPEG header.
  */
-bool probe_image_size(const std::string &path, int32_t &width, int32_t &height)
+bool probe_image(const std::string &path, ImageProbe &probe)
 {
     auto *file = std::fopen(path.c_str(), "rb");
     if (file == nullptr) {
@@ -153,9 +160,27 @@ bool probe_image_size(const std::string &path, int32_t &width, int32_t &height)
         return false;
     }
     if (data[0] == 0x89 && data[1] == 'P' && data[2] == 'N' && data[3] == 'G') {
-        width = static_cast<int32_t>(read_be32(data.data() + 16));
-        height = static_cast<int32_t>(read_be32(data.data() + 20));
-        return width > 0 && height > 0;
+        probe.width = static_cast<int32_t>(read_be32(data.data() + 16));
+        probe.height = static_cast<int32_t>(read_be32(data.data() + 20));
+        probe.format = "PNG";
+        // IHDR keeps the bit depth at offset 24 and the colour type at 25.
+        const uint8_t bit_depth = data[24];
+        const uint8_t color_type = data[25];
+        int32_t channels = 1;
+        switch (color_type) {
+        case 2: // RGB
+        case 6: // RGBA
+            channels = (color_type == 2) ? 3 : 4;
+            break;
+        case 4: // grey + alpha
+            channels = 2;
+            break;
+        default: // grey or palette
+            channels = 1;
+            break;
+        }
+        probe.bits_per_pixel = static_cast<int32_t>(bit_depth) * channels;
+        return probe.width > 0 && probe.height > 0;
     }
     if (data[0] == 0xFF && data[1] == 0xD8) {
         size_t pos = 2;
@@ -177,9 +202,13 @@ bool probe_image_size(const std::string &path, int32_t &width, int32_t &height)
             const bool is_sof = (marker >= 0xC0 && marker <= 0xCF) && marker != 0xC4 &&
                                 marker != 0xC8 && marker != 0xCC;
             if (is_sof) {
-                height = static_cast<int32_t>(read_be16(data.data() + pos + 5));
-                width = static_cast<int32_t>(read_be16(data.data() + pos + 7));
-                return width > 0 && height > 0;
+                probe.height = static_cast<int32_t>(read_be16(data.data() + pos + 5));
+                probe.width = static_cast<int32_t>(read_be16(data.data() + pos + 7));
+                probe.format = "JPEG";
+                // SOF carries the sample precision at offset 4 and the number of
+                // components at offset 9; 8-bit YCbCr reports as 24-bit.
+                probe.bits_per_pixel = static_cast<int32_t>(data[pos + 4]) * data[pos + 9];
+                return probe.width > 0 && probe.height > 0;
             }
             if (length < 2) {
                 break;
@@ -443,16 +472,22 @@ void GalleryApp::show_image(system::core::AppContext &context, size_t index)
         bytes = static_cast<uint64_t>(st.st_size);
     }
     std::string info;
-    int32_t width = 0;
-    int32_t height = 0;
-    if (probe_image_size(path, width, height)) {
-        info = std::to_string(width) + "x" + std::to_string(height);
+    ImageProbe probe;
+    const bool probed = probe_image(path, probe);
+    if (probed) {
+        info = std::to_string(probe.width) + "x" + std::to_string(probe.height);
     }
     if (bytes > 0) {
         if (!info.empty()) {
             info += " · ";
         }
         info += format_size(bytes);
+    }
+    if (probed && probe.format[0] != '\0') {
+        info += std::string(" · ") + probe.format;
+        if (probe.bits_per_pixel > 0) {
+            info += " · " + std::to_string(probe.bits_per_pixel) + "-bit";
+        }
     }
     (void)context.gui().set_binding_value(PATH_PHOTO_INFO, "photo_info", info);
 }

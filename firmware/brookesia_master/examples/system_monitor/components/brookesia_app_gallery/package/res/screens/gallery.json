@@ -36,91 +36,6 @@
             "children": [
                 {
                     "type": "container",
-                    "id": "header",
-                    "commonProps": {
-                        "clickable": false
-                    },
-                    "layout": {
-                        "type": "flex",
-                        "flexFlow": "row",
-                        "mainAlign": "spaceBetween",
-                        "crossAlign": "center",
-                        "gap": "12dp"
-                    },
-                    "style": {
-                        "padding": "0dp"
-                    },
-                    "placement": {
-                        "mode": "flow",
-                        "width": "match",
-                        "height": "${constant.gallery.layout.headerHeight}"
-                    },
-                    "children": [
-                        {
-                            "type": "label",
-                            "id": "title",
-                            "labelProps": {
-                                "text": "图片 / 壁纸"
-                            },
-                            "style": {
-                                "textColor": "#eef3fb",
-                                "fontSize": "${constant.gallery.font.title}"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "wrap",
-                                "height": "wrap"
-                            }
-                        },
-                        {
-                            "type": "container",
-                            "id": "index_chip",
-                            "commonProps": {
-                                "clickable": false
-                            },
-                            "layout": {
-                                "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
-                            },
-                            "style": {
-                                "bgColor": "#101a2b",
-                                "radius": "14dp",
-                                "borderWidth": "1dp",
-                                "borderColor": "#1e2b42",
-                                "padding": "5dp"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "wrap",
-                                "height": "wrap"
-                            },
-                            "children": [
-                                {
-                                    "type": "label",
-                                    "id": "photo_index",
-                                    "labelProps": {
-                                        "text": "0 / 0"
-                                    },
-                                    "style": {
-                                        "textColor": "#a9b8cd",
-                                        "fontSize": "${constant.gallery.font.meta}"
-                                    },
-                                    "bindings": {
-                                        "labelProps.text": "photo_index"
-                                    },
-                                    "placement": {
-                                        "mode": "flow",
-                                        "width": "wrap",
-                                        "height": "wrap"
-                                    }
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "type": "container",
                     "id": "preview",
                     "commonProps": {
                         "clickable": false,
@@ -200,9 +115,9 @@
                             "layout": {
                                 "type": "flex",
                                 "flexFlow": "row",
-                                "mainAlign": "spaceBetween",
+                                "mainAlign": "start",
                                 "crossAlign": "center",
-                                "gap": "12dp"
+                                "gap": "10dp"
                             },
                             "style": {
                                 "padding": "0dp"
@@ -213,6 +128,25 @@
                                 "height": "${constant.gallery.layout.infoHeight}"
                             },
                             "children": [
+                                {
+                                    "type": "label",
+                                    "id": "photo_index",
+                                    "bindings": {
+                                        "labelProps.text": "photo_index"
+                                    },
+                                    "labelProps": {
+                                        "text": "0 / 0"
+                                    },
+                                    "style": {
+                                        "textColor": "#7f8ea3",
+                                        "fontSize": "${constant.gallery.font.meta}"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "wrap",
+                                        "height": "wrap"
+                                    }
+                                },
                                 {
                                     "type": "label",
                                     "id": "file_name",
@@ -243,12 +177,14 @@
                                     },
                                     "style": {
                                         "textColor": "#8494a8",
-                                        "fontSize": "${constant.gallery.font.meta}"
+                                        "fontSize": "${constant.gallery.font.meta}",
+                                        "textAlign": "right"
                                     },
                                     "placement": {
                                         "mode": "flow",
                                         "width": "wrap",
-                                        "height": "wrap"
+                                        "height": "wrap",
+                                        "flexGrow": 1
                                     }
                                 }
                             ]

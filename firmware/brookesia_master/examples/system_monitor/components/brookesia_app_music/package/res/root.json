@@ -6,5 +6,12 @@
         "screens/music.json",
         "flows/music_flow.json"
     ],
-    "variants": []
+    "variants": [
+        {
+            "when": "${expr(${env.widthDp} == 1024dp && ${env.heightDp} == 600dp)}",
+            "assets": [
+                "constants/1024x600.json"
+            ]
+        }
+    ]
 }

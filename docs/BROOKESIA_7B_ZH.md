@@ -1,9 +1,10 @@
 # ESP-Brookesia 桌面系统（ESP32-P4-WIFI6-Touch-LCD-7B）
 
-[English](BROOKESIA_7B.md)
+[English full text](BROOKESIA_7B.md) · [项目主页](../README.md)
 
 本仓库在微雪（Waveshare）官方 7B 开发板 BSP 之上，二次开发了一套 **ESP-Brookesia
-桌面系统**。本文档说明它的软件基线、功能、分区、编译与烧录方式、素材格式以及已知限制。
+桌面系统**。本文档是这套系统的主文档：软件基线、功能细节、分区、编译烧录、素材
+格式、界面开发约定、排障与已知限制。
 
 > 本仓库同时保留官方内容（`examples/`、`firmware/brookesia/`、出厂固件等）；
 > **本文档描述的是 `firmware/brookesia_master/` 这条主线**。
@@ -23,15 +24,27 @@
 | ESP-IDF | **v6.1**（Brookesia 0.8 要求 `>=6.0, <=6.2`） |
 | ESP-Brookesia | **0.8.x**，以源码形式内置在 `firmware/brookesia_master/`（上游 `espressif/esp-brookesia` master） |
 | GUI | LVGL 9 + `esp_lvgl_adapter` |
+| 板级支持 | 托管组件 `waveshare/esp32_p4_wifi6_touch_lcd_7b` 3.0.1 + 内置 7B 板级包 |
 
-系统启动后进入 Brookesia 桌面（Super Shell），可在桌面上启动各应用；应用之间可以后台
-挂起与恢复，状态栏会显示被挂起的应用。
+系统启动后进入 Brookesia 桌面（Super Shell），可在桌面上启动各应用；应用之间可以
+后台挂起与恢复，状态栏会显示被挂起的应用。
+
+启动成功的验收标志（串口 115200）是 6 个 App 全部安装：
+
+```text
+SysCore: : Native app installed: id(1), manifest(brookesia.system.super.shell)
+SysCore: : Native app installed: id(2), manifest(brookesia.general.settings)
+SysCore: : Native app installed: id(3), manifest(brookesia.waveshare.gallery)
+SysCore: : Native app installed: id(4), manifest(brookesia.waveshare.music)
+SysCore: : Native app installed: id(5), manifest(brookesia.waveshare.system_monitor)
+SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
+```
 
 ---
 
 ## 2. 目录结构
 
-```
+```text
 firmware/
   brookesia/                    官方 BSP 示例（registry esp-brookesia 0.5.0，工厂演示同源）
   brookesia_master/             ★ 本项目的 Brookesia 0.8 源码树（vendored）
@@ -49,16 +62,28 @@ firmware/
 tools/
   make_mjpeg.py                 把 GIF / 图片序列转成 .mjpeg
   make_demo_videos.py           生成内置示例视频（1024 × 524）
+  make_app_art.py               生成音乐 App 的封面图
 scripts/
   pc_agent.py                   向开发板广播 PC 状态（UDP 9999），供系统监视器使用
 docs/
-  BROOKESIA_7B_ZH.md            本文档
+  BROOKESIA_7B_ZH.md            本文档（中文主文档）
+  BROOKESIA_7B.md               英文全文（次要入口）
 ```
 
 > `firmware/brookesia_master/` 是从 `espressif/esp-brookesia`（master 分支）拷入的源码树，
 > 由本仓库统一跟踪。发布时其独立仓库元数据被重命名为 `.git-upstream`（已被
 > `.gitignore` 忽略）；如需再向上游同步，先用 `Move-Item .git-upstream .git`
 > 把它恢复成独立仓库。
+
+自研组件一览：
+
+| 组件 | 包 id | 说明 |
+| --- | --- | --- |
+| `brookesia_app_system_monitor` | `brookesia.waveshare.system_monitor` | 系统监视器 |
+| `brookesia_app_music` | `brookesia.waveshare.music` | WAV 音乐播放器 |
+| `brookesia_app_gallery` | `brookesia.waveshare.gallery` | 图片浏览 / 壁纸 |
+| `brookesia_app_video` | `brookesia.waveshare.video` | MJPEG 视频播放器 |
+| `bt_service` | —（服务，不是 App） | BLE 扫描 / 广播服务 |
 
 ---
 
@@ -76,29 +101,34 @@ docs/
 
 ### 3.2 系统监视器（`brookesia.waveshare.system_monitor`）
 
-- 磁盘：**全卷聚合**统计，使用率 ≥ 90% 变红并报警。
+- 磁盘：**全卷聚合**统计，使用率 ≥ 90 % 变红并报警。
 - 环形仪表：圆心同时显示 **CPU / GPU 温度**。
 - 网络卡片：除速率外还显示 **DISK I/O**。
 - 温度告警阈值 `TEMP_ALARM_C = 90.0`，超限时数值后追加 `HIGH!`。
 - 数据来源：板载硬件传感器 + `scripts/pc_agent.py`（每秒向 UDP **9999** 广播
-  CPU / 内存 / 磁盘 / GPU / 网络统计）。
+  CPU / 内存 / 磁盘 / GPU / 网络统计；GPU 需要 NVIDIA 显卡与 `nvidia-smi`，
+  CPU / 内存等指标建议安装 `psutil`）。
 
 ### 3.3 音乐（`brookesia.waveshare.music`）
 
 - 仅支持 **WAV**（PCM），JSON 描述的 GUI，独立线程解码播放，**离开 App 后继续播放**。
 - 进度条可拖动 **seek**（每 500 ms 应用一次，避免拖动风暴重启 codec）。
 - 独立 **音量滑条 0–100**，实时生效。
-- 元信息显示采样率 / 声道 / 位深；显示当前曲目序号与总数。
-- 一首播完自动下一首；重新进入 App 保留上一首与播放位置。
-- 底部为独立控制栏，播放 / 上一首 / 下一首 / 重新扫描四个按钮水平居中。
+- 详情区显示：曲目序号 / 总数、采样率、声道、位深、**码率**（采样率 × 声道 × 位深）
+  与文件大小；一首播完自动下一首；重新进入 App 保留上一首与播放位置。
+- 界面没有标题栏：整页上方是放大后的播放器卡片（封面 240 dp），
+  底部为独立控制栏，播放 / 上一首 / 下一首 / 重新扫描四个按钮水平居中。
 - 目录：`/littlefs/sounds`、`/sdcard/music`、`/sdcard`。
 
 ### 3.4 图片（`brookesia.waveshare.gallery`）
 
 - 目录：`/littlefs/pictures`、`/littlefs/wallpapers`、`/sdcard/pictures`、`/sdcard`。
-- 布局：上方为整幅预览，底部为信息栏（文件名、分辨率与大小）+ 居中的操作按钮 + 状态行。
-- 上一张 / 下一张浏览；显示文件名、序号、**分辨率与文件大小**。
-- **自动播放**：每 4 秒切一张（按钮与"刷新"并排）。
+- 支持 **PNG / JPEG**；详情行显示分辨率、文件大小、格式与位深，例如
+  `1024x600 · 1.2 MB · PNG · 24-bit`（PNG 由 IHDR 的位深 × 颜色通道推算，
+  JPEG 由 SOF 的精度 × 分量数推算）。
+- 布局：顶部为接近满宽的预览（无标题栏），底部卡片包含
+  序号 + 文件名 + 详情、居中的操作按钮与状态行。
+- 上一张 / 下一张浏览；**自动播放**：每 4 秒切一张。
 - **设为壁纸**：写入 `/littlefs/system/super/wallpaper.txt`，返回桌面即生效。
 - 图片资源使用固定 id 重新注册，切换图片会释放上一张的解码缓存，长时间浏览不漏内存。
 
@@ -110,7 +140,7 @@ docs/
 - 硬件 JPEG 解码（`esp_driver_jpeg`）输出 RGB565，双缓冲逐帧切换。
 - 切换影片由播放线程异步完成，点击「上一部 / 下一部」只投递请求，不会卡住界面。
 - 显示策略：视频**小于画面区时按原始尺寸 1:1 居中显示**（LVGL 不做缩放，帧率有保证）；
-  画面区为 1024 × 524，超出才等比缩小。底部 76dp 为独立控制栏：上一行是居中的操作按钮，
+  画面区为 1024 × 524，超出才等比缩小。底部 76 dp 为独立控制栏：上一行是居中的操作按钮，
   下一行是进度条与时长，不遮挡画面。
   建议素材直接做成 **1024 × 524**，可 1:1 满幅播放且 12 fps 稳定。
 - 目录：`/littlefs/videos`、`/sdcard/videos`、`/sdcard`。
@@ -149,6 +179,15 @@ docs/
 - 原始：`firmware/backups/partition-table-0x8000-original.bin`
 - 当前：`firmware/backups/partition-table-0x8000-new.bin`
 
+烧录矩阵：
+
+| 内容 | 偏移 | 何时需要烧 |
+| --- | --- | --- |
+| `build/system_monitor.bin` | `0x110000` | 每次改 C++ 代码 |
+| `build/storage.bin` | `0x1000000` | 改了 `littlefs/` 里的 App 包 / 素材 |
+| `build/partition_table/partition-table.bin` | `0x8000` | **仅在修改分区表时** |
+| 出厂整片镜像 | `0x0` | 需要恢复出厂演示时 |
+
 整片还原出厂演示：把 `firmware/ESP32-P4-WIFI6-Touch-LCD-7B-FactoryOnly.bin` 烧到 `0x0`。
 
 ---
@@ -184,19 +223,14 @@ idf.py build
 - **新增组件（`components/xxx`）后必须先 `idf.py reconfigure`**，否则 IDF 不会编译它。
 - 本项目要求 `CONFIG_LV_CACHE_DEF_SIZE` 足够大（默认 4 MB），否则 1024 × 600 壁纸无法整图缓存。
 - 编译结束打印 `Project build complete` 即为成功（本工程在部分环境下进程返回码非 0，可忽略）。
+- 只改 `littlefs/` 下的 JSON / 图片时，构建仍会重新打包 `storage.bin`，不必清理整个 build 目录。
+- 改了 `partitions.csv` 才需要重新生成并烧 `partition_table`，其余情况不要动 `0x8000`。
 
 ---
 
 ## 6. 烧录
 
 **只烧 `factory` 与 `storage` 两个分区**，不要整片烧录，避免破坏出厂 Wi-Fi 校准和分区表：
-
-| 内容 | 偏移 | 何时需要烧 |
-| --- | --- | --- |
-| `build/system_monitor.bin` | `0x110000` | 每次改代码 |
-| `build/storage.bin` | `0x1000000` | 改了 `littlefs/` 里的 App 包 / 素材 |
-| `build/partition_table/partition-table.bin` | `0x8000` | **仅在修改分区表时** |
-| 出厂整片镜像 | `0x0` | 需要恢复出厂演示时 |
 
 ```powershell
 # 一次烧 app + storage（脚本已内置上面的地址）
@@ -233,10 +267,16 @@ python -m esptool --chip esp32p4 -p COMx -b 460800 `
 
 - 只接受 **WAV（PCM）**；把文件放进 `/littlefs/sounds`（需重新烧 `storage`），
   或放进 SD 卡的 `/music`、根目录（插卡即用）。
-- 采样率 / 声道 / 位深会在界面显示，推荐 44.1 kHz / 16 bit。
-- 界面封面是内置生成的 PNG，可用 `python tools/make_app_art.py` 重新生成或替换。
+- 采样率 / 声道 / 位深 / 码率 / 文件大小会在界面显示，推荐 44.1 kHz / 16 bit / 立体声。
+- 界面封面是内置生成的 PNG（240 × 240），可用 `python tools/make_app_art.py` 重新生成或替换。
 
-### 7.3 视频
+### 7.3 图片
+
+- 支持 PNG / JPEG；放到 `/littlefs/pictures`、`/littlefs/wallpapers` 或 SD 卡目录。
+- 大图会按预览区等比缩放（`innerAlign: contain`），不会裁切。
+- 设为壁纸后写入 `/littlefs/system/super/wallpaper.txt`，桌面下次显示时加载。
+
+### 7.4 视频
 
 ```bash
 # 把 GIF 或图片文件夹转成 mjpeg（默认 12 fps 定速播放）
@@ -251,14 +291,88 @@ python tools/make_demo_videos.py
 - 非 1024 × 524 的素材会按原始尺寸居中显示（小尺寸留黑边），超过画面区（1024 × 524）才缩放。
 - 无 ffmpeg 时，可先用其他工具把视频导出为图片序列，再用 `make_mjpeg.py` 合并。
 
-### 7.4 壁纸
+### 7.5 壁纸
 
 用图片 App 选中图片后点"设为壁纸"即可，系统会把路径写入
 `/littlefs/system/super/wallpaper.txt`，下次进入桌面生效。
 
 ---
 
-## 8. 与上游的差异（关键改动）
+## 8. 界面开发约定
+
+自研 App 的界面全部由 JSON 描述，C++ 只负责数据与动作。改 UI 通常只改 JSON 与常量，
+不需要动编译逻辑。
+
+### 8.1 资源包结构
+
+```text
+components/brookesia_app_xxx/package/
+  res/root.json             资源清单 + 分辨率变体
+  res/screens/*.json        屏幕（viewScreen）定义
+  res/constants/default.json  默认常量
+  res/constants/1024x600.json 7B 屏幕的覆盖常量
+  res/images/index.json     静态图片索引
+  res/flows/*.json          页面流（页面跳转 / 生命周期）
+```
+
+`root.json` 中的 `variants` 按屏幕尺寸追加常量文件，例如：
+
+```json
+"variants": [
+    {
+        "when": "${expr(${env.widthDp} == 1024dp && ${env.heightDp} == 600dp)}",
+        "assets": ["constants/1024x600.json"]
+    }
+]
+```
+
+后加载的常量按键覆盖 `default.json`，因此公共键放默认文件，屏幕相关尺寸放变体文件。
+
+### 8.2 布局与样式
+
+- `layout`：`flex` 容器，`flexFlow` / `mainAlign` / `crossAlign` / `gap`。
+- `placement`：`flow`（参与布局）、`absolute`（相对父容器左上角）、
+  `relative`（可用 `align` 对齐，例如 `TopRight`）；`flexGrow: 1` 吃掉剩余空间。
+- `style`：颜色、圆角、边框、内边距、字号、`textAlign`、`clipCorner` 等。
+- 单位：尺寸用 `dp`，字号用 `sp`，颜色用 `#RRGGBB`。
+
+### 8.3 绑定与动作
+
+- `bindings` 把控件属性绑到运行时数据，例如
+  `"labelProps.text": "track_detail"`。
+- C++ 侧用 `context.gui().set_binding_value(path, binding, value)` 更新；
+  `path` 是文档内的绝对路径（如 `/music/page/player_card/info/track_detail`）。
+- `events` 把控件事件映射到动作名（如 `music.seek`、`gallery.prev`、`video.tap`），
+  C++ 侧用 `context.gui().subscribe_actions` 订阅。
+
+### 8.4 图片资源
+
+- 静态图片写 `${image.<id>}`（id 来自 `images/index.json`），不能直接写路径。
+- 运行时图片先 `register_image()` 注册（用稳定 id 覆盖旧图以释放内存），
+  再通过绑定把 id 赋给 `imageProps.src`。
+
+### 8.5 构建同步
+
+构建会把 `components/*/package/res/` 同步到 `littlefs/apps/<包 id>/res/`，
+再整体打包成 `storage.bin`。因此：
+
+- 改界面只烧 `storage` 即可生效；
+- 不要直接改 `littlefs/apps/` 下的副本（下次构建会被覆盖）；
+- JSON 语义在 App install 阶段校验，写错会在启动日志里出现
+  `System init failed` 或对应 App 未 installed。
+
+### 8.6 双击暂停的实现
+
+GUI 只提供 `clicked` 事件，视频 App 的处理方式是：
+
+1. `stage` 设为 `clickable`，`clicked` 触发 `video.tap`；
+2. C++ 记录上一次点击时间，400 ms 内第二次点击视为双击，调用 `toggle_playback()`；
+3. 单击不做任何操作，因此不会和「上滑 / 按住」手势冲突（Shell 手势来自
+   Display 服务的原始触摸事件，与控件点击互不影响）。
+
+---
+
+## 9. 与上游的差异（关键改动）
 
 | 位置 | 改动 |
 | --- | --- |
@@ -272,10 +386,64 @@ python tools/make_demo_videos.py
 
 ---
 
-## 9. 已知限制
+## 10. 性能与内存
+
+- 视频走硬件 JPEG 解码 + RGB565 双缓冲，12 fps 定速；画面区 1024 × 524，
+  不做放大缩放，避免软缩放吃掉帧率。
+- 图片 App 复用固定资源 id，切换图片即释放上一张解码结果；壁纸整图依赖
+  `CONFIG_LV_CACHE_DEF_SIZE`（默认 4 MB）。
+- 音乐解码在独立线程，GUI 定时器每 500 ms 刷新一次进度，拖动 seek 会合并到一次应用。
+- 应用切到后台只停 GUI 绘制，音频与业务线程继续运行（音乐后台播放即依赖此机制）。
+
+---
+
+## 11. 验证清单
+
+上机验收建议按下列顺序走一遍：
+
+1. **启动**：串口出现 6 个 `Native app installed`，无 `System init failed`、无 panic。
+2. **桌面**：图标顶部不被裁切；左右翻页；上滑回桌面；按住进最近任务；CLEAR ALL 正常。
+3. **状态栏**：时间居中；Wi-Fi 图标随信号强度变色；后台 App 图标出现在左上角。
+4. **系统监视器**：磁盘/CPU/内存有数据；环心显示 CPU / GPU 温度；超过 90 °C 出现 `HIGH!`；
+   运行 `scripts/pc_agent.py` 后网络卡片有 PC 指标与 DISK I/O。
+5. **音乐**：播放 / 暂停 / 上下一首 / 拖动进度 / 音量；详情行显示采样率、位深、码率、大小；
+   返回桌面后仍在播放。
+6. **图片**：上一张 / 下一张；详情行显示分辨率 / 大小 / 格式 / 位深；自动播放每 4 秒切换；
+   设为壁纸后返回桌面生效。
+7. **视频**：双击画面暂停 / 继续；按钮居中；拖动进度；上一部 / 下一部切换不卡界面。
+8. **设置**：Wi-Fi 扫描连接后显示 IP/MAC，断开后自动重连；BLE 扫描与广播互斥正常。
+
+---
+
+## 12. 排障
+
+### 12.1 日志速查
+
+| 日志 | 含义 / 处理 |
+| --- | --- |
+| `sdmmc_init_ocr: send_op_cond (1) returned 0x107` | 未插卡或卡不识别，属预期噪声；媒体回落到 `/littlefs` |
+| `Failed to initialize SD card` | 同上 |
+| `swap_xy is not supported` | 该 MIPI 屏不支持交换 XY，无害 |
+| `disp_on_off is not supported` | 面板不支持软件开关屏，无害 |
+| `Backlight control GPIO not found` | 板级包用 GPIO 32 背光，出现该提示说明板级配置不是 7B |
+| `Version mismatch: Host [2.12.0] > Co-proc [0.0.0]` | ESP-Hosted 版本提示，功能正常时可忽略 |
+| `System init failed` | JSON 界面包出错；常见是 `imageProps.src` 没写 `${image.<id>}` |
+| 某 App 未 installed | `littlefs/apps/<包 id>/res/` 不完整，重烧 `storage` |
+
+### 12.2 常见故障
+
+- **烧录后黑屏 / 卡在启动**：确认只烧了 `factory + storage`，且 `storage` 与当前固件
+  同批构建；分区表改过的话需要同时烧 `0x8000`。
+- **Wi-Fi 连上但没网**：先在设置页确认 IP 与 MAC；DHCP 较慢时可直接等待自动重连。
+- **视频卡顿**：素材超过 1024 × 524 会触发缩放，建议按 `--size 1024x524` 重新生成。
+- **音乐没声音**：确认是 PCM WAV、音量不为 0；A2DP 不可用，蓝牙音箱无法出声。
+- **图片打不开**：只支持 PNG / JPEG；文件名过长会被截断显示，但不影响加载。
+
+---
+
+## 13. 已知限制
 
 - **未插 SD 卡时**启动日志会打印 `sdmmc_init_ocr ... 0x107` / `Failed to initialize SD card`，属预期噪声。
-- `swap_xy is not supported` / `disp_on_off is not supported`：该 MIPI 屏不支持这两个调用，无害。
 - **不支持经典蓝牙 / A2DP**（C6 仅 BLE 5）。
 - 视频 12 fps 定速、无音轨；MJPEG 越大越吃带宽，建议 ≤ 1024 × 524。
 - 电池电量依赖硬件采样，部分批次读数仅供参考。
@@ -284,10 +452,40 @@ python tools/make_demo_videos.py
 
 ---
 
-## 10. 相关文档
+## 14. 相关文档
 
+- [项目主页](../README.md)
+- [英文全文](BROOKESIA_7B.md)
 - [工程结构](PROJECT_STRUCTURE_ZH.md)
 - [固件说明](firmware_ZH.md)
 - [示例指南](EXAMPLES_GUIDE_ZH.md)
 - [烧录与 CI](CI_ZH.md)
 - 固件工程内说明：[`firmware/brookesia_master/examples/system_monitor/README.md`](../firmware/brookesia_master/examples/system_monitor/README.md)
+
+---
+
+## English Overview
+
+This document is Chinese-first; the full English text lives in
+[`BROOKESIA_7B.md`](BROOKESIA_7B.md). Quick summary:
+
+- **What it is**: an ESP-Brookesia 0.8 desktop for the Waveshare
+  ESP32-P4-WIFI6-Touch-LCD-7B (1024 × 600 MIPI-DSI, GT911 touch, ESP32-C6
+  Wi-Fi 6 / BLE over ESP-Hosted SDIO), built with ESP-IDF 6.1 and LVGL 9.
+- **Apps**: desktop shell (status bar, launcher, recents, wallpaper), settings
+  (Wi-Fi / BLE / display / sound / time / language), system monitor (90 %
+  disk alarm, 90 °C temperature alarm, DISK I/O), WAV music player with
+  background playback, PNG/JPEG gallery with slideshow and wallpaper support,
+  and a 12 fps hardware-decoded MJPEG player with double-tap pause.
+- **Partitions**: `factory` at `0x110000` (14.94 MB) and a 16 MB littlefs
+  `storage` volume at `0x1000000`; OTA and assets partitions were removed.
+  Flash only these two images (or `flash_app.ps1`), never the whole chip.
+- **Build**: `idf.py set-target esp32p4`, `idf.py gen-bmgr-config -b
+  esp32_p4_wifi6_touch_lcd_7b`, then `idf.py build` under
+  `firmware/brookesia_master/examples/system_monitor`.
+- **UI**: screens, layout constants and bindings are JSON files under
+  `components/*/package/res/`; the build copies them into `littlefs/apps/` and
+  packs them into `storage.bin`.
+- **Known limits**: no SD card means littlefs-only media, no classic Bluetooth /
+  A2DP, MJPEG video only (no audio), and real CPU / GPU temperatures on the
+  monitor need `scripts/pc_agent.py` broadcasting to UDP 9999.
