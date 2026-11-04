@@ -1,6 +1,6 @@
 # ESP-Brookesia Desktop System (ESP32-P4-WIFI6-Touch-LCD-7B)
 
-[涓枃涓绘枃妗(BROOKESIA_7B_ZH.md) 路 [Project home](../README_EN.md)
+*[中文版：Brookesia 桌面（中文）](BROOKESIA_7B_ZH.md) · [Project home](../README_EN.md)*
 
 This repository builds a second-generation **ESP-Brookesia desktop system** on top
 of the Waveshare 7B board support package. This document is the English full text:
@@ -20,7 +20,7 @@ formats, UI development conventions, troubleshooting and known limits.
 | --- | --- |
 | SoC | ESP32-P4NRW32, dual-core RISC-V up to 360 MHz plus an LP core |
 | Memory / storage | 32 MB PSRAM in package (HEX, 200 MHz), 32 MB NOR flash on board |
-| Display | 7-inch 1024 脳 600 IPS over MIPI-DSI (EK79007) |
+| Display | 7-inch 1024 × 600 IPS over MIPI-DSI (EK79007) |
 | Touch | GT911 capacitive controller, five-point touch |
 | Wireless | ESP32-C6: 2.4 GHz Wi-Fi 6 + Bluetooth 5 (LE) over ESP-Hosted SDIO |
 | Audio | ES8311 codec with a speaker header |
@@ -64,7 +64,7 @@ firmware/
   ESP32-P4-WIFI6-Touch-LCD-7B-FactoryOnly.bin  Full factory image (32 MB)
 tools/
   make_mjpeg.py                 GIF / image sequence to .mjpeg
-  make_demo_videos.py           Bundled sample videos (1024 脳 524)
+  make_demo_videos.py           Bundled sample videos (1024 × 524)
   make_app_art.py               Music app cover art
 scripts/
   pc_agent.py                   PC telemetry broadcast (UDP 9999)
@@ -86,7 +86,7 @@ In-house components:
 | `brookesia_app_music` | `brookesia.waveshare.music` | WAV music player |
 | `brookesia_app_gallery` | `brookesia.waveshare.gallery` | Image browser / wallpaper |
 | `brookesia_app_video` | `brookesia.waveshare.video` | MJPEG player |
-| `bt_service` | 鈥?(service, not an app) | BLE scan / advertising |
+| `bt_service` | —(service, not an app) | BLE scan / advertising |
 
 ---
 
@@ -120,27 +120,35 @@ In-house components:
 
 ### 3.3 Music (`brookesia.waveshare.music`)
 
+- The app opens on a **track list** (6 rows per page with previous / next page);
+  a track only starts when its row is tapped, so entering the app is silent.
+  The row being played is tagged "playing".
 - **PCM WAV only**, JSON-described UI, decoding and playback on a dedicated
   thread, **keeps playing when the app is in the background**.
 - Seeking is applied at most every 500 ms so dragging does not restart the codec
   repeatedly.
-- A separate **0鈥?00 volume slider** applies immediately.
+- A separate **0–100 volume slider** applies immediately.
 - The detail area shows track index / total, sample rate, channel layout, bit
-  depth, **bitrate** (sample rate 脳 channels 脳 bit depth) and file size; tracks
-  advance automatically and reopening the app resumes the previous track and
-  position.
-- There is no title bar: the enlarged player card (240 dp cover) fills the upper
-  area, and the bottom control bar centers previous, play / pause, next and
-  rescan.
+  depth, **bitrate** (sample rate × channels × bit depth) and file size; tracks
+  advance automatically, and returning from the background keeps the player page
+  while a track is loaded.
+- There is no title bar: the enlarged player card (**300 dp cover**) fills the
+  upper area, and the bottom control bar centers list, previous, play / pause,
+  next and refresh.
+- The page starts right under the status bar (`pageY = 56dp`) so the content gets
+  as much vertical room as possible.
 - Folders: `/littlefs/sounds`, `/sdcard/music`, `/sdcard`.
 
 ### 3.4 Gallery (`brookesia.waveshare.gallery`)
 
+- The app opens on an **overview table** (6 rows per page with file name,
+  resolution and size); tapping a row opens the full preview, whose first button
+  returns to the list.
 - Folders: `/littlefs/pictures`, `/littlefs/wallpapers`, `/sdcard/pictures`,
   `/sdcard`.
 - **PNG / JPEG** are supported; the detail line shows resolution, file size,
-  format and color depth, for example `1024x600 路 1.2 MB 路 PNG 路 24-bit`
-  (PNG: IHDR bit depth 脳 color channels, JPEG: SOF precision 脳 components).
+  format and color depth, for example `1024x600 · 1.2 MB · PNG · 24-bit`
+  (PNG: IHDR bit depth × color channels, JPEG: SOF precision × components).
 - Layout: a near-full-width preview without a title bar, then a bottom card with
   index + file name + details, centered action buttons and a status line.
 - Previous / next browsing; **slideshow** changes the image every 4 seconds.
@@ -151,6 +159,9 @@ In-house components:
 
 ### 3.5 Video (`brookesia.waveshare.video`)
 
+- The app opens on a **movie list** (6 rows per page with file name and size);
+  a movie is only read and decoded after a row is tapped. Loading runs on the
+  playback worker, so the UI stays responsive.
 - Format: `.mjpeg` / `.mjpg` / `.mjp`, i.e. **concatenated JPEG frames**, no
   container and no audio track.
 - Fixed **12 fps** playback (MJPEG has no timestamps); the next movie starts
@@ -163,9 +174,10 @@ In-house components:
   never blocks the UI.
 - Display policy: movies smaller than the stage are shown **centered at native
   1:1 scale** (LVGL does not upscale, which protects the frame rate); the stage is
-  1024 脳 524 and larger movies are scaled down. The bottom 76 dp is a separate
-  control bar: centered buttons on the first row, progress and time below.
-  Authoring at **1024 脳 524** gives full-screen 1:1 playback at 12 fps.
+  1024 × 524 and larger movies are scaled down. The bottom 76 dp is a separate
+  control bar: centered buttons on the first row (list / previous / pause / next /
+  refresh), progress and time below.
+  Authoring at **1024 × 524** gives full-screen 1:1 playback at 12 fps.
 - Folders: `/littlefs/videos`, `/sdcard/videos`, `/sdcard`.
 
 ### 3.6 Settings (`brookesia.general.settings`)
@@ -247,7 +259,7 @@ Outputs: `build/system_monitor.bin` (application) and `build/storage.bin`
 - **A new component is ignored**: run `idf.py reconfigure` after adding
   `components/xxx`.
 - `CONFIG_LV_CACHE_DEF_SIZE` must be large enough (4 MB by default) to cache a
-  full 1024 脳 600 wallpaper.
+  full 1024 × 600 wallpaper.
 - `Project build complete` means success even if the process returns non-zero
   (seen in some environments).
 - Changing only JSON / images still repacks `storage.bin`; no full clean needed.
@@ -298,8 +310,10 @@ Serial log: USB-Serial/JTAG, 115200 baud.
   SD card under `/music` or the root directory.
 - Sample rate, channels, bit depth, bitrate and file size are shown; 44.1 kHz /
   16-bit / stereo is recommended.
-- The cover is a generated 240 脳 240 PNG; regenerate it with
+- The cover is a generated **300 × 300** PNG; regenerate it with
   `python tools/make_app_art.py`.
+- The track list shows 6 rows per page; tapping anywhere on a row starts that
+  track, while "refresh" only rescans and never starts playback.
 
 ### 7.3 Pictures
 
@@ -323,7 +337,7 @@ python tools/make_demo_videos.py
 
 - Use `--size 1024x524` for the best full-screen 1:1 result.
 - Other sizes are shown centered at native scale (with black borders); only
-  material larger than 1024 脳 524 is scaled down.
+  material larger than 1024 × 524 is scaled down.
 - Without ffmpeg, export the video to an image sequence with another tool and
   merge it with `make_mjpeg.py`.
 
@@ -419,7 +433,7 @@ The GUI only exposes `clicked`, so the video app:
 
 | Location | Change |
 | --- | --- |
-| `hal/brookesia_hal_boards/.../esp32_p4_wifi6_touch_lcd_7b/` | New 7B board package: 1024 脳 600 MIPI-DSI, GT911, backlight GPIO 32, HEX PSRAM 200 MHz, C6 SDIO pins (RST 54 / CLK 18 / CMD 19 / D0鈥揇3 14鈥?7, 40 MHz 4-bit) |
+| `hal/brookesia_hal_boards/.../esp32_p4_wifi6_touch_lcd_7b/` | New 7B board package: 1024 × 600 MIPI-DSI, GT911, backlight GPIO 32, HEX PSRAM 200 MHz, C6 SDIO pins (RST 54 / CLK 18 / CMD 19 / D0–D3 14–17, 40 MHz 4-bit) |
 | `hal/brookesia_hal_adaptor/src/wifi/backend.cpp` | **Report Connected as soon as the link is up** (previously it waited for DHCP, hitting the 15 s service state-machine timeout and making Wi-Fi flap) |
 | `system/brookesia_system_super/` | Status bar (centered clock / Wi-Fi strength icon / Bluetooth / battery / paused apps), left-to-right launcher, swipe-up home, long-press recents, CLEAR ALL, wallpaper loading |
 | `system/brookesia_system_core/src/app/manager.cpp` | Reopen apps after returning home, pause / resume lifecycle fixes |
@@ -432,7 +446,7 @@ The GUI only exposes `clicked`, so the video app:
 ## 10. Performance and memory
 
 - Video uses hardware JPEG decoding with RGB565 double buffering at a fixed
-  12 fps; the stage is 1024 脳 524 and no upscaling is performed.
+  12 fps; the stage is 1024 × 524 and no upscaling is performed.
 - The gallery reuses one image resource id, releasing the previous decoded frame
   on every switch; full-wallpaper caching depends on `CONFIG_LV_CACHE_DEF_SIZE`
   (4 MB by default).
@@ -451,14 +465,17 @@ The GUI only exposes `clicked`, so the video app:
 3. **Status bar**: centered clock, signal-tinted Wi-Fi icon, paused apps on the
    left.
 4. **System monitor**: disk / CPU / memory data; CPU / GPU temperatures in the
-   gauge center; `HIGH!` above 90 掳C; PC metrics and DISK I/O after starting
+   gauge center; `HIGH!` above 90 °C; PC metrics and DISK I/O after starting
    `scripts/pc_agent.py`.
-5. **Music**: play / pause / previous / next / seek / volume; detail line shows
-   sample rate, bit depth, bitrate and size; playback continues on the launcher.
-6. **Gallery**: previous / next; resolution / size / format / depth details;
-   slideshow every 4 s; wallpaper applies on the launcher.
-7. **Video**: double tap pauses / resumes; centered buttons; seek; previous /
-   next switching without stutter.
+5. **Music**: opens on the list (6 rows per page) and only plays after a row tap;
+   play / pause / previous / next / seek / volume; detail line shows sample rate,
+   bit depth, bitrate and size; playback continues on the launcher.
+6. **Gallery**: opens on the overview table (name + resolution + size), a row
+   opens the preview and "list" returns; previous / next; resolution / size /
+   format / depth details; slideshow every 4 s; wallpaper applies on the launcher.
+7. **Video**: opens on the movie list and only loads after a row tap; double tap
+   pauses / resumes; centered buttons; seek; previous / next switching without
+   stutter.
 8. **Settings**: Wi-Fi shows IP / MAC and reconnects; BLE scan and advertising
    are mutually exclusive.
 
@@ -486,7 +503,7 @@ The GUI only exposes `clicked`, so the video app:
   changed, flash `0x8000` too.
 - **Wi-Fi connected without internet**: check IP / MAC in settings; slow DHCP is
   handled by automatic reconnection.
-- **Video stutters**: material larger than 1024 脳 524 is scaled; regenerate with
+- **Video stutters**: material larger than 1024 × 524 is scaled; regenerate with
   `--size 1024x524`.
 - **No music sound**: make sure the file is PCM WAV and volume is not zero;
   A2DP is unavailable so Bluetooth speakers cannot be used.
@@ -500,10 +517,15 @@ The GUI only exposes `clicked`, so the video app:
 - Without an SD card the boot log prints `sdmmc_init_ocr ... 0x107` /
   `Failed to initialize SD card`; this is expected.
 - No classic Bluetooth / A2DP (the C6 ships BLE 5 only).
-- Video is fixed at 12 fps with no audio; keep MJPEG at or below 1024 脳 524.
+- Video is fixed at 12 fps with no audio; keep MJPEG at or below 1024 × 524.
 - Battery readings depend on hardware sampling and are indicative only.
 - Real CPU / GPU temperatures on the monitor need `scripts/pc_agent.py`.
 - Final color and touch-calibration quality must be checked on the device.
+- This firmware and **XiaoZhi AI** are mutually exclusive: the Waveshare wiki
+  already lists this board (✅) with a ready-made XiaoZhi image, but flashing it
+  replaces the desktop and partition table, and the official FAQ states the two
+  cannot be switched in one click. Restoring this project means re-flashing
+  `firmware/ESP32-P4-WIFI6-Touch-LCD-7B-FactoryOnly.bin` (at `0x0`).
 
 ---
 

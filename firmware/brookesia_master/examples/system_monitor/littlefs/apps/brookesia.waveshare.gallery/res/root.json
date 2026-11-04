@@ -4,6 +4,7 @@
         "constants/default.json",
         "images/index.json",
         "screens/gallery.json",
+        "templates/list_item.json",
         "flows/gallery_flow.json"
     ],
     "variants": [

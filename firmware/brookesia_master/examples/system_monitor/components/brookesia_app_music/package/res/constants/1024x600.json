@@ -3,16 +3,16 @@
     "data": {
         "music": {
             "layout": {
-                "pageX": "40dp",
-                "pageY": "88dp",
-                "pageWidth": "${expr(${env.widthDp} - 80dp)}",
-                "pageHeight": "${expr(${env.heightDp} - 116dp)}",
+                "pageX": "24dp",
+                "pageY": "56dp",
+                "pageWidth": "${expr(${env.widthDp} - 48dp)}",
+                "pageHeight": "${expr(${env.heightDp} - 80dp)}",
                 "gap": "14dp",
                 "cardRadius": "22dp",
                 "cardPadding": "18dp",
-                "cardGap": "20dp",
-                "infoGap": "8dp",
-                "coverSize": "240dp",
+                "cardGap": "24dp",
+                "infoGap": "10dp",
+                "coverSize": "300dp",
                 "progressHeight": "24dp",
                 "volumeHeight": "26dp",
                 "volumeTextWidth": "46dp",
@@ -21,7 +21,12 @@
                 "buttonGap": "10dp",
                 "buttonRadius": "16dp",
                 "smallButtonWidth": "126dp",
-                "mainButtonWidth": "168dp"
+                "mainButtonWidth": "168dp",
+                "headHeight": "36dp",
+                "listGap": "8dp",
+                "rowHeight": "64dp",
+                "rowTagWidth": "96dp",
+                "pagerHeight": "36dp"
             },
             "font": {
                 "name": "26sp",

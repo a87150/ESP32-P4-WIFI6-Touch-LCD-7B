@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -39,13 +40,28 @@ constexpr const char *UI_TIMER_NAME = "video_ui";
 constexpr int32_t UI_PERIOD_MS = 250;
 
 // Absolute paths inside the video screen document.
-constexpr const char *PATH_FRAME = "/video/page/stage/frame";
-constexpr const char *PATH_TITLE = "/video/page/hint/title";
-constexpr const char *PATH_STATUS = "/video/page/hint/status";
-constexpr const char *PATH_TIME = "/video/page/bar/row_progress/time";
-constexpr const char *PATH_PROGRESS = "/video/page/bar/row_progress/progress";
-constexpr const char *PATH_TOGGLE_TEXT = "/video/page/bar/row_buttons/toggle/text";
+constexpr const char *PATH_VIEWER = "/video/page/viewer";
+constexpr const char *PATH_BROWSER = "/video/page/browser";
+constexpr const char *PATH_LIST = "/video/page/browser/list";
+constexpr const char *PATH_LIST_INFO = "/video/page/browser/head/list_info";
+constexpr const char *PATH_PAGER = "/video/page/browser/pager";
+constexpr const char *PATH_PAGE_TEXT = "/video/page/browser/pager/page";
+constexpr const char *PATH_FRAME = "/video/page/viewer/stage/frame";
+constexpr const char *PATH_TITLE = "/video/page/viewer/hint/title";
+constexpr const char *PATH_STATUS = "/video/page/viewer/hint/status";
+constexpr const char *PATH_TIME = "/video/page/viewer/bar/row_progress/time";
+constexpr const char *PATH_PROGRESS = "/video/page/viewer/bar/row_progress/progress";
+constexpr const char *PATH_TOGGLE_TEXT = "/video/page/viewer/bar/row_buttons/toggle/text";
 
+// The movie picker is paged so a full SD card never builds hundreds of views.
+constexpr const char *LIST_TEMPLATE_ID = "video_list_item";
+constexpr size_t LIST_PAGE_SIZE = 6;
+
+constexpr const char *ACTION_OPEN = "video.open";
+constexpr const char *ACTION_LIST = "video.list";
+constexpr const char *ACTION_PAGE_PREV = "video.page.prev";
+constexpr const char *ACTION_PAGE_NEXT = "video.page.next";
+constexpr const char *ACTION_BROWSER_REFRESH = "video.browser.refresh";
 constexpr const char *ACTION_PREV = "video.prev";
 constexpr const char *ACTION_TOGGLE = "video.toggle";
 constexpr const char *ACTION_NEXT = "video.next";
@@ -103,6 +119,38 @@ std::string file_name_of(const std::string &path)
         name += "..." + extension;
     }
     return name;
+}
+
+std::string format_size(uint64_t bytes)
+{
+    char text[32] = {};
+    if (bytes >= (1024ULL * 1024ULL)) {
+        std::snprintf(text, sizeof(text), "%.1f MB", static_cast<double>(bytes) / (1024.0 * 1024.0));
+    } else if (bytes >= 1024ULL) {
+        std::snprintf(text, sizeof(text), "%.1f KB", static_cast<double>(bytes) / 1024.0);
+    } else {
+        std::snprintf(text, sizeof(text), "%llu B", static_cast<unsigned long long>(bytes));
+    }
+    return text;
+}
+
+// Row instances are named "item<index>"; the click event carries the absolute
+// path of the instance, so the index is the trailing number.
+size_t item_index_of(std::string_view path)
+{
+    const auto marker = path.rfind("/item");
+    if (marker == std::string_view::npos) {
+        return static_cast<size_t>(-1);
+    }
+    size_t index = 0;
+    for (size_t i = marker + 5; i < path.size(); ++i) {
+        const auto character = static_cast<unsigned char>(path[i]);
+        if (!std::isdigit(character)) {
+            break;
+        }
+        index = index * 10 + static_cast<size_t>(character - '0');
+    }
+    return index;
 }
 
 std::string format_time(uint32_t seconds)
@@ -310,24 +358,16 @@ std::expected<void, std::string> VideoApp::on_start(system::core::AppContext &co
         BROOKESIA_LOGW("Failed to start video UI timer: %1%", timer.error());
     }
 
-    if (movies_.empty()) {
-        set_status("把 .mjpeg / .mjpg 文件放到 /littlefs/videos 后点刷新");
-        refresh_ui(context);
-        return {};
-    }
-
-    movie_index_ = 0;
-    if (!load_source(movie_index_)) {
-        refresh_ui(context);
-        return {};
-    }
-    request_play();
+    // Enter on the movie picker: nothing is read from storage or decoded until
+    // the user chooses a file.
+    show_list(context);
     refresh_ui(context);
     return {};
 }
 
-std::expected<void, std::string> VideoApp::on_stop(system::core::AppContext &)
+std::expected<void, std::string> VideoApp::on_stop(system::core::AppContext &context)
 {
+    destroy_list(context);
     stop_worker();
     release_source();
     unregister_frame_images();
@@ -361,13 +401,21 @@ std::expected<void, std::string> VideoApp::on_pause(system::core::AppContext &)
 std::expected<void, std::string> VideoApp::on_resume(system::core::AppContext &context)
 {
     paused_ui_ = false;
+    bool has_source = false;
     {
         std::lock_guard<std::mutex> lock(state_.mutex);
-        if (playing_ && !source_.frames.empty()) {
+        has_source = !source_.frames.empty();
+        if (playing_ && has_source) {
             state_.paused = false;
         }
     }
     notify_worker();
+    if (has_source && playing_) {
+        (void)context.gui().set_binding_value(PATH_BROWSER, "browser_hidden", "true");
+        (void)context.gui().set_binding_value(PATH_VIEWER, "viewer_hidden", "false");
+    } else {
+        show_list(context);
+    }
     refresh_ui(context);
     return {};
 }
@@ -759,6 +807,52 @@ void VideoApp::subscribe_actions(system::core::AppContext &context)
 {
     std::vector<system::core::GuiActionHandlerSubscription> subscriptions;
     subscriptions.push_back({
+        .action = ACTION_OPEN,
+        .handler = [this](const gui::Event &event) {
+            if (context_ == nullptr) {
+                return;
+            }
+            const size_t slot = item_index_of(event.path);
+            if (slot >= list_paths_.size()) {
+                return;
+            }
+            open_movie(*context_, list_page_ * LIST_PAGE_SIZE + slot);
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_LIST,
+        .handler = [this](const gui::Event &) {
+            if (context_ == nullptr) {
+                return;
+            }
+            // Stop decoding while the picker is open; the source stays loaded so
+            // re-entering playback is still instant.
+            {
+                std::lock_guard<std::mutex> lock(state_.mutex);
+                state_.paused = true;
+            }
+            playing_ = false;
+            notify_worker();
+            show_list(*context_);
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_PAGE_PREV,
+        .handler = [this](const gui::Event &) {
+            if (context_ != nullptr) {
+                change_page(*context_, -1);
+            }
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_PAGE_NEXT,
+        .handler = [this](const gui::Event &) {
+            if (context_ != nullptr) {
+                change_page(*context_, 1);
+            }
+        },
+    });
+    subscriptions.push_back({
         .action = ACTION_PREV,
         .handler = [this](const gui::Event &) {
             if (context_ != nullptr) {
@@ -809,31 +903,167 @@ void VideoApp::subscribe_actions(system::core::AppContext &context)
             }
         },
     });
-    subscriptions.push_back({
+    system::core::GuiActionHandlerSubscription refresh_subscription = {
         .action = ACTION_REFRESH,
         .handler = [this](const gui::Event &) {
             if (context_ == nullptr) {
                 return;
             }
+            // Rescan synchronously and go back to the picker: refresh must never
+            // start playing a movie on its own.
+            scan_movies();
+            list_page_ = 0;
+            show_list(*context_);
+            refresh_ui(*context_);
+            size_t count = 0;
             {
                 std::lock_guard<std::mutex> lock(state_.mutex);
-                state_.request_scan = true;
-                state_.pending_index = 0;
-                state_.request_load = true;
-                state_.seek_request = UINT32_MAX;
-                state_.finished = false;
-                state_.error = false;
-                state_.paused = false;
+                count = movies_.size();
             }
-            if (!worker_started_) {
-                start_worker();
-            } else {
-                notify_worker();
+            if (count == 0) {
+                set_status("把 .mjpeg / .mjpg 文件放到 /littlefs/videos 后点刷新");
             }
         },
-    });
+    };
+    subscriptions.push_back(refresh_subscription);
+    refresh_subscription.action = ACTION_BROWSER_REFRESH;
+    subscriptions.push_back(refresh_subscription);
 
     action_connections_ = context.gui().subscribe_actions(subscriptions);
+}
+
+void VideoApp::destroy_list(system::core::AppContext &context)
+{
+    for (auto it = list_paths_.rbegin(); it != list_paths_.rend(); ++it) {
+        (void)context.gui().destroy_view(*it);
+    }
+    list_paths_.clear();
+}
+
+void VideoApp::rebuild_list(system::core::AppContext &context)
+{
+    destroy_list(context);
+
+    std::vector<std::string> movies;
+    size_t current = 0;
+    bool playing = false;
+    {
+        std::lock_guard<std::mutex> lock(state_.mutex);
+        movies = movies_;
+        current = movie_index_;
+        playing = playing_;
+    }
+
+    const size_t total = movies.size();
+    const size_t page_count = (total + LIST_PAGE_SIZE - 1) / LIST_PAGE_SIZE;
+    if (page_count == 0) {
+        list_page_ = 0;
+    } else if (list_page_ >= page_count) {
+        list_page_ = page_count - 1;
+    }
+
+    const size_t start = list_page_ * LIST_PAGE_SIZE;
+    const size_t end = std::min(start + LIST_PAGE_SIZE, total);
+    for (size_t i = start; i < end; ++i) {
+        const std::string id = "item" + std::to_string(i - start);
+        const std::string path = std::string(PATH_LIST) + "/" + id;
+        auto created = context.gui().create_view(LIST_TEMPLATE_ID, PATH_LIST, id);
+        if (!created) {
+            BROOKESIA_LOGW("Failed to create video list row: %1%", created.error());
+            break;
+        }
+        list_paths_.push_back(path);
+
+        uint64_t bytes = 0;
+        struct stat st {};
+        if (stat(movies[i].c_str(), &st) == 0) {
+            bytes = static_cast<uint64_t>(st.st_size);
+        }
+        const std::string meta = "MJPEG · " + ((bytes > 0) ? format_size(bytes) : std::string("--"));
+        const bool is_current = playing && (i == current);
+
+        (void)context.gui().set_binding_value(path, "commonProps.hidden", "false");
+        (void)context.gui().set_binding_value(path + "/text/title", "title", file_name_of(movies[i]));
+        (void)context.gui().set_binding_value(path + "/text/meta", "meta", meta);
+        (void)context.gui().set_binding_value(path + "/tag", "tag", is_current ? "播放中" : "");
+    }
+
+    std::string info;
+    if (total == 0) {
+        info = "没有找到影片，把 .mjpeg 放进 /littlefs/videos 或 SD 卡";
+    } else {
+        info = "共 " + std::to_string(total) + " 部 · 第 " + std::to_string(start + 1) + "-" +
+               std::to_string(end) + " 部";
+    }
+    (void)context.gui().set_binding_value(PATH_LIST_INFO, "list_info", info);
+    (void)context.gui().set_binding_value(
+        PATH_PAGE_TEXT, "page_text",
+        std::to_string(page_count == 0 ? 0 : list_page_ + 1) + " / " + std::to_string(page_count)
+    );
+    (void)context.gui().set_binding_value(PATH_PAGER, "pager_hidden", page_count > 1 ? "false" : "true");
+}
+
+void VideoApp::show_list(system::core::AppContext &context)
+{
+    rebuild_list(context);
+    (void)context.gui().set_binding_value(PATH_VIEWER, "viewer_hidden", "true");
+    (void)context.gui().set_binding_value(PATH_BROWSER, "browser_hidden", "false");
+}
+
+void VideoApp::open_movie(system::core::AppContext &context, size_t index)
+{
+    size_t count = 0;
+    {
+        std::lock_guard<std::mutex> lock(state_.mutex);
+        count = movies_.size();
+    }
+    if (count == 0) {
+        return;
+    }
+    index %= count;
+    {
+        std::lock_guard<std::mutex> lock(state_.mutex);
+        state_.pending_index = index;
+        state_.request_load = true;
+        state_.request_scan = false;
+        state_.finished = false;
+        state_.error = false;
+    }
+    (void)context.gui().set_binding_value(PATH_BROWSER, "browser_hidden", "true");
+    (void)context.gui().set_binding_value(PATH_VIEWER, "viewer_hidden", "false");
+    set_status("正在载入…");
+    // Loading reads the whole movie into PSRAM, so it runs on the decode worker
+    // instead of blocking the GUI task.
+    if (!worker_started_) {
+        start_worker();
+    } else {
+        notify_worker();
+    }
+}
+
+void VideoApp::change_page(system::core::AppContext &context, int direction)
+{
+    size_t total = 0;
+    {
+        std::lock_guard<std::mutex> lock(state_.mutex);
+        total = movies_.size();
+    }
+    const size_t page_count = (total + LIST_PAGE_SIZE - 1) / LIST_PAGE_SIZE;
+    if (page_count == 0) {
+        return;
+    }
+    if (direction < 0) {
+        if (list_page_ == 0) {
+            return;
+        }
+        --list_page_;
+    } else {
+        if (list_page_ + 1 >= page_count) {
+            return;
+        }
+        ++list_page_;
+    }
+    rebuild_list(context);
 }
 
 void VideoApp::start_worker()

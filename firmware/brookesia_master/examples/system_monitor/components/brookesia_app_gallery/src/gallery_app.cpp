@@ -10,6 +10,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <dirent.h>
@@ -31,13 +32,28 @@ constexpr const char *GUI_ROOT = "res/root.json";
 constexpr const char *GALLERY_FLOW_ID = "gallery_flow";
 
 // Absolute paths inside the gallery screen document.
-constexpr const char *PATH_PHOTO = "/gallery/page/preview/photo";
-constexpr const char *PATH_FILE_NAME = "/gallery/page/bar/info/file_name";
-constexpr const char *PATH_PHOTO_INDEX = "/gallery/page/bar/info/photo_index";
-constexpr const char *PATH_PHOTO_INFO = "/gallery/page/bar/info/photo_info";
-constexpr const char *PATH_SLIDE_TEXT = "/gallery/page/bar/buttons/slideshow/text";
-constexpr const char *PATH_STATUS = "/gallery/page/bar/status";
+constexpr const char *PATH_BROWSER = "/gallery/page/browser";
+constexpr const char *PATH_VIEWER = "/gallery/page/viewer";
+constexpr const char *PATH_LIST = "/gallery/page/browser/list";
+constexpr const char *PATH_LIST_INFO = "/gallery/page/browser/head/list_info";
+constexpr const char *PATH_PAGER = "/gallery/page/browser/pager";
+constexpr const char *PATH_PAGE_TEXT = "/gallery/page/browser/pager/page";
+constexpr const char *PATH_PHOTO = "/gallery/page/viewer/preview/photo";
+constexpr const char *PATH_FILE_NAME = "/gallery/page/viewer/bar/info/file_name";
+constexpr const char *PATH_PHOTO_INDEX = "/gallery/page/viewer/bar/info/photo_index";
+constexpr const char *PATH_PHOTO_INFO = "/gallery/page/viewer/bar/info/photo_info";
+constexpr const char *PATH_SLIDE_TEXT = "/gallery/page/viewer/bar/buttons/slideshow/text";
+constexpr const char *PATH_STATUS = "/gallery/page/viewer/bar/status";
 
+// The overview list is paged so a long SD card never builds hundreds of views.
+constexpr const char *LIST_TEMPLATE_ID = "gallery_list_item";
+constexpr size_t LIST_PAGE_SIZE = 6;
+
+constexpr const char *ACTION_OPEN = "gallery.open";
+constexpr const char *ACTION_LIST = "gallery.list";
+constexpr const char *ACTION_PAGE_PREV = "gallery.page.prev";
+constexpr const char *ACTION_PAGE_NEXT = "gallery.page.next";
+constexpr const char *ACTION_BROWSER_REFRESH = "gallery.browser.refresh";
 constexpr const char *ACTION_PREV = "gallery.prev";
 constexpr const char *ACTION_NEXT = "gallery.next";
 constexpr const char *ACTION_SET_WALLPAPER = "gallery.set_wallpaper";
@@ -91,6 +107,38 @@ std::string file_name_of(const std::string &path)
         name = name.substr(0, MAX_NAME_LENGTH - 3) + "...";
     }
     return name;
+}
+
+std::string upper_extension_of(const std::string &path)
+{
+    const auto dot = path.find_last_of('.');
+    if (dot == std::string::npos) {
+        return {};
+    }
+    std::string extension = path.substr(dot + 1);
+    for (auto &character : extension) {
+        character = static_cast<char>(std::toupper(static_cast<unsigned char>(character)));
+    }
+    return extension;
+}
+
+// Row instances are named "item<index>"; the click event carries the absolute
+// path of the instance, so the index is the trailing number.
+size_t item_index_of(std::string_view path)
+{
+    const auto marker = path.rfind("/item");
+    if (marker == std::string_view::npos) {
+        return static_cast<size_t>(-1);
+    }
+    size_t index = 0;
+    for (size_t i = marker + 5; i < path.size(); ++i) {
+        const auto character = static_cast<unsigned char>(path[i]);
+        if (!std::isdigit(character)) {
+            break;
+        }
+        index = index * 10 + static_cast<size_t>(character - '0');
+    }
+    return index;
 }
 
 bool ensure_directory(const char *path)
@@ -279,25 +327,21 @@ std::expected<void, std::string> GalleryApp::on_start(system::core::AppContext &
     context_ = &context;
     slideshow_ = false;
     slideshow_timer_ = system::core::INVALID_TIMER_ID;
+    list_page_ = 0;
+    index_ = 0;
     (void)context.gui().set_binding_value(PATH_SLIDE_TEXT, "slide_text", "自动播放");
     scan_images();
-    index_ = 0;
     subscribe_actions(context);
-    if (images_.empty()) {
-        (void)context.gui().set_binding_value(PATH_PHOTO, "photo_src", "");
-        (void)context.gui().set_binding_value(PATH_FILE_NAME, "photo_name", "没有找到图片");
-        (void)context.gui().set_binding_value(PATH_PHOTO_INDEX, "photo_index", "0 / 0");
-        (void)context.gui().set_binding_value(PATH_PHOTO_INFO, "photo_info", "");
-        set_status(context, "把图片放进 SD 卡或 /littlefs/pictures 后点刷新");
-        return {};
-    }
-    show_image(context, 0);
+    // Enter on the overview table; a picture is only decoded after the user
+    // picks one, so opening the app never blocks on a large file.
+    show_list(context);
     return {};
 }
 
 std::expected<void, std::string> GalleryApp::on_stop(system::core::AppContext &context)
 {
     stop_slideshow();
+    destroy_list(context);
     // Release the decoded picture before the document is torn down.
     (void)context.gui().unregister_image(PHOTO_IMAGE_ID);
     action_connections_.clear();
@@ -316,19 +360,11 @@ std::expected<void, std::string> GalleryApp::on_resume(system::core::AppContext 
     slideshow_ = false;
     slideshow_timer_ = system::core::INVALID_TIMER_ID;
     (void)context.gui().set_binding_value(PATH_SLIDE_TEXT, "slide_text", "自动播放");
+    if (list_page_ * LIST_PAGE_SIZE >= images_.size()) {
+        list_page_ = 0;
+    }
     scan_images();
-    if (images_.empty()) {
-        (void)context.gui().set_binding_value(PATH_PHOTO, "photo_src", "");
-        (void)context.gui().set_binding_value(PATH_FILE_NAME, "photo_name", "没有找到图片");
-        (void)context.gui().set_binding_value(PATH_PHOTO_INDEX, "photo_index", "0 / 0");
-        (void)context.gui().set_binding_value(PATH_PHOTO_INFO, "photo_info", "");
-        set_status(context, "把图片放进 SD 卡或 /littlefs/pictures 后点刷新");
-        return {};
-    }
-    if (index_ >= images_.size()) {
-        index_ = 0;
-    }
-    show_image(context, index_);
+    show_list(context);
     return {};
 }
 
@@ -377,6 +413,43 @@ void GalleryApp::subscribe_actions(system::core::AppContext &context)
 {
     std::vector<system::core::GuiActionHandlerSubscription> subscriptions;
     subscriptions.push_back({
+        .action = ACTION_OPEN,
+        .handler = [this](const gui::Event &event) {
+            if (context_ == nullptr) {
+                return;
+            }
+            const size_t slot = item_index_of(event.path);
+            if (slot >= list_paths_.size()) {
+                return;
+            }
+            open_image(*context_, list_page_ * LIST_PAGE_SIZE + slot);
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_LIST,
+        .handler = [this](const gui::Event &) {
+            if (context_ != nullptr) {
+                show_list(*context_);
+            }
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_PAGE_PREV,
+        .handler = [this](const gui::Event &) {
+            if (context_ != nullptr) {
+                change_page(*context_, -1);
+            }
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_PAGE_NEXT,
+        .handler = [this](const gui::Event &) {
+            if (context_ != nullptr) {
+                change_page(*context_, 1);
+            }
+        },
+    });
+    subscriptions.push_back({
         .action = ACTION_PREV,
         .handler = [this](const gui::Event &) {
             if (context_ != nullptr) {
@@ -400,7 +473,7 @@ void GalleryApp::subscribe_actions(system::core::AppContext &context)
             }
         },
     });
-    subscriptions.push_back({
+    system::core::GuiActionHandlerSubscription refresh_subscription = {
         .action = ACTION_REFRESH,
         .handler = [this](const gui::Event &) {
             if (context_ == nullptr) {
@@ -409,19 +482,14 @@ void GalleryApp::subscribe_actions(system::core::AppContext &context)
             stop_slideshow();
             (void)context_->gui().set_binding_value(PATH_SLIDE_TEXT, "slide_text", "自动播放");
             scan_images();
-            if (images_.empty()) {
-                (void)context_->gui().set_binding_value(PATH_PHOTO, "photo_src", "");
-                (void)context_->gui().set_binding_value(PATH_FILE_NAME, "photo_name", "没有找到图片");
-                (void)context_->gui().set_binding_value(PATH_PHOTO_INDEX, "photo_index", "0 / 0");
-                (void)context_->gui().set_binding_value(PATH_PHOTO_INFO, "photo_info", "");
-                set_status(*context_, "把图片放进 SD 卡或 /littlefs/pictures 后点刷新");
-                return;
-            }
+            list_page_ = 0;
             index_ = 0;
-            show_image(*context_, index_);
-            set_status(*context_, "列表已刷新");
+            show_list(*context_);
         },
-    });
+    };
+    subscriptions.push_back(refresh_subscription);
+    refresh_subscription.action = ACTION_BROWSER_REFRESH;
+    subscriptions.push_back(refresh_subscription);
     subscriptions.push_back({
         .action = ACTION_SLIDESHOW,
         .handler = [this](const gui::Event &) {
@@ -432,6 +500,116 @@ void GalleryApp::subscribe_actions(system::core::AppContext &context)
     });
 
     action_connections_ = context.gui().subscribe_actions(subscriptions);
+}
+
+void GalleryApp::destroy_list(system::core::AppContext &context)
+{
+    for (auto it = list_paths_.rbegin(); it != list_paths_.rend(); ++it) {
+        (void)context.gui().destroy_view(*it);
+    }
+    list_paths_.clear();
+}
+
+void GalleryApp::rebuild_list(system::core::AppContext &context)
+{
+    destroy_list(context);
+
+    const size_t total = images_.size();
+    const size_t page_count = (total + LIST_PAGE_SIZE - 1) / LIST_PAGE_SIZE;
+    if (page_count == 0) {
+        list_page_ = 0;
+    } else if (list_page_ >= page_count) {
+        list_page_ = page_count - 1;
+    }
+
+    const size_t start = list_page_ * LIST_PAGE_SIZE;
+    const size_t end = std::min(start + LIST_PAGE_SIZE, total);
+    for (size_t i = start; i < end; ++i) {
+        const std::string id = "item" + std::to_string(i - start);
+        const std::string path = std::string(PATH_LIST) + "/" + id;
+        auto created = context.gui().create_view(LIST_TEMPLATE_ID, PATH_LIST, id);
+        if (!created) {
+            BROOKESIA_LOGW("Failed to create gallery list row: %1%", created.error());
+            break;
+        }
+        list_paths_.push_back(path);
+
+        uint64_t bytes = 0;
+        struct stat st {};
+        if (stat(images_[i].c_str(), &st) == 0) {
+            bytes = static_cast<uint64_t>(st.st_size);
+        }
+        ImageProbe probe;
+        const bool probed = probe_image(images_[i], probe);
+        std::string meta;
+        if (probed) {
+            meta = std::to_string(probe.width) + "x" + std::to_string(probe.height) + " · ";
+        }
+        meta += (bytes > 0) ? format_size(bytes) : std::string("--");
+        std::string tag = (probed && probe.format[0] != '\0') ? std::string(probe.format) : upper_extension_of(images_[i]);
+        if (tag.empty()) {
+            tag = "IMG";
+        }
+
+        (void)context.gui().set_binding_value(path, "commonProps.hidden", "false");
+        (void)context.gui().set_binding_value(path + "/text/title", "title", file_name_of(images_[i]));
+        (void)context.gui().set_binding_value(path + "/text/meta", "meta", meta);
+        (void)context.gui().set_binding_value(path + "/tag", "tag", tag);
+    }
+
+    std::string info;
+    if (total == 0) {
+        info = "没有找到图片";
+    } else {
+        info = "共 " + std::to_string(total) + " 张 · 第 " + std::to_string(start + 1) + "-" +
+               std::to_string(end) + " 张";
+    }
+    (void)context.gui().set_binding_value(PATH_LIST_INFO, "list_info", info);
+    (void)context.gui().set_binding_value(
+        PATH_PAGE_TEXT, "page_text",
+        std::to_string(page_count == 0 ? 0 : list_page_ + 1) + " / " + std::to_string(page_count)
+    );
+    (void)context.gui().set_binding_value(PATH_PAGER, "pager_hidden", page_count > 1 ? "false" : "true");
+}
+
+void GalleryApp::show_list(system::core::AppContext &context)
+{
+    stop_slideshow();
+    (void)context.gui().set_binding_value(PATH_SLIDE_TEXT, "slide_text", "自动播放");
+    rebuild_list(context);
+    (void)context.gui().set_binding_value(PATH_VIEWER, "viewer_hidden", "true");
+    (void)context.gui().set_binding_value(PATH_BROWSER, "browser_hidden", "false");
+}
+
+void GalleryApp::open_image(system::core::AppContext &context, size_t index)
+{
+    if (images_.empty()) {
+        return;
+    }
+    (void)context.gui().set_binding_value(PATH_BROWSER, "browser_hidden", "true");
+    (void)context.gui().set_binding_value(PATH_VIEWER, "viewer_hidden", "false");
+    show_image(context, index);
+    set_status(context, "");
+}
+
+void GalleryApp::change_page(system::core::AppContext &context, int direction)
+{
+    const size_t page_count = (images_.size() + LIST_PAGE_SIZE - 1) / LIST_PAGE_SIZE;
+    if (page_count == 0) {
+        return;
+    }
+    if (direction < 0) {
+        if (list_page_ == 0) {
+            return;
+        }
+        --list_page_;
+    } else {
+        if (list_page_ + 1 >= page_count) {
+            return;
+        }
+        ++list_page_;
+    }
+    rebuild_list(context);
 }
 
 void GalleryApp::show_image(system::core::AppContext &context, size_t index)

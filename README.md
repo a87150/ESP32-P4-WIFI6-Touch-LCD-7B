@@ -200,16 +200,21 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 
 ### 音乐
 
+- 进入 App 先看到**曲目列表**（每页 6 首，可翻页），点某一首才开始播放，
+  不会一进来自动出声。
 - 仅支持 **PCM WAV**；解码与播放跑在独立线程，离开 App 后继续播放。
 - 进度条可拖动 seek（每 500 ms 应用一次，避免拖动风暴重启 codec）；
   独立音量滑条 0–100，实时生效。
 - 详情区显示序号 / 总数、采样率、声道、位深、码率（由采样率 × 声道 × 位深推算）
   与文件大小；一首播完自动下一首。
 - 目录：`/littlefs/sounds`、`/sdcard/music`、`/sdcard`。
-- 底部为独立控制栏：上一首、播放 / 暂停、下一首、重新扫描，水平居中。
+- 底部为独立控制栏：列表、上一首、播放 / 暂停、下一首、刷新，水平居中。
+- 封面 300 dp，页面顶部只留状态栏高度，内容区尽量放大。
 
 ### 相册
 
+- 进入 App 先看到**图片总览表**（每页 6 张，显示文件名、分辨率与大小），
+  点某一行进入大图预览，预览页可「列表」返回。
 - 目录：`/littlefs/pictures`、`/littlefs/wallpapers`、`/sdcard/pictures`、`/sdcard`。
 - 支持 PNG / JPEG；详情行显示分辨率、文件大小、格式与位深（如 `1024x600 · 1.2 MB · PNG · 24-bit`）。
 - 布局：上方为接近满宽的预览，底部为信息 + 居中的操作按钮 + 状态行。
@@ -219,14 +224,15 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 
 ### 视频
 
+- 进入 App 先看到**影片列表**（每页 6 部，显示文件名与大小），点某一部才开始载入播放。
 - 格式：**纯 JPEG 串接**的 `.mjpeg` / `.mjpg` / `.mjp`，无容器、无音轨。
 - 固定 **12 fps** 定速播放（MJPEG 不含时间戳），播完自动下一部。
 - **双击画面暂停 / 继续**：GUI 没有双击事件，由 `video.tap` 在 400 ms 窗口内
   合并两次点击。
 - 硬件 JPEG 解码（`esp_driver_jpeg`）输出 RGB565，双缓冲逐帧切换；
-  切换影片由播放线程异步完成，不阻塞界面。
+  切换影片与载入文件由播放线程异步完成，不阻塞界面。
 - 画面区 1024 × 524，小于画面区的素材按原始尺寸 1:1 居中显示（LVGL 不放大，
-  保证帧率）；底部 76 dp 控制栏：上一行居中按钮，下一行进度条与时长。
+  保证帧率）；底部 76 dp 控制栏：列表、上一部、播放 / 暂停、下一部、刷新 + 进度条。
 - 目录：`/littlefs/videos`、`/sdcard/videos`、`/sdcard`。
 
 ### 设置
@@ -244,6 +250,25 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 - **蓝牙**：C6 固件只带 BLE 5，支持 GAP 广播与扫描；扫描期间暂停广播，结束后自动恢复。
 - C6 固件不包含经典蓝牙，因此 **A2DP / 蓝牙音频不可用**，音频只走板载 ES8311。
 
+## 📦 小智 AI（可选固件）
+
+- **结论：可以装。** 微雪 wiki 的「已发布固件产品列表」里，
+  **ESP32-P4-WIFI6-Touch-LCD-7B 明确标注为 ✅**，既有现成固件，也有可编译的 ESP-IDF 工程。
+- **但不能与本桌面共存**：小智和本项目的 Brookesia 桌面是两个独立固件，
+  官方 FAQ 明确「不能一键切换」。刷小智会覆盖当前 app 与分区表；
+  想回到本仓库，需要重新烧 `firmware/ESP32-P4-WIFI6-Touch-LCD-7B-FactoryOnly.bin`（@0x0）
+  或完整的 factory + storage。
+- 无开发环境刷写：
+  1. 打开[小智 AI 应用参考教程](https://www.waveshare.net/wiki/%E5%B0%8F%E6%99%BAAI%E5%BA%94%E7%94%A8%E5%8F%82%E8%80%83%E6%95%99%E7%A8%8B)，
+     在「方式一 / 方式二」中展开「已发布固件地址」；
+  2. 找到 7B 对应固件，按 wiki 的 Flash 教程烧录（会一并写入 bootloader 与分区表）；
+  3. 首次开机连接 `Xiaozhi-xxxxxx` 热点，浏览器打开 `http://192.168.4.1` 配网（仅 2.4 GHz）；
+  4. 在 `https://xiaozhi.me` 后台输入设备播报的 6 位验证码完成激活。
+- 自行编译：下载 wiki 中的「XiaoZhi AI Chatbot2」工程，选定设备后编译烧录；
+  工程自带 7B 板级配置，无需改本项目代码。
+- 已知限制：小智必须联网（不能离线）；目前不识别 SD 卡文件；
+  想接 DeepSeek / ChatGPT 等其他模型需要自建服务端。
+
 ## ✅ 已验证与已知限制
 
 ### 验证记录
@@ -253,6 +278,7 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 - 视频换片由播放线程异步执行，切换时不阻塞 UI；12 fps 定速播放。
 - Wi-Fi 掉线自动重连；BLE 扫描与广播互斥切换正常。
 - 音乐后台播放、进度拖动、音量调节正常；相册自动播放与设为壁纸正常。
+- 相册 / 音乐 / 视频均先进入列表页，点选后才打开或播放；长列表按 6 项分页。
 
 ### 已知限制
 

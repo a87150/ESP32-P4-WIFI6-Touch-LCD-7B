@@ -3,10 +3,10 @@
     "data": {
         "gallery": {
             "layout": {
-                "pageX": "16dp",
-                "pageY": "88dp",
-                "pageWidth": "${expr(${env.widthDp} - 32dp)}",
-                "pageHeight": "${expr(${env.heightDp} - 116dp)}",
+                "pageX": "12dp",
+                "pageY": "56dp",
+                "pageWidth": "${expr(${env.widthDp} - 24dp)}",
+                "pageHeight": "${expr(${env.heightDp} - 80dp)}",
                 "gap": "12dp",
                 "cardRadius": "20dp",
                 "barPadding": "8dp",
@@ -15,7 +15,12 @@
                 "infoHeight": "24dp",
                 "buttonHeight": "50dp",
                 "buttonGap": "8dp",
-                "buttonRadius": "16dp"
+                "buttonRadius": "16dp",
+                "headHeight": "36dp",
+                "listGap": "8dp",
+                "rowHeight": "64dp",
+                "rowTagWidth": "96dp",
+                "pagerHeight": "36dp"
             },
             "font": {
                 "name": "18sp",

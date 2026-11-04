@@ -216,6 +216,8 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 
 ### Music
 
+- The app opens on a **track list** (6 rows per page, paged); nothing plays until a
+  row is tapped, so entering the app is silent and instant.
 - **PCM WAV only**; decoding and playback run on a dedicated thread, so the music
   keeps playing while the app is in the background.
 - The progress slider supports seek (applied once every 500 ms so dragging does
@@ -225,10 +227,15 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
   depth, bitrate (sample rate × channels × bit depth) and file size; tracks
   advance automatically.
 - Folders: `/littlefs/sounds`, `/sdcard/music`, `/sdcard`.
-- The bottom control bar holds previous, play / pause, next and rescan, centered.
+- The bottom bar holds list, previous, play / pause, next and refresh, centered.
+- The cover is 300 dp; the page starts right under the status bar so the player
+  gets as much room as possible.
 
 ### Gallery
 
+- The app opens on an **overview table** (6 rows per page with file name,
+  resolution and size); tapping a row opens the full preview, and the preview bar
+  has a "list" button to come back.
 - Folders: `/littlefs/pictures`, `/littlefs/wallpapers`, `/sdcard/pictures`,
   `/sdcard`.
 - PNG / JPEG are supported; the detail line shows resolution, file size, format
@@ -242,6 +249,8 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 
 ### Video
 
+- The app opens on a **movie list** (6 rows per page with file name and size);
+  a movie is only read and decoded after a row is tapped.
 - Format: `.mjpeg` / `.mjpg` / `.mjp`, i.e. concatenated JPEG frames with no
   container and no audio track.
 - Fixed **12 fps** playback (MJPEG carries no timestamps); the next movie starts
@@ -249,8 +258,8 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 - **Double tap on the picture pauses / resumes**: the JSON DSL has no double-click
   event, so `video.tap` merges two clicks inside a 400 ms window.
 - Hardware JPEG decoding (`esp_driver_jpeg`) outputs RGB565 with double
-  buffering; movie switching runs asynchronously on the playback worker and does
-  not block the UI.
+  buffering; both loading and switching run asynchronously on the playback worker
+  and do not block the UI.
 - The stage is 1024 × 524; smaller movies are centered at their native 1:1 size
   (LVGL does not upscale, which keeps the frame rate). The bottom 76 dp bar holds
   centered buttons on the first row and the progress slider plus time on the
@@ -279,6 +288,31 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 - Classic Bluetooth is not part of the C6 firmware, therefore **A2DP is not
   available** and audio only plays through the on-board ES8311.
 
+## 📦 XiaoZhi AI (optional firmware)
+
+- **Yes, it can be installed.** The Waveshare wiki's published-firmware table
+  marks **ESP32-P4-WIFI6-Touch-LCD-7B as ✅**, and the tutorial provides both a
+  ready-made image and an ESP-IDF project to build yourself.
+- **It cannot coexist with this desktop.** XiaoZhi and the Brookesia desktop are
+  two independent firmwares; the official FAQ states they cannot be switched with
+  one click. Flashing XiaoZhi replaces the current app and partition table, so
+  coming back requires re-flashing
+  `firmware/ESP32-P4-WIFI6-Touch-LCD-7B-FactoryOnly.bin` (at `0x0`) or a full
+  factory + storage flash.
+- Flashing without a toolchain:
+  1. Open the [XiaoZhi AI tutorial](https://www.waveshare.net/wiki/%E5%B0%8F%E6%99%BAAI%E5%BA%94%E7%94%A8%E5%8F%82%E8%80%83%E6%95%99%E7%A8%8B)
+     and expand "published firmware" under method one or two;
+  2. pick the 7B image and follow the wiki flash guide (it also writes bootloader
+     and partition table);
+  3. on first boot connect to `Xiaozhi-xxxxxx`, open `http://192.168.4.1` and join
+     a 2.4 GHz network;
+  4. enter the six-digit code on `https://xiaozhi.me` to activate the device.
+- Building from source: download the "XiaoZhi AI Chatbot2" project linked from the
+  wiki, select the board and flash; the project already ships the 7B board config.
+- Limits: XiaoZhi needs a network connection; it does not read SD card files; and
+  using DeepSeek / ChatGPT instead of the default backend requires your own
+  server.
+
 ## ✅ Verified behaviour and known limits
 
 ### Verification log
@@ -292,6 +326,8 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 - Wi-Fi reconnects after a drop; BLE scanning and advertising switch cleanly.
 - Background music playback, seek and volume work; gallery slideshow and
   wallpaper work.
+- Gallery, music and video all open on a list first and only load/play after a
+  row is tapped; long lists are paged six rows at a time.
 
 ### Known limits
 

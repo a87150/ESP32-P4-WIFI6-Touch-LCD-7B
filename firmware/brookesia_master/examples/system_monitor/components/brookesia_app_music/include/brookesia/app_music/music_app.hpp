@@ -74,6 +74,11 @@ private:
 
     void scan_tracks();
     void subscribe_actions(system::core::AppContext &context);
+    void rebuild_list(system::core::AppContext &context);
+    void destroy_list(system::core::AppContext &context);
+    void show_list(system::core::AppContext &context);
+    void open_track(system::core::AppContext &context, size_t index);
+    void change_page(system::core::AppContext &context, int direction);
     void play_index(size_t index, bool start_playback);
     void toggle_playback();
     void step_track(int direction);
@@ -90,6 +95,9 @@ private:
 
     system::core::AppContext *context_ = nullptr;
     std::vector<std::string> tracks_;
+    std::vector<uint32_t> track_bytes_list_;
+    std::vector<std::string> list_paths_;
+    size_t list_page_ = 0;
     size_t index_ = 0;
     // Size of the current WAV file, cached when the track changes so the UI
     // timer never stats the filesystem.

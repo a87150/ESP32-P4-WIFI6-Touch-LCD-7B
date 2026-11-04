@@ -17,7 +17,16 @@
                 "buttonHeight": "40dp",
                 "buttonGap": "10dp",
                 "buttonRadius": "12dp",
-                "progressHeight": "20dp"
+                "progressHeight": "20dp",
+                "browserX": "16dp",
+                "browserY": "56dp",
+                "browserWidth": "${expr(${env.widthDp} - 32dp)}",
+                "browserHeight": "${expr(${env.heightDp} - 80dp)}",
+                "headHeight": "36dp",
+                "listGap": "8dp",
+                "rowHeight": "64dp",
+                "rowTagWidth": "96dp",
+                "pagerHeight": "36dp"
             },
             "font": {
                 "title": "18sp",

@@ -108,6 +108,11 @@ private:
 
     /* ---- playback control (app task) ---- */
     void subscribe_actions(system::core::AppContext &context);
+    void rebuild_list(system::core::AppContext &context);
+    void destroy_list(system::core::AppContext &context);
+    void show_list(system::core::AppContext &context);
+    void open_movie(system::core::AppContext &context, size_t index);
+    void change_page(system::core::AppContext &context, int direction);
     void start_worker();
     void stop_worker();
     void worker_loop();
@@ -124,6 +129,8 @@ private:
 
     system::core::AppContext *context_ = nullptr;
     std::vector<std::string> movies_;
+    std::vector<std::string> list_paths_;
+    size_t list_page_ = 0;
     size_t movie_index_ = 0;
     bool paused_ui_ = false;
     std::atomic<bool> playing_{false};

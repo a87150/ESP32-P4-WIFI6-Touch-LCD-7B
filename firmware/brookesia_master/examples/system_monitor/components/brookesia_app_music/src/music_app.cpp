@@ -10,6 +10,8 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 #include <dirent.h>
@@ -43,16 +45,31 @@ constexpr const char *PLAYBACK_TIMER_NAME = "music_playback";
 constexpr int32_t PLAYBACK_PERIOD_MS = 500;
 
 // Absolute paths inside the music screen document.
-constexpr const char *PATH_TRACK_NAME = "/music/page/player_card/info/track_name";
-constexpr const char *PATH_TRACK_META = "/music/page/player_card/info/track_meta";
-constexpr const char *PATH_TRACK_DETAIL = "/music/page/player_card/info/track_detail";
-constexpr const char *PATH_PROGRESS = "/music/page/player_card/info/progress";
-constexpr const char *PATH_TIME_LABEL = "/music/page/player_card/info/time_label";
-constexpr const char *PATH_VOLUME_SLIDER = "/music/page/player_card/info/volume/volume_slider";
-constexpr const char *PATH_VOLUME_TEXT = "/music/page/player_card/info/volume/volume_text";
-constexpr const char *PATH_TOGGLE_TEXT = "/music/page/controls/toggle/text";
-constexpr const char *PATH_STATUS = "/music/page/status";
+constexpr const char *PATH_BROWSER = "/music/page/browser";
+constexpr const char *PATH_VIEWER = "/music/page/viewer";
+constexpr const char *PATH_LIST = "/music/page/browser/list";
+constexpr const char *PATH_LIST_INFO = "/music/page/browser/head/list_info";
+constexpr const char *PATH_PAGER = "/music/page/browser/pager";
+constexpr const char *PATH_PAGE_TEXT = "/music/page/browser/pager/page";
+constexpr const char *PATH_TRACK_NAME = "/music/page/viewer/player_card/info/track_name";
+constexpr const char *PATH_TRACK_META = "/music/page/viewer/player_card/info/track_meta";
+constexpr const char *PATH_TRACK_DETAIL = "/music/page/viewer/player_card/info/track_detail";
+constexpr const char *PATH_PROGRESS = "/music/page/viewer/player_card/info/progress";
+constexpr const char *PATH_TIME_LABEL = "/music/page/viewer/player_card/info/time_label";
+constexpr const char *PATH_VOLUME_SLIDER = "/music/page/viewer/player_card/info/volume/volume_slider";
+constexpr const char *PATH_VOLUME_TEXT = "/music/page/viewer/player_card/info/volume/volume_text";
+constexpr const char *PATH_TOGGLE_TEXT = "/music/page/viewer/controls/toggle/text";
+constexpr const char *PATH_STATUS = "/music/page/viewer/status";
 
+// The playlist is paged so a full SD card never builds hundreds of views.
+constexpr const char *LIST_TEMPLATE_ID = "music_list_item";
+constexpr size_t LIST_PAGE_SIZE = 6;
+
+constexpr const char *ACTION_OPEN = "music.open";
+constexpr const char *ACTION_LIST = "music.list";
+constexpr const char *ACTION_PAGE_PREV = "music.page.prev";
+constexpr const char *ACTION_PAGE_NEXT = "music.page.next";
+constexpr const char *ACTION_BROWSER_REFRESH = "music.browser.refresh";
 constexpr const char *ACTION_PREV = "music.prev";
 constexpr const char *ACTION_TOGGLE = "music.toggle";
 constexpr const char *ACTION_NEXT = "music.next";
@@ -108,6 +125,25 @@ std::string file_name_of(const std::string &path)
         name += "...";
     }
     return name;
+}
+
+// Row instances are named "item<index>"; the click event carries the absolute
+// path of the instance, so the index is the trailing number.
+size_t item_index_of(std::string_view path)
+{
+    const auto marker = path.rfind("/item");
+    if (marker == std::string_view::npos) {
+        return static_cast<size_t>(-1);
+    }
+    size_t index = 0;
+    for (size_t i = marker + 5; i < path.size(); ++i) {
+        const auto character = static_cast<unsigned char>(path[i]);
+        if (!std::isdigit(character)) {
+            break;
+        }
+        index = index * 10 + static_cast<size_t>(character - '0');
+    }
+    return index;
 }
 
 uint32_t read_u32(const uint8_t *data)
@@ -261,6 +297,7 @@ std::expected<void, std::string> MusicApp::on_start(system::core::AppContext &co
     last_programmed_volume_ = -1;
     requested_seek_ = -1;
     seek_hold_until_ms_ = 0;
+    list_page_ = 0;
     scan_tracks();
     subscribe_actions(context);
     start_engine();
@@ -271,26 +308,22 @@ std::expected<void, std::string> MusicApp::on_start(system::core::AppContext &co
     }
 
     if (tracks_.empty()) {
+        (void)context.gui().set_binding_value(PATH_TRACK_NAME, "track_name", "未在播放");
         (void)context.gui().set_binding_value(PATH_TRACK_META, "track_meta", "没有找到 WAV 文件");
         (void)context.gui().set_binding_value(
             PATH_TRACK_DETAIL, "track_detail", "把 WAV 放进 /littlefs/sounds 或 SD 卡后点「重新扫描」"
         );
-        (void)context.gui().set_binding_value(
-            PATH_STATUS, "status_text", "把 WAV 文件放到 SD 卡或 /littlefs/sounds 后点刷新列表"
-        );
-        return {};
+        (void)context.gui().set_binding_value(PATH_STATUS, "status_text", "");
     }
-
-    // Reopening the app should continue with the track that was playing before.
-    if (index_ >= tracks_.size()) {
-        index_ = 0;
-    }
-    play_index(index_, true);
+    // Always open on the playlist: nothing is decoded or played until the user
+    // picks a track, so entering the app is instant and silent.
+    show_list(context);
     return {};
 }
 
-std::expected<void, std::string> MusicApp::on_stop(system::core::AppContext &)
+std::expected<void, std::string> MusicApp::on_stop(system::core::AppContext &context)
 {
+    destroy_list(context);
     stop_engine();
     action_connections_.clear();
     context_ = nullptr;
@@ -307,7 +340,20 @@ std::expected<void, std::string> MusicApp::on_pause(system::core::AppContext &)
 std::expected<void, std::string> MusicApp::on_resume(system::core::AppContext &context)
 {
     paused_ui_ = false;
-    refresh_ui(context);
+    bool has_track = false;
+    {
+        std::lock_guard<std::mutex> lock(state_.mutex);
+        has_track = !state_.path.empty();
+    }
+    if (has_track) {
+        // Coming back to a track that is still loaded (and possibly playing)
+        // keeps the player view instead of bouncing to the list.
+        (void)context.gui().set_binding_value(PATH_BROWSER, "browser_hidden", "true");
+        (void)context.gui().set_binding_value(PATH_VIEWER, "viewer_hidden", "false");
+        refresh_ui(context);
+        return {};
+    }
+    show_list(context);
     return {};
 }
 
@@ -362,6 +408,7 @@ std::expected<void, std::string> MusicApp::on_timer(
 void MusicApp::scan_tracks()
 {
     tracks_.clear();
+    std::vector<std::pair<std::string, uint32_t>> found;
     for (const auto *dir_path : TRACK_DIRS) {
         auto *dir = opendir(dir_path);
         if (dir == nullptr) {
@@ -377,18 +424,62 @@ void MusicApp::scan_tracks()
             if (stat(full_path.c_str(), &st) != 0 || !S_ISREG(st.st_mode)) {
                 continue;
             }
-            tracks_.push_back(full_path);
+            found.emplace_back(full_path, static_cast<uint32_t>(st.st_size));
         }
         closedir(dir);
     }
-    std::sort(tracks_.begin(), tracks_.end());
-    tracks_.erase(std::unique(tracks_.begin(), tracks_.end()), tracks_.end());
+    std::sort(found.begin(), found.end());
+    found.erase(std::unique(found.begin(), found.end()), found.end());
+    track_bytes_list_.clear();
+    tracks_.reserve(found.size());
+    track_bytes_list_.reserve(found.size());
+    for (const auto &entry : found) {
+        tracks_.push_back(entry.first);
+        track_bytes_list_.push_back(entry.second);
+    }
     BROOKESIA_LOGI("Music found %1% track(s)", tracks_.size());
 }
 
 void MusicApp::subscribe_actions(system::core::AppContext &context)
 {
     std::vector<system::core::GuiActionHandlerSubscription> subscriptions;
+    subscriptions.push_back({
+        .action = ACTION_OPEN,
+        .handler = [this](const gui::Event &event) {
+            if (context_ == nullptr) {
+                return;
+            }
+            const size_t slot = item_index_of(event.path);
+            if (slot >= list_paths_.size()) {
+                return;
+            }
+            open_track(*context_, list_page_ * LIST_PAGE_SIZE + slot);
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_LIST,
+        .handler = [this](const gui::Event &) {
+            if (context_ != nullptr) {
+                show_list(*context_);
+            }
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_PAGE_PREV,
+        .handler = [this](const gui::Event &) {
+            if (context_ != nullptr) {
+                change_page(*context_, -1);
+            }
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_PAGE_NEXT,
+        .handler = [this](const gui::Event &) {
+            if (context_ != nullptr) {
+                change_page(*context_, 1);
+            }
+        },
+    });
     subscriptions.push_back({
         .action = ACTION_PREV,
         .handler = [this](const gui::Event &) {
@@ -407,27 +498,23 @@ void MusicApp::subscribe_actions(system::core::AppContext &context)
             step_track(1);
         },
     });
-    subscriptions.push_back({
+    system::core::GuiActionHandlerSubscription refresh_subscription = {
         .action = ACTION_REFRESH,
         .handler = [this](const gui::Event &) {
             scan_tracks();
-            if (tracks_.empty()) {
-                stop_engine();
-                start_engine();
-                index_ = 0;
-                if (context_ != nullptr) {
-                    refresh_status("没有找到 WAV 文件");
-                    refresh_ui(*context_);
-                }
+            list_page_ = 0;
+            if (context_ == nullptr) {
                 return;
             }
-            if (index_ >= tracks_.size()) {
-                index_ = 0;
+            show_list(*context_);
+            if (tracks_.empty()) {
+                refresh_status("没有找到 WAV 文件");
             }
-            play_index(index_, true);
-            refresh_status("列表已刷新");
         },
-    });
+    };
+    subscriptions.push_back(refresh_subscription);
+    refresh_subscription.action = ACTION_BROWSER_REFRESH;
+    subscriptions.push_back(refresh_subscription);
     subscriptions.push_back({
         .action = ACTION_SEEK,
         .handler = [this](const gui::Event &event) {
@@ -446,6 +533,110 @@ void MusicApp::subscribe_actions(system::core::AppContext &context)
     });
 
     action_connections_ = context.gui().subscribe_actions(subscriptions);
+}
+
+void MusicApp::destroy_list(system::core::AppContext &context)
+{
+    for (auto it = list_paths_.rbegin(); it != list_paths_.rend(); ++it) {
+        (void)context.gui().destroy_view(*it);
+    }
+    list_paths_.clear();
+}
+
+void MusicApp::rebuild_list(system::core::AppContext &context)
+{
+    destroy_list(context);
+
+    const size_t total = tracks_.size();
+    const size_t page_count = (total + LIST_PAGE_SIZE - 1) / LIST_PAGE_SIZE;
+    if (page_count == 0) {
+        list_page_ = 0;
+    } else if (list_page_ >= page_count) {
+        list_page_ = page_count - 1;
+    }
+
+    const size_t start = list_page_ * LIST_PAGE_SIZE;
+    const size_t end = std::min(start + LIST_PAGE_SIZE, total);
+
+    bool has_track = false;
+    bool track_playing = false;
+    {
+        std::lock_guard<std::mutex> lock(state_.mutex);
+        has_track = !state_.path.empty();
+        track_playing = has_track && state_.play_requested && !state_.paused;
+    }
+
+    for (size_t i = start; i < end; ++i) {
+        const std::string id = "item" + std::to_string(i - start);
+        const std::string path = std::string(PATH_LIST) + "/" + id;
+        auto created = context.gui().create_view(LIST_TEMPLATE_ID, PATH_LIST, id);
+        if (!created) {
+            BROOKESIA_LOGW("Failed to create music list row: %1%", created.error());
+            break;
+        }
+        list_paths_.push_back(path);
+
+        const uint32_t bytes = (i < track_bytes_list_.size()) ? track_bytes_list_[i] : 0;
+        const std::string meta = (bytes > 0) ? format_size(bytes) : std::string("--");
+        const bool current = has_track && (i == index_);
+        const char *tag = current ? (track_playing ? "播放中" : "已暂停") : "WAV";
+
+        (void)context.gui().set_binding_value(path, "commonProps.hidden", "false");
+        (void)context.gui().set_binding_value(path + "/text/title", "title", file_name_of(tracks_[i]));
+        (void)context.gui().set_binding_value(path + "/text/meta", "meta", meta);
+        (void)context.gui().set_binding_value(path + "/tag", "tag", tag);
+    }
+
+    std::string info;
+    if (total == 0) {
+        info = "没有找到音乐，把 WAV 放进 /littlefs/sounds 或 SD 卡";
+    } else {
+        info = "共 " + std::to_string(total) + " 首 · 第 " + std::to_string(start + 1) + "-" +
+               std::to_string(end) + " 首";
+    }
+    (void)context.gui().set_binding_value(PATH_LIST_INFO, "list_info", info);
+    (void)context.gui().set_binding_value(
+        PATH_PAGE_TEXT, "page_text",
+        std::to_string(page_count == 0 ? 0 : list_page_ + 1) + " / " + std::to_string(page_count)
+    );
+    (void)context.gui().set_binding_value(PATH_PAGER, "pager_hidden", page_count > 1 ? "false" : "true");
+}
+
+void MusicApp::show_list(system::core::AppContext &context)
+{
+    rebuild_list(context);
+    (void)context.gui().set_binding_value(PATH_VIEWER, "viewer_hidden", "true");
+    (void)context.gui().set_binding_value(PATH_BROWSER, "browser_hidden", "false");
+}
+
+void MusicApp::open_track(system::core::AppContext &context, size_t index)
+{
+    if (tracks_.empty()) {
+        return;
+    }
+    (void)context.gui().set_binding_value(PATH_BROWSER, "browser_hidden", "true");
+    (void)context.gui().set_binding_value(PATH_VIEWER, "viewer_hidden", "false");
+    play_index(index, true);
+}
+
+void MusicApp::change_page(system::core::AppContext &context, int direction)
+{
+    const size_t page_count = (tracks_.size() + LIST_PAGE_SIZE - 1) / LIST_PAGE_SIZE;
+    if (page_count == 0) {
+        return;
+    }
+    if (direction < 0) {
+        if (list_page_ == 0) {
+            return;
+        }
+        --list_page_;
+    } else {
+        if (list_page_ + 1 >= page_count) {
+            return;
+        }
+        ++list_page_;
+    }
+    rebuild_list(context);
 }
 
 void MusicApp::play_index(size_t index, bool start_playback)
@@ -625,6 +816,7 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
     int32_t volume = volume_;
     bool playing = false;
     bool paused = false;
+    bool has_track = false;
     {
         std::lock_guard<std::mutex> lock(state_.mutex);
         byte_pos = state_.byte_pos;
@@ -635,6 +827,25 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
         volume = state_.volume;
         playing = state_.play_requested && !state_.paused;
         paused = state_.paused;
+        has_track = !state_.path.empty();
+    }
+
+    if (!has_track) {
+        // The playlist is open and nothing has been picked yet.
+        (void)context.gui().set_binding_value(PATH_TRACK_NAME, "track_name", "未在播放");
+        (void)context.gui().set_binding_value(
+            PATH_TRACK_META, "track_meta",
+            "共 " + std::to_string(tracks_.size()) + " 首 · 点列表选择播放"
+        );
+        (void)context.gui().set_binding_value(PATH_TRACK_DETAIL, "track_detail", "选一首开始播放，离开 App 后继续");
+        (void)context.gui().set_binding_value(PATH_TIME_LABEL, "time_label", "00:00 / 00:00");
+        (void)context.gui().set_value(PATH_PROGRESS, 0);
+        (void)context.gui().set_binding_value(PATH_TOGGLE_TEXT, "toggle_text", "播放");
+        (void)context.gui().set_value(PATH_VOLUME_SLIDER, volume);
+        (void)context.gui().set_binding_value(
+            PATH_VOLUME_TEXT, "volume_text", std::to_string(volume) + "%"
+        );
+        return;
     }
 
     (void)context.gui().set_binding_value(PATH_TRACK_NAME, "track_name", file_name_of(tracks_[index_]));

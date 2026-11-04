@@ -4,9 +4,9 @@
         "gallery": {
             "layout": {
                 "pageX": "24dp",
-                "pageY": "80dp",
+                "pageY": "64dp",
                 "pageWidth": "${expr(${env.widthDp} - 48dp)}",
-                "pageHeight": "${expr(${env.heightDp} - 100dp)}",
+                "pageHeight": "${expr(${env.heightDp} - 88dp)}",
                 "gap": "12dp",
                 "cardRadius": "18dp",
                 "barPadding": "8dp",
@@ -15,7 +15,12 @@
                 "infoHeight": "22dp",
                 "buttonHeight": "48dp",
                 "buttonGap": "8dp",
-                "buttonRadius": "14dp"
+                "buttonRadius": "14dp",
+                "headHeight": "32dp",
+                "listGap": "6dp",
+                "rowHeight": "56dp",
+                "rowTagWidth": "84dp",
+                "pagerHeight": "32dp"
             },
             "font": {
                 "name": "16sp",

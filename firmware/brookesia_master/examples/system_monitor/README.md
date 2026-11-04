@@ -14,9 +14,9 @@ Full description (features, partition layout, media formats, known limitations):
 | `brookesia.system.super.shell` | vendored `system/brookesia_system_super` | Desktop, status bar, recents (CLEAR ALL), wallpaper, gestures |
 | `brookesia.general.settings` | vendored `app/brookesia_app_settings` | Wi-Fi (IP/MAC, auto-reconnect), Bluetooth (BLE scan), display, sound, time zone, language |
 | `brookesia.waveshare.system_monitor` | `components/brookesia_app_system_monitor` | Disk aggregate + 90 % alarm, CPU/GPU temperature in the ring centres, DISK I/O, `TEMP_ALARM_C = 90.0` → `HIGH!` |
-| `brookesia.waveshare.music` | `components/brookesia_app_music` | WAV only, background playback, seek + volume + sample rate / bit depth / bitrate / size |
-| `brookesia.waveshare.gallery` | `components/brookesia_app_gallery` | Browsing, slideshow (4 s), resolution / size / format / depth, set wallpaper |
-| `brookesia.waveshare.video` | `components/brookesia_app_video` | MJPEG (concatenated JPEG), hardware decode, 12 fps, no audio, double-tap pause |
+| `brookesia.waveshare.music` | `components/brookesia_app_music` | Opens on a paged track list (6 rows, no autoplay); WAV only, background playback, 300 dp cover, seek + volume + sample rate / bit depth / bitrate / size |
+| `brookesia.waveshare.gallery` | `components/brookesia_app_gallery` | Opens on a paged overview table (6 rows: name, resolution, size); preview with slideshow (4 s), format / depth, set wallpaper |
+| `brookesia.waveshare.video` | `components/brookesia_app_video` | Opens on a paged movie list (6 rows, no autoplay); MJPEG (concatenated JPEG), hardware decode, 12 fps, no audio, double-tap pause |
 
 ## Board support
 
@@ -92,3 +92,8 @@ an NVIDIA card (`nvidia-smi`).
 - No classic Bluetooth / A2DP (the C6 firmware ships BLE only).
 - Video is a fixed 12 fps with no audio track; author at `1024 × 524` for
   full-screen playback at native scale.
+- Gallery, music and video open on a paged list (six rows per page); nothing is
+  loaded or played until a row is tapped, and "refresh" only rescans.
+- Waveshare publishes a XiaoZhi AI image for this board (✅ in the wiki table),
+  but it replaces this firmware and partition table; the two cannot be switched
+  in one click. Restore with `firmware/ESP32-P4-WIFI6-Touch-LCD-7B-FactoryOnly.bin`.

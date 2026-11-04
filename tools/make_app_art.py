@@ -16,7 +16,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-SIZE = 240
+SIZE = 300
 OUTPUT = (
     Path(__file__).resolve().parent.parent
     / "firmware/brookesia_master/examples/system_monitor/components"

@@ -1,0 +1,131 @@
+{
+    "type": "viewTemplate",
+    "id": "video_list_item",
+    "node": {
+        "type": "button",
+        "commonProps": {
+            "scrollable": false
+        },
+        "bindings": {
+            "commonProps.hidden": "commonProps.hidden"
+        },
+        "events": [
+            {
+                "type": "clicked",
+                "action": "video.open"
+            }
+        ],
+        "style": {
+            "bgColor": "#0d1626",
+            "radius": "14dp",
+            "borderWidth": "1dp",
+            "borderColor": "#1b2740",
+            "padding": "8dp"
+        },
+        "layout": {
+            "type": "flex",
+            "flexFlow": "row",
+            "mainAlign": "start",
+            "crossAlign": "center",
+            "gap": "12dp"
+        },
+        "placement": {
+            "mode": "flow",
+            "width": "match",
+            "height": "${constant.video.layout.rowHeight}",
+            "alignSelf": "stretch"
+        },
+        "children": [
+            {
+                "type": "container",
+                "id": "text",
+                "commonProps": {
+                    "clickable": false,
+                    "scrollable": false
+                },
+                "layout": {
+                    "type": "flex",
+                    "flexFlow": "column",
+                    "mainAlign": "center",
+                    "crossAlign": "start",
+                    "gap": "2dp"
+                },
+                "placement": {
+                    "mode": "flow",
+                    "width": "wrap",
+                    "height": "wrap",
+                    "flexGrow": 1
+                },
+                "children": [
+                    {
+                        "type": "label",
+                        "id": "title",
+                        "commonProps": {
+                            "clickable": false
+                        },
+                        "bindings": {
+                            "labelProps.text": "title"
+                        },
+                        "labelProps": {
+                            "text": ""
+                        },
+                        "style": {
+                            "textColor": "#eef3fb",
+                            "fontSize": "${constant.video.font.title}"
+                        },
+                        "placement": {
+                            "mode": "flow",
+                            "width": "wrap",
+                            "height": "wrap"
+                        }
+                    },
+                    {
+                        "type": "label",
+                        "id": "meta",
+                        "commonProps": {
+                            "clickable": false
+                        },
+                        "bindings": {
+                            "labelProps.text": "meta"
+                        },
+                        "labelProps": {
+                            "text": ""
+                        },
+                        "style": {
+                            "textColor": "#8494a8",
+                            "fontSize": "${constant.video.font.meta}"
+                        },
+                        "placement": {
+                            "mode": "flow",
+                            "width": "wrap",
+                            "height": "wrap"
+                        }
+                    }
+                ]
+            },
+            {
+                "type": "label",
+                "id": "tag",
+                "commonProps": {
+                    "clickable": false
+                },
+                "bindings": {
+                    "labelProps.text": "tag"
+                },
+                "labelProps": {
+                    "text": ""
+                },
+                "style": {
+                    "textColor": "#7f8ea3",
+                    "fontSize": "${constant.video.font.meta}",
+                    "textAlign": "right"
+                },
+                "placement": {
+                    "mode": "flow",
+                    "width": "${constant.video.layout.rowTagWidth}",
+                    "height": "wrap"
+                }
+            }
+        ]
+    }
+}
