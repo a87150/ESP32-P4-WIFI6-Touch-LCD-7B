@@ -22,15 +22,25 @@
                 "buttonRadius": "16dp",
                 "smallButtonWidth": "110dp",
                 "mainButtonWidth": "150dp",
+                "drawerX": "${expr(${env.widthDp} - 344dp)}",
+                "drawerY": "64dp",
+                "drawerWidth": "320dp",
+                "drawerHeight": "${expr(${env.heightDp} - 206dp)}",
+                "drawerPadding": "6dp",
+                "drawerGap": "6dp",
                 "headHeight": "32dp",
                 "listGap": "6dp",
                 "rowHeight": "56dp",
                 "rowTagWidth": "84dp",
-                "pagerHeight": "32dp"
+                "pagerHeight": "32dp",
+                "pagerButtonWidth": "76dp",
+                "pagerTextWidth": "84dp"
             },
             "font": {
                 "name": "24sp",
                 "meta": "14sp",
+                "row": "16sp",
+                "rowMeta": "12sp",
                 "button": "18sp",
                 "status": "13sp"
             }

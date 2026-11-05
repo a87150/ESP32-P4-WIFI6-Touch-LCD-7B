@@ -216,8 +216,10 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 
 ### Music
 
-- The app opens on a **track list** (6 rows per page, paged); nothing plays until a
-  row is tapped, so entering the app is silent and instant.
+- The app opens on the **player** (silent); the "list" button slides a 320 dp
+  picker drawer over the right side, and a row starts playback and closes it.
+- The drawer shows 5 rows per page with file name and size, and tags the current
+  track as playing / paused.
 - **PCM WAV only**; decoding and playback run on a dedicated thread, so the music
   keeps playing while the app is in the background.
 - The progress slider supports seek (applied once every 500 ms so dragging does
@@ -233,9 +235,11 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 
 ### Gallery
 
-- The app opens on an **overview table** (6 rows per page with file name,
-  resolution and size); tapping a row opens the full preview, and the preview bar
-  has a "list" button to come back.
+- The app opens on the **preview of the first picture** (only one frame decoded,
+  no autoplay); the "list" button slides a 320 dp picker drawer over the right
+  side, and a row switches the preview and closes the drawer.
+- The drawer shows 5 rows per page with file name, resolution and size, tagged
+  with the format (PNG / JPEG).
 - Folders: `/littlefs/pictures`, `/littlefs/wallpapers`, `/sdcard/pictures`,
   `/sdcard`.
 - PNG / JPEG are supported; the detail line shows resolution, file size, format
@@ -249,8 +253,11 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 
 ### Video
 
-- The app opens on a **movie list** (6 rows per page with file name and size);
-  a movie is only read and decoded after a row is tapped.
+- The app opens on the **player** (empty stage); the "list" button slides a
+  320 dp picker drawer over the right side, and a movie is only read and decoded
+  after a row is tapped.
+- The drawer shows 5 rows per page with file name and size, and tags the current
+  movie as playing.
 - Format: `.mjpeg` / `.mjpg` / `.mjp`, i.e. concatenated JPEG frames with no
   container and no audio track.
 - Fixed **12 fps** playback (MJPEG carries no timestamps); the next movie starts
@@ -260,10 +267,9 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 - Hardware JPEG decoding (`esp_driver_jpeg`) outputs RGB565 with double
   buffering; both loading and switching run asynchronously on the playback worker
   and do not block the UI.
-- The stage is 1024 × 524; smaller movies are centered at their native 1:1 size
+- The stage is 976 × 432; smaller movies are centered at their native 1:1 size
   (LVGL does not upscale, which keeps the frame rate). The bottom 76 dp bar holds
-  centered buttons on the first row and the progress slider plus time on the
-  second.
+  the progress slider plus time on the first row and centered buttons below.
 - Folders: `/littlefs/videos`, `/sdcard/videos`, `/sdcard`.
 
 ### Settings

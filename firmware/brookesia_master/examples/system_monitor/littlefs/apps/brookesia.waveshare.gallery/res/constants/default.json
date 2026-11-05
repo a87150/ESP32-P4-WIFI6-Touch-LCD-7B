@@ -11,20 +11,30 @@
                 "cardRadius": "18dp",
                 "barPadding": "8dp",
                 "barGap": "6dp",
-                "barHeight": "120dp",
+                "barHeight": "112dp",
                 "infoHeight": "22dp",
-                "buttonHeight": "48dp",
+                "buttonHeight": "44dp",
                 "buttonGap": "8dp",
                 "buttonRadius": "14dp",
+                "drawerX": "${expr(${env.widthDp} - 344dp)}",
+                "drawerY": "64dp",
+                "drawerWidth": "320dp",
+                "drawerHeight": "${expr(${env.heightDp} - 212dp)}",
+                "drawerPadding": "6dp",
+                "drawerGap": "6dp",
                 "headHeight": "32dp",
                 "listGap": "6dp",
                 "rowHeight": "56dp",
                 "rowTagWidth": "84dp",
-                "pagerHeight": "32dp"
+                "pagerHeight": "32dp",
+                "pagerButtonWidth": "76dp",
+                "pagerTextWidth": "84dp"
             },
             "font": {
                 "name": "16sp",
                 "meta": "13sp",
+                "row": "16sp",
+                "rowMeta": "12sp",
                 "button": "16sp",
                 "status": "12sp"
             }

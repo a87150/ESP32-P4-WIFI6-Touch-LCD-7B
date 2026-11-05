@@ -3,12 +3,13 @@
     "data": {
         "video": {
             "layout": {
-                "pageX": "0dp",
-                "pageY": "0dp",
-                "pageWidth": "${env.widthDp}",
-                "pageHeight": "${env.heightDp}",
-                "stageHeight": "${expr(${env.heightDp} - 76dp)}",
-                "barY": "${expr(${env.heightDp} - 76dp)}",
+                "pageX": "24dp",
+                "pageY": "64dp",
+                "pageWidth": "${expr(${env.widthDp} - 48dp)}",
+                "pageHeight": "${expr(${env.heightDp} - 88dp)}",
+                "gap": "12dp",
+                "stageRadius": "16dp",
+                "barRadius": "16dp",
                 "barHeight": "76dp",
                 "barPadding": "6dp",
                 "barGap": "4dp",
@@ -18,19 +19,25 @@
                 "buttonGap": "10dp",
                 "buttonRadius": "12dp",
                 "progressHeight": "20dp",
-                "browserX": "24dp",
-                "browserY": "64dp",
-                "browserWidth": "${expr(${env.widthDp} - 48dp)}",
-                "browserHeight": "${expr(${env.heightDp} - 88dp)}",
+                "drawerX": "${expr(${env.widthDp} - 344dp)}",
+                "drawerY": "64dp",
+                "drawerWidth": "320dp",
+                "drawerHeight": "${expr(${env.heightDp} - 176dp)}",
+                "drawerPadding": "6dp",
+                "drawerGap": "6dp",
                 "headHeight": "32dp",
                 "listGap": "6dp",
                 "rowHeight": "56dp",
                 "rowTagWidth": "84dp",
-                "pagerHeight": "32dp"
+                "pagerHeight": "32dp",
+                "pagerButtonWidth": "76dp",
+                "pagerTextWidth": "84dp"
             },
             "font": {
                 "title": "18sp",
                 "meta": "13sp",
+                "row": "17sp",
+                "rowMeta": "12sp",
                 "button": "16sp",
                 "time": "14sp"
             }

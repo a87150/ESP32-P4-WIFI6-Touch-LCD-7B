@@ -45,31 +45,30 @@ constexpr const char *PLAYBACK_TIMER_NAME = "music_playback";
 constexpr int32_t PLAYBACK_PERIOD_MS = 500;
 
 // Absolute paths inside the music screen document.
-constexpr const char *PATH_BROWSER = "/music/page/browser";
-constexpr const char *PATH_VIEWER = "/music/page/viewer";
-constexpr const char *PATH_LIST = "/music/page/browser/list";
-constexpr const char *PATH_LIST_INFO = "/music/page/browser/head/list_info";
-constexpr const char *PATH_PAGER = "/music/page/browser/pager";
-constexpr const char *PATH_PAGE_TEXT = "/music/page/browser/pager/page";
-constexpr const char *PATH_TRACK_NAME = "/music/page/viewer/player_card/info/track_name";
-constexpr const char *PATH_TRACK_META = "/music/page/viewer/player_card/info/track_meta";
-constexpr const char *PATH_TRACK_DETAIL = "/music/page/viewer/player_card/info/track_detail";
-constexpr const char *PATH_PROGRESS = "/music/page/viewer/player_card/info/progress";
-constexpr const char *PATH_TIME_LABEL = "/music/page/viewer/player_card/info/time_label";
-constexpr const char *PATH_VOLUME_SLIDER = "/music/page/viewer/player_card/info/volume/volume_slider";
-constexpr const char *PATH_VOLUME_TEXT = "/music/page/viewer/player_card/info/volume/volume_text";
-constexpr const char *PATH_TOGGLE_TEXT = "/music/page/viewer/controls/toggle/text";
-constexpr const char *PATH_STATUS = "/music/page/viewer/status";
+constexpr const char *PATH_DRAWER = "/music/drawer";
+constexpr const char *PATH_LIST = "/music/drawer/list";
+constexpr const char *PATH_LIST_INFO = "/music/drawer/head/list_info";
+constexpr const char *PATH_PAGER = "/music/drawer/pager";
+constexpr const char *PATH_PAGE_TEXT = "/music/drawer/pager/page";
+constexpr const char *PATH_TRACK_NAME = "/music/page/player_card/info/track_name";
+constexpr const char *PATH_TRACK_META = "/music/page/player_card/info/track_meta";
+constexpr const char *PATH_TRACK_DETAIL = "/music/page/player_card/info/track_detail";
+constexpr const char *PATH_PROGRESS = "/music/page/player_card/info/progress";
+constexpr const char *PATH_TIME_LABEL = "/music/page/player_card/info/time_label";
+constexpr const char *PATH_VOLUME_SLIDER = "/music/page/player_card/info/volume/volume_slider";
+constexpr const char *PATH_VOLUME_TEXT = "/music/page/player_card/info/volume/volume_text";
+constexpr const char *PATH_TOGGLE_TEXT = "/music/page/controls/toggle/text";
+constexpr const char *PATH_STATUS = "/music/page/status";
 
 // The playlist is paged so a full SD card never builds hundreds of views.
 constexpr const char *LIST_TEMPLATE_ID = "music_list_item";
-constexpr size_t LIST_PAGE_SIZE = 6;
+constexpr size_t LIST_PAGE_SIZE = 5;
 
 constexpr const char *ACTION_OPEN = "music.open";
 constexpr const char *ACTION_LIST = "music.list";
+constexpr const char *ACTION_CLOSE = "music.close";
 constexpr const char *ACTION_PAGE_PREV = "music.page.prev";
 constexpr const char *ACTION_PAGE_NEXT = "music.page.next";
-constexpr const char *ACTION_BROWSER_REFRESH = "music.browser.refresh";
 constexpr const char *ACTION_PREV = "music.prev";
 constexpr const char *ACTION_TOGGLE = "music.toggle";
 constexpr const char *ACTION_NEXT = "music.next";
@@ -315,9 +314,10 @@ std::expected<void, std::string> MusicApp::on_start(system::core::AppContext &co
         );
         (void)context.gui().set_binding_value(PATH_STATUS, "status_text", "");
     }
-    // Always open on the playlist: nothing is decoded or played until the user
-    // picks a track, so entering the app is instant and silent.
-    show_list(context);
+    // The player keeps the full width; the playlist only slides over it when
+    // the user asks for it, so entering the app is instant and silent.
+    close_list(context);
+    rebuild_list(context);
     return {};
 }
 
@@ -340,6 +340,7 @@ std::expected<void, std::string> MusicApp::on_pause(system::core::AppContext &)
 std::expected<void, std::string> MusicApp::on_resume(system::core::AppContext &context)
 {
     paused_ui_ = false;
+    close_list(context);
     bool has_track = false;
     {
         std::lock_guard<std::mutex> lock(state_.mutex);
@@ -347,13 +348,11 @@ std::expected<void, std::string> MusicApp::on_resume(system::core::AppContext &c
     }
     if (has_track) {
         // Coming back to a track that is still loaded (and possibly playing)
-        // keeps the player view instead of bouncing to the list.
-        (void)context.gui().set_binding_value(PATH_BROWSER, "browser_hidden", "true");
-        (void)context.gui().set_binding_value(PATH_VIEWER, "viewer_hidden", "false");
+        // keeps the player view untouched.
         refresh_ui(context);
         return {};
     }
-    show_list(context);
+    rebuild_list(context);
     return {};
 }
 
@@ -460,7 +459,15 @@ void MusicApp::subscribe_actions(system::core::AppContext &context)
         .action = ACTION_LIST,
         .handler = [this](const gui::Event &) {
             if (context_ != nullptr) {
-                show_list(*context_);
+                open_list(*context_);
+            }
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_CLOSE,
+        .handler = [this](const gui::Event &) {
+            if (context_ != nullptr) {
+                close_list(*context_);
             }
         },
     });
@@ -498,7 +505,7 @@ void MusicApp::subscribe_actions(system::core::AppContext &context)
             step_track(1);
         },
     });
-    system::core::GuiActionHandlerSubscription refresh_subscription = {
+    subscriptions.push_back({
         .action = ACTION_REFRESH,
         .handler = [this](const gui::Event &) {
             scan_tracks();
@@ -506,15 +513,13 @@ void MusicApp::subscribe_actions(system::core::AppContext &context)
             if (context_ == nullptr) {
                 return;
             }
-            show_list(*context_);
+            close_list(*context_);
+            rebuild_list(*context_);
             if (tracks_.empty()) {
                 refresh_status("没有找到 WAV 文件");
             }
         },
-    };
-    subscriptions.push_back(refresh_subscription);
-    refresh_subscription.action = ACTION_BROWSER_REFRESH;
-    subscriptions.push_back(refresh_subscription);
+    });
     subscriptions.push_back({
         .action = ACTION_SEEK,
         .handler = [this](const gui::Event &event) {
@@ -602,11 +607,15 @@ void MusicApp::rebuild_list(system::core::AppContext &context)
     (void)context.gui().set_binding_value(PATH_PAGER, "pager_hidden", page_count > 1 ? "false" : "true");
 }
 
-void MusicApp::show_list(system::core::AppContext &context)
+void MusicApp::open_list(system::core::AppContext &context)
 {
     rebuild_list(context);
-    (void)context.gui().set_binding_value(PATH_VIEWER, "viewer_hidden", "true");
-    (void)context.gui().set_binding_value(PATH_BROWSER, "browser_hidden", "false");
+    (void)context.gui().set_binding_value(PATH_DRAWER, "drawer_hidden", "false");
+}
+
+void MusicApp::close_list(system::core::AppContext &context)
+{
+    (void)context.gui().set_binding_value(PATH_DRAWER, "drawer_hidden", "true");
 }
 
 void MusicApp::open_track(system::core::AppContext &context, size_t index)
@@ -614,8 +623,7 @@ void MusicApp::open_track(system::core::AppContext &context, size_t index)
     if (tracks_.empty()) {
         return;
     }
-    (void)context.gui().set_binding_value(PATH_BROWSER, "browser_hidden", "true");
-    (void)context.gui().set_binding_value(PATH_VIEWER, "viewer_hidden", "false");
+    close_list(context);
     play_index(index, true);
 }
 

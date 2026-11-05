@@ -2,7 +2,7 @@
 """Generate the two sample movies that ship in ``littlefs/videos``.
 
 The ESP32-P4 video app plays concatenated JPEG pictures and draws them 1:1 when
-they fit the screen area (1024x524 on the 7B board), so the samples are rendered
+they fit the screen area (976x432 on the 7B board), so the samples are rendered
 at exactly that size for a full-bleed, fast playback.
 
     python tools/make_demo_videos.py
@@ -18,8 +18,8 @@ from pathlib import Path
 
 from PIL import Image
 
-WIDTH = 1024
-HEIGHT = 524
+WIDTH = 976
+HEIGHT = 432
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "firmware" / "brookesia_master" / "examples" / "system_monitor" / "littlefs" / "videos"

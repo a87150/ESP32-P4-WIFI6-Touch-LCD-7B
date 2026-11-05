@@ -123,7 +123,10 @@ class LibreHardwareMonitorReader:
             with urllib.request.urlopen(self.url, timeout=1.5) as response:
                 payload = response.read().decode("utf-8", "replace")
             tree = json.loads(payload)
-        except (urllib.error.URLError, OSError, ValueError, json.JSONDecodeError):
+        except Exception:
+            # A local web server can answer with a broken status line, drop the
+            # connection mid-header or return truncated JSON. None of that may
+            # stop the sampler, so every failure degrades to "no reading".
             if not self._warned:
                 print(
                     "\nLibreHardwareMonitor unreachable at "
@@ -465,7 +468,10 @@ def main() -> None:
         last_net = net
         last_time = now
 
-        disk_io = psutil.disk_io_counters()
+        try:
+            disk_io = psutil.disk_io_counters()
+        except Exception:
+            disk_io = None
         disk_read = 0.0
         disk_write = 0.0
         if disk_io is not None and last_disk_io is not None:
@@ -509,7 +515,7 @@ def main() -> None:
             payload[f"disk{index}_name"] = str(volume["name"])
 
         sock.sendto(json.dumps(payload).encode("utf-8"), target)
-        worst_disk = max(float(v["pct"]) for v in volumes)
+        worst_disk = max((float(v["pct"]) for v in volumes), default=0.0)
         source = "" if cpu_temp is None else (" [LHM]" if lhm.available else "")
         print(
             f"\rCPU {payload['cpu']:5.1f}%  MEM {memory.percent:5.1f}%  "

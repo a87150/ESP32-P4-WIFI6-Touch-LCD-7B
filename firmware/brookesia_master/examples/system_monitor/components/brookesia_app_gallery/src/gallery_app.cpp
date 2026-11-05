@@ -32,28 +32,27 @@ constexpr const char *GUI_ROOT = "res/root.json";
 constexpr const char *GALLERY_FLOW_ID = "gallery_flow";
 
 // Absolute paths inside the gallery screen document.
-constexpr const char *PATH_BROWSER = "/gallery/page/browser";
-constexpr const char *PATH_VIEWER = "/gallery/page/viewer";
-constexpr const char *PATH_LIST = "/gallery/page/browser/list";
-constexpr const char *PATH_LIST_INFO = "/gallery/page/browser/head/list_info";
-constexpr const char *PATH_PAGER = "/gallery/page/browser/pager";
-constexpr const char *PATH_PAGE_TEXT = "/gallery/page/browser/pager/page";
-constexpr const char *PATH_PHOTO = "/gallery/page/viewer/preview/photo";
-constexpr const char *PATH_FILE_NAME = "/gallery/page/viewer/bar/info/file_name";
-constexpr const char *PATH_PHOTO_INDEX = "/gallery/page/viewer/bar/info/photo_index";
-constexpr const char *PATH_PHOTO_INFO = "/gallery/page/viewer/bar/info/photo_info";
-constexpr const char *PATH_SLIDE_TEXT = "/gallery/page/viewer/bar/buttons/slideshow/text";
-constexpr const char *PATH_STATUS = "/gallery/page/viewer/bar/status";
+constexpr const char *PATH_DRAWER = "/gallery/drawer";
+constexpr const char *PATH_LIST = "/gallery/drawer/list";
+constexpr const char *PATH_LIST_INFO = "/gallery/drawer/head/list_info";
+constexpr const char *PATH_PAGER = "/gallery/drawer/pager";
+constexpr const char *PATH_PAGE_TEXT = "/gallery/drawer/pager/page";
+constexpr const char *PATH_PHOTO = "/gallery/page/preview/photo";
+constexpr const char *PATH_FILE_NAME = "/gallery/page/bar/info/file_name";
+constexpr const char *PATH_PHOTO_INDEX = "/gallery/page/bar/info/photo_index";
+constexpr const char *PATH_PHOTO_INFO = "/gallery/page/bar/info/photo_info";
+constexpr const char *PATH_SLIDE_TEXT = "/gallery/page/bar/buttons/slideshow/text";
+constexpr const char *PATH_STATUS = "/gallery/page/bar/status";
 
-// The overview list is paged so a long SD card never builds hundreds of views.
+// The picker list is paged so a long SD card never builds hundreds of views.
 constexpr const char *LIST_TEMPLATE_ID = "gallery_list_item";
-constexpr size_t LIST_PAGE_SIZE = 6;
+constexpr size_t LIST_PAGE_SIZE = 5;
 
 constexpr const char *ACTION_OPEN = "gallery.open";
 constexpr const char *ACTION_LIST = "gallery.list";
+constexpr const char *ACTION_CLOSE = "gallery.close";
 constexpr const char *ACTION_PAGE_PREV = "gallery.page.prev";
 constexpr const char *ACTION_PAGE_NEXT = "gallery.page.next";
-constexpr const char *ACTION_BROWSER_REFRESH = "gallery.browser.refresh";
 constexpr const char *ACTION_PREV = "gallery.prev";
 constexpr const char *ACTION_NEXT = "gallery.next";
 constexpr const char *ACTION_SET_WALLPAPER = "gallery.set_wallpaper";
@@ -332,9 +331,16 @@ std::expected<void, std::string> GalleryApp::on_start(system::core::AppContext &
     (void)context.gui().set_binding_value(PATH_SLIDE_TEXT, "slide_text", "自动播放");
     scan_images();
     subscribe_actions(context);
-    // Enter on the overview table; a picture is only decoded after the user
-    // picks one, so opening the app never blocks on a large file.
-    show_list(context);
+    // The picker starts hidden so the picture area keeps the full width. The
+    // first picture is shown without decoding the whole album.
+    close_list(context);
+    rebuild_list(context);
+    if (images_.empty()) {
+        set_status(context, "没有找到图片");
+    } else {
+        show_image(context, 0);
+        set_status(context, "");
+    }
     return {};
 }
 
@@ -364,7 +370,17 @@ std::expected<void, std::string> GalleryApp::on_resume(system::core::AppContext 
         list_page_ = 0;
     }
     scan_images();
-    show_list(context);
+    if (index_ >= images_.size()) {
+        index_ = 0;
+    }
+    close_list(context);
+    rebuild_list(context);
+    if (images_.empty()) {
+        set_status(context, "没有找到图片");
+    } else {
+        show_image(context, index_);
+        set_status(context, "");
+    }
     return {};
 }
 
@@ -429,7 +445,15 @@ void GalleryApp::subscribe_actions(system::core::AppContext &context)
         .action = ACTION_LIST,
         .handler = [this](const gui::Event &) {
             if (context_ != nullptr) {
-                show_list(*context_);
+                open_list(*context_);
+            }
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_CLOSE,
+        .handler = [this](const gui::Event &) {
+            if (context_ != nullptr) {
+                close_list(*context_);
             }
         },
     });
@@ -473,7 +497,7 @@ void GalleryApp::subscribe_actions(system::core::AppContext &context)
             }
         },
     });
-    system::core::GuiActionHandlerSubscription refresh_subscription = {
+    subscriptions.push_back({
         .action = ACTION_REFRESH,
         .handler = [this](const gui::Event &) {
             if (context_ == nullptr) {
@@ -484,12 +508,16 @@ void GalleryApp::subscribe_actions(system::core::AppContext &context)
             scan_images();
             list_page_ = 0;
             index_ = 0;
-            show_list(*context_);
+            close_list(*context_);
+            rebuild_list(*context_);
+            if (images_.empty()) {
+                set_status(*context_, "没有找到图片");
+            } else {
+                show_image(*context_, 0);
+                set_status(*context_, "");
+            }
         },
-    };
-    subscriptions.push_back(refresh_subscription);
-    refresh_subscription.action = ACTION_BROWSER_REFRESH;
-    subscriptions.push_back(refresh_subscription);
+    });
     subscriptions.push_back({
         .action = ACTION_SLIDESHOW,
         .handler = [this](const gui::Event &) {
@@ -572,13 +600,15 @@ void GalleryApp::rebuild_list(system::core::AppContext &context)
     (void)context.gui().set_binding_value(PATH_PAGER, "pager_hidden", page_count > 1 ? "false" : "true");
 }
 
-void GalleryApp::show_list(system::core::AppContext &context)
+void GalleryApp::open_list(system::core::AppContext &context)
 {
-    stop_slideshow();
-    (void)context.gui().set_binding_value(PATH_SLIDE_TEXT, "slide_text", "自动播放");
     rebuild_list(context);
-    (void)context.gui().set_binding_value(PATH_VIEWER, "viewer_hidden", "true");
-    (void)context.gui().set_binding_value(PATH_BROWSER, "browser_hidden", "false");
+    (void)context.gui().set_binding_value(PATH_DRAWER, "drawer_hidden", "false");
+}
+
+void GalleryApp::close_list(system::core::AppContext &context)
+{
+    (void)context.gui().set_binding_value(PATH_DRAWER, "drawer_hidden", "true");
 }
 
 void GalleryApp::open_image(system::core::AppContext &context, size_t index)
@@ -586,8 +616,7 @@ void GalleryApp::open_image(system::core::AppContext &context, size_t index)
     if (images_.empty()) {
         return;
     }
-    (void)context.gui().set_binding_value(PATH_BROWSER, "browser_hidden", "true");
-    (void)context.gui().set_binding_value(PATH_VIEWER, "viewer_hidden", "false");
+    close_list(context);
     show_image(context, index);
     set_status(context, "");
 }

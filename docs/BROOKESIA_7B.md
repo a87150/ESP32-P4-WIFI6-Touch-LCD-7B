@@ -64,7 +64,7 @@ firmware/
   ESP32-P4-WIFI6-Touch-LCD-7B-FactoryOnly.bin  Full factory image (32 MB)
 tools/
   make_mjpeg.py                 GIF / image sequence to .mjpeg
-  make_demo_videos.py           Bundled sample videos (1024 × 524)
+  make_demo_videos.py           Bundled sample videos (976 × 432)
   make_app_art.py               Music app cover art
 scripts/
   pc_agent.py                   PC telemetry broadcast (UDP 9999)
@@ -120,9 +120,11 @@ In-house components:
 
 ### 3.3 Music (`brookesia.waveshare.music`)
 
-- The app opens on a **track list** (6 rows per page with previous / next page);
-  a track only starts when its row is tapped, so entering the app is silent.
-  The row being played is tagged "playing".
+- The app opens on the **player** and stays silent; the "list" button slides a
+  **320 dp picker drawer** over the right side. Tapping a row starts that track
+  and closes the drawer, so the main view is never replaced.
+- The drawer shows **5 rows per page** (previous / next page) with file name and
+  size; the row being played is tagged "playing / paused".
 - **PCM WAV only**, JSON-described UI, decoding and playback on a dedicated
   thread, **keeps playing when the app is in the background**.
 - Seeking is applied at most every 500 ms so dragging does not restart the codec
@@ -141,9 +143,11 @@ In-house components:
 
 ### 3.4 Gallery (`brookesia.waveshare.gallery`)
 
-- The app opens on an **overview table** (6 rows per page with file name,
-  resolution and size); tapping a row opens the full preview, whose first button
-  returns to the list.
+- The app opens on the **preview of the first picture** (only that one is
+  decoded, no autoplay); the "list" button slides a **320 dp picker drawer** over
+  the right side, and tapping a row switches the preview and closes the drawer.
+- The drawer shows **5 rows per page** with file name, resolution and size, and
+  the format (PNG / JPEG) as the right-hand tag.
 - Folders: `/littlefs/pictures`, `/littlefs/wallpapers`, `/sdcard/pictures`,
   `/sdcard`.
 - **PNG / JPEG** are supported; the detail line shows resolution, file size,
@@ -159,9 +163,12 @@ In-house components:
 
 ### 3.5 Video (`brookesia.waveshare.video`)
 
-- The app opens on a **movie list** (6 rows per page with file name and size);
-  a movie is only read and decoded after a row is tapped. Loading runs on the
-  playback worker, so the UI stays responsive.
+- The app opens on the **player** (empty stage); the "list" button slides a
+  **320 dp picker drawer** over the right side, and a movie is only read and
+  decoded after a row is tapped. Loading runs on the playback worker, so the UI
+  stays responsive.
+- The drawer shows **5 rows per page** (previous / next page) with file name and
+  size; the movie being played is tagged "playing".
 - Format: `.mjpeg` / `.mjpg` / `.mjp`, i.e. **concatenated JPEG frames**, no
   container and no audio track.
 - Fixed **12 fps** playback (MJPEG has no timestamps); the next movie starts
@@ -174,10 +181,10 @@ In-house components:
   never blocks the UI.
 - Display policy: movies smaller than the stage are shown **centered at native
   1:1 scale** (LVGL does not upscale, which protects the frame rate); the stage is
-  1024 × 524 and larger movies are scaled down. The bottom 76 dp is a separate
-  control bar: centered buttons on the first row (list / previous / pause / next /
-  refresh), progress and time below.
-  Authoring at **1024 × 524** gives full-screen 1:1 playback at 12 fps.
+  976 × 432 and larger movies are scaled down. The bottom 76 dp is a separate
+  control bar: progress and time on the first row, centered buttons below
+  (list / previous / pause / next / refresh).
+  Authoring at **976 × 432** gives full-screen 1:1 playback at 12 fps.
 - Folders: `/littlefs/videos`, `/sdcard/videos`, `/sdcard`.
 
 ### 3.6 Settings (`brookesia.general.settings`)
@@ -312,8 +319,9 @@ Serial log: USB-Serial/JTAG, 115200 baud.
   16-bit / stereo is recommended.
 - The cover is a generated **300 × 300** PNG; regenerate it with
   `python tools/make_app_art.py`.
-- The track list shows 6 rows per page; tapping anywhere on a row starts that
-  track, while "refresh" only rescans and never starts playback.
+- The track drawer shows 5 rows per page; tapping anywhere on a row starts that
+  track and closes the drawer, while "refresh" only rescans and never starts
+  playback.
 
 ### 7.3 Pictures
 
@@ -328,16 +336,16 @@ Serial log: USB-Serial/JTAG, 115200 baud.
 
 ```bash
 # GIF or image folder to mjpeg (played back at a fixed 12 fps)
-python tools/make_mjpeg.py frames/ video.mjpeg --size 1024x524 --quality 70
+python tools/make_mjpeg.py frames/ video.mjpeg --size 976x432 --quality 70
 python tools/make_mjpeg.py clip.gif video.mjpeg --size 640x360
 
 # Regenerate the bundled sample videos
 python tools/make_demo_videos.py
 ```
 
-- Use `--size 1024x524` for the best full-screen 1:1 result.
+- Use `--size 976x432` for the best full-screen 1:1 result.
 - Other sizes are shown centered at native scale (with black borders); only
-  material larger than 1024 × 524 is scaled down.
+  material larger than 976 × 432 is scaled down.
 - Without ffmpeg, export the video to an image sequence with another tool and
   merge it with `make_mjpeg.py`.
 
@@ -446,7 +454,7 @@ The GUI only exposes `clicked`, so the video app:
 ## 10. Performance and memory
 
 - Video uses hardware JPEG decoding with RGB565 double buffering at a fixed
-  12 fps; the stage is 1024 × 524 and no upscaling is performed.
+  12 fps; the stage is 976 × 432 and no upscaling is performed.
 - The gallery reuses one image resource id, releasing the previous decoded frame
   on every switch; full-wallpaper caching depends on `CONFIG_LV_CACHE_DEF_SIZE`
   (4 MB by default).
@@ -467,15 +475,16 @@ The GUI only exposes `clicked`, so the video app:
 4. **System monitor**: disk / CPU / memory data; CPU / GPU temperatures in the
    gauge center; `HIGH!` above 90 °C; PC metrics and DISK I/O after starting
    `scripts/pc_agent.py`.
-5. **Music**: opens on the list (6 rows per page) and only plays after a row tap;
-   play / pause / previous / next / seek / volume; detail line shows sample rate,
-   bit depth, bitrate and size; playback continues on the launcher.
-6. **Gallery**: opens on the overview table (name + resolution + size), a row
-   opens the preview and "list" returns; previous / next; resolution / size /
+5. **Music**: opens on the player and stays silent; "list" opens the 5-row drawer
+   (over the main view) and a row starts playback and closes it; play / pause /
+   previous / next / seek / volume; detail line shows sample rate, bit depth,
+   bitrate and size; playback continues on the launcher.
+6. **Gallery**: opens on the first picture; "list" opens the 5-row drawer and a
+   row switches the preview and closes it; previous / next; resolution / size /
    format / depth details; slideshow every 4 s; wallpaper applies on the launcher.
-7. **Video**: opens on the movie list and only loads after a row tap; double tap
-   pauses / resumes; centered buttons; seek; previous / next switching without
-   stutter.
+7. **Video**: opens on the empty player; "list" opens the 5-row drawer and a row
+   loads and plays that movie; double tap pauses / resumes; progress row plus
+   centered buttons; seek; previous / next switching without stutter.
 8. **Settings**: Wi-Fi shows IP / MAC and reconnects; BLE scan and advertising
    are mutually exclusive.
 
@@ -503,8 +512,8 @@ The GUI only exposes `clicked`, so the video app:
   changed, flash `0x8000` too.
 - **Wi-Fi connected without internet**: check IP / MAC in settings; slow DHCP is
   handled by automatic reconnection.
-- **Video stutters**: material larger than 1024 × 524 is scaled; regenerate with
-  `--size 1024x524`.
+- **Video stutters**: material larger than 976 × 432 is scaled; regenerate with
+  `--size 976x432`.
 - **No music sound**: make sure the file is PCM WAV and volume is not zero;
   A2DP is unavailable so Bluetooth speakers cannot be used.
 - **Picture does not open**: only PNG / JPEG are supported; long names are
@@ -517,7 +526,7 @@ The GUI only exposes `clicked`, so the video app:
 - Without an SD card the boot log prints `sdmmc_init_ocr ... 0x107` /
   `Failed to initialize SD card`; this is expected.
 - No classic Bluetooth / A2DP (the C6 ships BLE 5 only).
-- Video is fixed at 12 fps with no audio; keep MJPEG at or below 1024 × 524.
+- Video is fixed at 12 fps with no audio; keep MJPEG at or below 976 × 432.
 - Battery readings depend on hardware sampling and are indicative only.
 - Real CPU / GPU temperatures on the monitor need `scripts/pc_agent.py`.
 - Final color and touch-calibration quality must be checked on the device.

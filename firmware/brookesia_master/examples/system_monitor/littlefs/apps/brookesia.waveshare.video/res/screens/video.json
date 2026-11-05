@@ -28,27 +28,6 @@
             "children": [
                 {
                     "type": "container",
-                    "id": "viewer",
-                    "commonProps": {
-                        "clickable": false,
-                        "scrollable": false
-                    },
-                    "bindings": {
-                        "commonProps.hidden": "viewer_hidden"
-                    },
-                    "style": {
-                        "padding": "0dp"
-                    },
-                    "placement": {
-                        "mode": "absolute",
-                        "x": 0,
-                        "y": 0,
-                        "width": "${constant.video.layout.pageWidth}",
-                        "height": "${constant.video.layout.pageHeight}"
-                    },
-                    "children": [
-                {
-                    "type": "container",
                     "id": "stage",
                     "commonProps": {
                         "clickable": true,
@@ -63,14 +42,14 @@
                     "style": {
                         "bgColor": "#000000",
                         "padding": "0dp",
-                        "clipCorner": true
+                        "clipCorner": true,
+                        "radius": "${constant.video.layout.stageRadius}"
                     },
                     "placement": {
-                        "mode": "absolute",
-                        "x": 0,
-                        "y": 0,
-                        "width": "${constant.video.layout.pageWidth}",
-                        "height": "${constant.video.layout.stageHeight}"
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "wrap",
+                        "flexGrow": 1
                     },
                     "children": [
                         {
@@ -96,74 +75,80 @@
                                 "width": "match",
                                 "height": "match"
                             }
-                        }
-                    ]
-                },
-                {
-                    "type": "container",
-                    "id": "hint",
-                    "commonProps": {
-                        "clickable": false
-                    },
-                    "layout": {
-                        "type": "flex",
-                        "flexFlow": "column",
-                        "mainAlign": "start",
-                        "crossAlign": "start",
-                        "gap": "2dp"
-                    },
-                    "style": {
-                        "bgColor": "#0b1220",
-                        "radius": "12dp",
-                        "padding": "8dp",
-                        "borderWidth": "1dp",
-                        "borderColor": "#1b2740"
-                    },
-                    "placement": {
-                        "mode": "absolute",
-                        "x": "${constant.video.layout.hintX}",
-                        "y": "${constant.video.layout.hintY}",
-                        "width": "wrap",
-                        "height": "wrap"
-                    },
-                    "children": [
-                        {
-                            "type": "label",
-                            "id": "title",
-                            "labelProps": {
-                                "text": "视频"
-                            },
-                            "style": {
-                                "textColor": "#eef3fb",
-                                "fontSize": "${constant.video.font.title}"
-                            },
-                            "bindings": {
-                                "labelProps.text": "title_text"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "wrap",
-                                "height": "wrap"
-                            }
                         },
                         {
-                            "type": "label",
-                            "id": "status",
-                            "labelProps": {
-                                "text": "MJPEG 播放器"
+                            "type": "container",
+                            "id": "hint",
+                            "commonProps": {
+                                "clickable": false
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "column",
+                                "mainAlign": "start",
+                                "crossAlign": "start",
+                                "gap": "2dp"
                             },
                             "style": {
-                                "textColor": "#93a4bc",
-                                "fontSize": "${constant.video.font.meta}"
-                            },
-                            "bindings": {
-                                "labelProps.text": "status_text"
+                                "bgColor": "#0b1220",
+                                "radius": "12dp",
+                                "padding": "8dp",
+                                "borderWidth": "1dp",
+                                "borderColor": "#1b2740"
                             },
                             "placement": {
-                                "mode": "flow",
+                                "mode": "absolute",
+                                "x": "${constant.video.layout.hintX}",
+                                "y": "${constant.video.layout.hintY}",
                                 "width": "wrap",
                                 "height": "wrap"
-                            }
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "title",
+                                    "commonProps": {
+                                        "clickable": false
+                                    },
+                                    "labelProps": {
+                                        "text": "视频"
+                                    },
+                                    "style": {
+                                        "textColor": "#eef3fb",
+                                        "fontSize": "${constant.video.font.title}"
+                                    },
+                                    "bindings": {
+                                        "labelProps.text": "title_text"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "wrap",
+                                        "height": "wrap"
+                                    }
+                                },
+                                {
+                                    "type": "label",
+                                    "id": "status",
+                                    "commonProps": {
+                                        "clickable": false
+                                    },
+                                    "labelProps": {
+                                        "text": "MJPEG 播放器"
+                                    },
+                                    "style": {
+                                        "textColor": "#93a4bc",
+                                        "fontSize": "${constant.video.font.meta}"
+                                    },
+                                    "bindings": {
+                                        "labelProps.text": "status_text"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "wrap",
+                                        "height": "wrap"
+                                    }
+                                }
+                            ]
                         }
                     ]
                 },
@@ -183,16 +168,92 @@
                     },
                     "style": {
                         "bgColor": "#0a1019",
-                        "padding": "${constant.video.layout.barPadding}"
+                        "padding": "${constant.video.layout.barPadding}",
+                        "radius": "${constant.video.layout.barRadius}"
                     },
                     "placement": {
-                        "mode": "absolute",
-                        "x": 0,
-                        "y": "${constant.video.layout.barY}",
-                        "width": "${constant.video.layout.pageWidth}",
+                        "mode": "flow",
+                        "width": "match",
                         "height": "${constant.video.layout.barHeight}"
                     },
                     "children": [
+                        {
+                            "type": "container",
+                            "id": "row_progress",
+                            "commonProps": {
+                                "clickable": false
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "flexFlow": "row",
+                                "mainAlign": "start",
+                                "crossAlign": "center",
+                                "gap": "10dp"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "match",
+                                "height": "${constant.video.layout.progressHeight}"
+                            },
+                            "children": [
+                                {
+                                    "type": "slider",
+                                    "id": "progress",
+                                    "rangeProps": {
+                                        "min": 0,
+                                        "max": 1000,
+                                        "value": 0
+                                    },
+                                    "events": [
+                                        {
+                                            "type": "valueChanged",
+                                            "action": "video.seek"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#1a2334",
+                                        "radius": "6dp"
+                                    },
+                                    "partStyles": {
+                                        "indicator": {
+                                            "bgColor": "#22d3ee",
+                                            "bgGradientColor": "#6366f1",
+                                            "bgGradientDirection": "horizontal",
+                                            "radius": "6dp"
+                                        },
+                                        "knob": {
+                                            "bgColor": "#f8fafc",
+                                            "radius": "8dp"
+                                        }
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "wrap",
+                                        "height": "match",
+                                        "flexGrow": 1
+                                    }
+                                },
+                                {
+                                    "type": "label",
+                                    "id": "time",
+                                    "labelProps": {
+                                        "text": "00:00 / 00:00"
+                                    },
+                                    "style": {
+                                        "textColor": "#a9b8cd",
+                                        "fontSize": "${constant.video.font.time}"
+                                    },
+                                    "bindings": {
+                                        "labelProps.text": "time_text"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "wrap",
+                                        "height": "wrap"
+                                    }
+                                }
+                            ]
+                        },
                         {
                             "type": "container",
                             "id": "row_buttons",
@@ -421,365 +482,295 @@
                                     ]
                                 }
                             ]
-                        },
+                        }
+                    ]
+                }
+            ],
+            "layout": {
+                "type": "flex",
+                "flexFlow": "column",
+                "mainAlign": "start",
+                "crossAlign": "stretch",
+                "gap": "${constant.video.layout.gap}"
+            }
+        },
+        {
+            "type": "container",
+            "id": "drawer",
+            "commonProps": {
+                "clickable": false,
+                "scrollable": false
+            },
+            "bindings": {
+                "commonProps.hidden": "drawer_hidden"
+            },
+            "layout": {
+                "type": "flex",
+                "flexFlow": "column",
+                "mainAlign": "start",
+                "crossAlign": "stretch",
+                "gap": "${constant.video.layout.drawerGap}"
+            },
+            "style": {
+                "bgColor": "#0b1220",
+                "radius": "16dp",
+                "borderWidth": "1dp",
+                "borderColor": "#25324c",
+                "padding": "${constant.video.layout.drawerPadding}"
+            },
+            "placement": {
+                "mode": "absolute",
+                "x": "${constant.video.layout.drawerX}",
+                "y": "${constant.video.layout.drawerY}",
+                "width": "${constant.video.layout.drawerWidth}",
+                "height": "${constant.video.layout.drawerHeight}"
+            },
+            "children": [
+                {
+                    "type": "container",
+                    "id": "head",
+                    "commonProps": {
+                        "clickable": false
+                    },
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "row",
+                        "mainAlign": "spaceBetween",
+                        "crossAlign": "center",
+                        "gap": "10dp"
+                    },
+                    "style": {
+                        "padding": "0dp"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "${constant.video.layout.headHeight}"
+                    },
+                    "children": [
                         {
-                            "type": "container",
-                            "id": "row_progress",
+                            "type": "label",
+                            "id": "list_info",
                             "commonProps": {
                                 "clickable": false
                             },
-                            "layout": {
-                                "type": "flex",
-                                "flexFlow": "row",
-                                "mainAlign": "start",
-                                "crossAlign": "center",
-                                "gap": "10dp"
+                            "bindings": {
+                                "labelProps.text": "list_info"
+                            },
+                            "labelProps": {
+                                "text": "正在读取影片"
+                            },
+                            "style": {
+                                "textColor": "#a9b8cd",
+                                "fontSize": "${constant.video.font.rowMeta}"
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "match",
-                                "height": "${constant.video.layout.progressHeight}"
+                                "width": "wrap",
+                                "height": "wrap"
+                            }
+                        },
+                        {
+                            "type": "button",
+                            "id": "close",
+                            "events": [
+                                {
+                                    "type": "clicked",
+                                    "action": "video.close"
+                                }
+                            ],
+                            "style": {
+                                "bgColor": "#18223a",
+                                "radius": "10dp",
+                                "borderWidth": "0dp"
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "56dp",
+                                "height": "26dp"
                             },
                             "children": [
                                 {
-                                    "type": "slider",
-                                    "id": "progress",
-                                    "rangeProps": {
-                                        "min": 0,
-                                        "max": 1000,
-                                        "value": 0
-                                    },
-                                    "events": [
-                                        {
-                                            "type": "valueChanged",
-                                            "action": "video.seek"
-                                        }
-                                    ],
-                                    "style": {
-                                        "bgColor": "#1a2334",
-                                        "radius": "6dp"
-                                    },
-                                    "partStyles": {
-                                        "indicator": {
-                                            "bgColor": "#22d3ee",
-                                            "bgGradientColor": "#6366f1",
-                                            "bgGradientDirection": "horizontal",
-                                            "radius": "6dp"
-                                        },
-                                        "knob": {
-                                            "bgColor": "#f8fafc",
-                                            "radius": "8dp"
-                                        }
-                                    },
-                                    "placement": {
-                                        "mode": "flow",
-                                        "width": "wrap",
-                                        "height": "match",
-                                        "flexGrow": 1
-                                    }
-                                },
-                                {
                                     "type": "label",
-                                    "id": "time",
+                                    "id": "text",
+                                    "commonProps": {
+                                        "clickable": false
+                                    },
                                     "labelProps": {
-                                        "text": "00:00 / 00:00"
+                                        "text": "关闭"
                                     },
                                     "style": {
-                                        "textColor": "#a9b8cd",
-                                        "fontSize": "${constant.video.font.time}"
-                                    },
-                                    "bindings": {
-                                        "labelProps.text": "time_text"
-                                    },
-                                    "placement": {
-                                        "mode": "flow",
-                                        "width": "wrap",
-                                        "height": "wrap"
+                                        "textColor": "#dbe4f2",
+                                        "fontSize": "${constant.video.font.rowMeta}"
                                     }
                                 }
                             ]
                         }
                     ]
-                }
-                    ]
                 },
                 {
                     "type": "container",
-                    "id": "browser",
+                    "id": "list",
                     "commonProps": {
                         "clickable": false,
                         "scrollable": false
-                    },
-                    "bindings": {
-                        "commonProps.hidden": "browser_hidden"
                     },
                     "layout": {
                         "type": "flex",
                         "flexFlow": "column",
                         "mainAlign": "start",
                         "crossAlign": "stretch",
+                        "gap": "${constant.video.layout.listGap}"
+                    },
+                    "style": {
+                        "padding": "0dp"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "wrap",
+                        "flexGrow": 1
+                    },
+                    "children": []
+                },
+                {
+                    "type": "container",
+                    "id": "pager",
+                    "commonProps": {
+                        "clickable": false
+                    },
+                    "bindings": {
+                        "commonProps.hidden": "pager_hidden"
+                    },
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "row",
+                        "mainAlign": "center",
+                        "crossAlign": "center",
                         "gap": "8dp"
                     },
                     "style": {
                         "padding": "0dp"
                     },
                     "placement": {
-                        "mode": "absolute",
-                        "x": "${constant.video.layout.browserX}",
-                        "y": "${constant.video.layout.browserY}",
-                        "width": "${constant.video.layout.browserWidth}",
-                        "height": "${constant.video.layout.browserHeight}"
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "${constant.video.layout.pagerHeight}"
                     },
                     "children": [
                         {
-                            "type": "container",
-                            "id": "head",
-                            "commonProps": {
-                                "clickable": false
+                            "type": "button",
+                            "id": "prev",
+                            "events": [
+                                {
+                                    "type": "clicked",
+                                    "action": "video.page.prev"
+                                }
+                            ],
+                            "style": {
+                                "bgColor": "#18223a",
+                                "radius": "10dp",
+                                "borderWidth": "0dp"
                             },
                             "layout": {
                                 "type": "flex",
-                                "flexFlow": "row",
-                                "mainAlign": "spaceBetween",
-                                "crossAlign": "center",
-                                "gap": "10dp"
-                            },
-                            "style": {
-                                "padding": "0dp"
+                                "mainAlign": "center",
+                                "crossAlign": "center"
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "match",
-                                "height": "${constant.video.layout.headHeight}"
+                                "width": "${constant.video.layout.pagerButtonWidth}",
+                                "height": "match"
                             },
                             "children": [
                                 {
                                     "type": "label",
-                                    "id": "list_info",
+                                    "id": "text",
                                     "commonProps": {
                                         "clickable": false
                                     },
-                                    "bindings": {
-                                        "labelProps.text": "list_info"
-                                    },
                                     "labelProps": {
-                                        "text": "正在读取影片"
+                                        "text": "上一页"
                                     },
                                     "style": {
-                                        "textColor": "#a9b8cd",
-                                        "fontSize": "${constant.video.font.meta}"
+                                        "textColor": "#dbe4f2",
+                                        "fontSize": "${constant.video.font.rowMeta}"
                                     },
                                     "placement": {
-                                        "mode": "flow",
-                                        "width": "wrap",
-                                        "height": "wrap"
+                                        "mode": "flow"
                                     }
-                                },
-                                {
-                                    "type": "button",
-                                    "id": "refresh",
-                                    "events": [
-                                        {
-                                            "type": "clicked",
-                                            "action": "video.browser.refresh"
-                                        }
-                                    ],
-                                    "style": {
-                                        "bgColor": "#14251f",
-                                        "radius": "12dp",
-                                        "borderWidth": "0dp"
-                                    },
-                                    "layout": {
-                                        "type": "flex",
-                                        "mainAlign": "center",
-                                        "crossAlign": "center"
-                                    },
-                                    "placement": {
-                                        "mode": "flow",
-                                        "width": "96dp",
-                                        "height": "36dp"
-                                    },
-                                    "children": [
-                                        {
-                                            "type": "label",
-                                            "id": "text",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "labelProps": {
-                                                "text": "重新扫描"
-                                            },
-                                            "style": {
-                                                "textColor": "#c8e8d9",
-                                                "fontSize": "${constant.video.font.meta}"
-                                            },
-                                            "placement": {
-                                                "mode": "flow"
-                                            }
-                                        }
-                                    ]
                                 }
                             ]
                         },
                         {
-                            "type": "container",
-                            "id": "list",
-                            "commonProps": {
-                                "clickable": false,
-                                "scrollable": false
-                            },
-                            "layout": {
-                                "type": "flex",
-                                "flexFlow": "column",
-                                "mainAlign": "start",
-                                "crossAlign": "stretch",
-                                "gap": "${constant.video.layout.listGap}"
-                            },
-                            "style": {
-                                "padding": "0dp"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "match",
-                                "height": "wrap",
-                                "flexGrow": 1
-                            },
-                            "children": []
-                        },
-                        {
-                            "type": "container",
-                            "id": "pager",
+                            "type": "label",
+                            "id": "page",
                             "commonProps": {
                                 "clickable": false
                             },
                             "bindings": {
-                                "commonProps.hidden": "pager_hidden"
+                                "labelProps.text": "page_text"
                             },
-                            "layout": {
-                                "type": "flex",
-                                "flexFlow": "row",
-                                "mainAlign": "center",
-                                "crossAlign": "center",
-                                "gap": "12dp"
+                            "labelProps": {
+                                "text": "1 / 1"
                             },
                             "style": {
-                                "padding": "0dp"
+                                "textColor": "#8494a8",
+                                "fontSize": "${constant.video.font.rowMeta}",
+                                "textAlign": "center"
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "match",
-                                "height": "${constant.video.layout.pagerHeight}"
+                                "width": "${constant.video.layout.pagerTextWidth}",
+                                "height": "wrap"
+                            }
+                        },
+                        {
+                            "type": "button",
+                            "id": "next",
+                            "events": [
+                                {
+                                    "type": "clicked",
+                                    "action": "video.page.next"
+                                }
+                            ],
+                            "style": {
+                                "bgColor": "#18223a",
+                                "radius": "10dp",
+                                "borderWidth": "0dp"
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "${constant.video.layout.pagerButtonWidth}",
+                                "height": "match"
                             },
                             "children": [
                                 {
-                                    "type": "button",
-                                    "id": "prev",
-                                    "events": [
-                                        {
-                                            "type": "clicked",
-                                            "action": "video.page.prev"
-                                        }
-                                    ],
-                                    "style": {
-                                        "bgColor": "#18223a",
-                                        "radius": "12dp",
-                                        "borderWidth": "0dp"
-                                    },
-                                    "layout": {
-                                        "type": "flex",
-                                        "mainAlign": "center",
-                                        "crossAlign": "center"
-                                    },
-                                    "placement": {
-                                        "mode": "flow",
-                                        "width": "120dp",
-                                        "height": "match"
-                                    },
-                                    "children": [
-                                        {
-                                            "type": "label",
-                                            "id": "text",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "labelProps": {
-                                                "text": "上一页"
-                                            },
-                                            "style": {
-                                                "textColor": "#dbe4f2",
-                                                "fontSize": "${constant.video.font.meta}"
-                                            },
-                                            "placement": {
-                                                "mode": "flow"
-                                            }
-                                        }
-                                    ]
-                                },
-                                {
                                     "type": "label",
-                                    "id": "page",
+                                    "id": "text",
                                     "commonProps": {
                                         "clickable": false
                                     },
-                                    "bindings": {
-                                        "labelProps.text": "page_text"
-                                    },
                                     "labelProps": {
-                                        "text": "1 / 1"
+                                        "text": "下一页"
                                     },
                                     "style": {
-                                        "textColor": "#8494a8",
-                                        "fontSize": "${constant.video.font.meta}"
+                                        "textColor": "#dbe4f2",
+                                        "fontSize": "${constant.video.font.rowMeta}"
                                     },
                                     "placement": {
-                                        "mode": "flow",
-                                        "width": "120dp",
-                                        "height": "wrap"
+                                        "mode": "flow"
                                     }
-                                },
-                                {
-                                    "type": "button",
-                                    "id": "next",
-                                    "events": [
-                                        {
-                                            "type": "clicked",
-                                            "action": "video.page.next"
-                                        }
-                                    ],
-                                    "style": {
-                                        "bgColor": "#18223a",
-                                        "radius": "12dp",
-                                        "borderWidth": "0dp"
-                                    },
-                                    "layout": {
-                                        "type": "flex",
-                                        "mainAlign": "center",
-                                        "crossAlign": "center"
-                                    },
-                                    "placement": {
-                                        "mode": "flow",
-                                        "width": "120dp",
-                                        "height": "match"
-                                    },
-                                    "children": [
-                                        {
-                                            "type": "label",
-                                            "id": "text",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "labelProps": {
-                                                "text": "下一页"
-                                            },
-                                            "style": {
-                                                "textColor": "#dbe4f2",
-                                                "fontSize": "${constant.video.font.meta}"
-                                            },
-                                            "placement": {
-                                                "mode": "flow"
-                                            }
-                                        }
-                                    ]
                                 }
                             ]
                         }

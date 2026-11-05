@@ -17,17 +17,17 @@
         ],
         "style": {
             "bgColor": "#0d1626",
-            "radius": "14dp",
+            "radius": "12dp",
             "borderWidth": "1dp",
             "borderColor": "#1b2740",
-            "padding": "8dp"
+            "padding": "6dp"
         },
         "layout": {
             "type": "flex",
             "flexFlow": "row",
             "mainAlign": "start",
             "crossAlign": "center",
-            "gap": "12dp"
+            "gap": "8dp"
         },
         "placement": {
             "mode": "flow",
@@ -71,7 +71,7 @@
                         },
                         "style": {
                             "textColor": "#eef3fb",
-                            "fontSize": "${constant.music.font.name}"
+                            "fontSize": "${constant.music.font.row}"
                         },
                         "placement": {
                             "mode": "flow",
@@ -93,7 +93,7 @@
                         },
                         "style": {
                             "textColor": "#8494a8",
-                            "fontSize": "${constant.music.font.meta}"
+                            "fontSize": "${constant.music.font.rowMeta}"
                         },
                         "placement": {
                             "mode": "flow",
@@ -117,7 +117,7 @@
                 },
                 "style": {
                     "textColor": "#7f8ea3",
-                    "fontSize": "${constant.music.font.meta}",
+                    "fontSize": "${constant.music.font.rowMeta}",
                     "textAlign": "right"
                 },
                 "placement": {
