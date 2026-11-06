@@ -95,6 +95,9 @@ an NVIDIA card (`nvidia-smi`).
 - Gallery, music and video open on their main view; a 320 dp drawer (five rows
   per page) slides over the right side and nothing is loaded or played until a
   row is tapped, and "refresh" only rescans.
+- The action bars put the "list" toggle on the far right, next to the drawer.
+  Auto-next (music / video) is an optional switch, off by default; the gallery
+  slideshow is off by default as well.
 - Waveshare publishes a XiaoZhi AI image for this board (✅ in the wiki table),
   but it replaces this firmware and partition table; the two cannot be switched
   in one click. Restore with `firmware/ESP32-P4-WIFI6-Touch-LCD-7B-FactoryOnly.bin`.

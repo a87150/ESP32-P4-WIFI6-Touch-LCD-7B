@@ -221,47 +221,6 @@
                             "children": [
                                 {
                                     "type": "button",
-                                    "id": "back",
-                                    "events": [
-                                        {
-                                            "type": "clicked",
-                                            "action": "gallery.list"
-                                        }
-                                    ],
-                                    "style": {
-                                        "bgColor": "#18223a",
-                                        "radius": "${constant.gallery.layout.buttonRadius}",
-                                        "borderWidth": "0dp"
-                                    },
-                                    "layout": {
-                                        "type": "flex",
-                                        "mainAlign": "center",
-                                        "crossAlign": "center"
-                                    },
-                                    "placement": {
-                                        "mode": "flow",
-                                        "width": "88dp",
-                                        "height": "match"
-                                    },
-                                    "children": [
-                                        {
-                                            "type": "label",
-                                            "id": "text",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "labelProps": {
-                                                "text": "列表"
-                                            },
-                                            "style": {
-                                                "textColor": "#dbe4f2",
-                                                "fontSize": "${constant.gallery.font.button}"
-                                            }
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "button",
                                     "id": "prev",
                                     "events": [
                                         {
@@ -460,6 +419,47 @@
                                             },
                                             "labelProps": {
                                                 "text": "刷新"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.gallery.font.button}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "back",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "gallery.list"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#18223a",
+                                        "radius": "${constant.gallery.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "88dp",
+                                        "height": "match"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "列表"
                                             },
                                             "style": {
                                                 "textColor": "#dbe4f2",

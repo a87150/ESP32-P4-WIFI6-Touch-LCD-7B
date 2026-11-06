@@ -131,12 +131,15 @@ In-house components:
   repeatedly.
 - A separate **0–100 volume slider** applies immediately.
 - The detail area shows track index / total, sample rate, channel layout, bit
-  depth, **bitrate** (sample rate × channels × bit depth) and file size; tracks
-  advance automatically, and returning from the background keeps the player page
-  while a track is loaded.
+  depth, **bitrate** (sample rate × channels × bit depth) and file size;
+  returning from the background keeps the player page while a track is loaded.
 - There is no title bar: the enlarged player card (**300 dp cover**) fills the
-  upper area, and the bottom control bar centers list, previous, play / pause,
-  next and refresh.
+  upper area, and the bottom control bar centers previous, play / pause, next,
+  refresh, auto-next and list. **"List" sits on the far right**, next to the
+  drawer that slides in from that side.
+- **Auto-next is an optional switch** (off by default): when on, a finished
+  track advances to the next one; when off, playback stops on the current track
+  with the position reset.
 - The page starts right under the status bar (`pageY = 56dp`) so the content gets
   as much vertical room as possible.
 - Folders: `/littlefs/sounds`, `/sdcard/music`, `/sdcard`.
@@ -154,8 +157,11 @@ In-house components:
   format and color depth, for example `1024x600 · 1.2 MB · PNG · 24-bit`
   (PNG: IHDR bit depth × color channels, JPEG: SOF precision × components).
 - Layout: a near-full-width preview without a title bar, then a bottom card with
-  index + file name + details, centered action buttons and a status line.
-- Previous / next browsing; **slideshow** changes the image every 4 seconds.
+  index + file name + details, centered action buttons and a status line. Button
+  order: previous, next, set wallpaper, slideshow, refresh, list, with **"List"
+  on the far right**.
+- Previous / next browsing; **slideshow is an optional switch** (off by default)
+  and changes the image every 4 seconds while enabled.
 - **Set wallpaper** writes `/littlefs/system/super/wallpaper.txt` and takes
   effect when the launcher is shown again.
 - One stable image resource id is reused, so switching images releases the
@@ -171,8 +177,10 @@ In-house components:
   size; the movie being played is tagged "playing".
 - Format: `.mjpeg` / `.mjpg` / `.mjp`, i.e. **concatenated JPEG frames**, no
   container and no audio track.
-- Fixed **12 fps** playback (MJPEG has no timestamps); the next movie starts
-  automatically, and pause / previous / next / seek are supported.
+- Fixed **12 fps** playback (MJPEG has no timestamps); pause / previous / next /
+  seek are supported. **Auto-next is an optional switch** (off by default): when
+  on, a finished movie advances to the next one; when off, it stops on the last
+  frame.
 - **Double tap on the picture pauses / resumes**; the GUI has no double-click
   event, so `video.tap` merges two clicks inside a 400 ms window.
 - Hardware JPEG decoding (`esp_driver_jpeg`) outputs RGB565 with double
@@ -183,7 +191,8 @@ In-house components:
   1:1 scale** (LVGL does not upscale, which protects the frame rate); the stage is
   976 × 432 and larger movies are scaled down. The bottom 76 dp is a separate
   control bar: progress and time on the first row, centered buttons below
-  (list / previous / pause / next / refresh).
+  (previous / pause / next / refresh / auto-next / list), **"List" on the far
+  right** next to the drawer.
   Authoring at **976 × 432** gives full-screen 1:1 playback at 12 fps.
 - Folders: `/littlefs/videos`, `/sdcard/videos`, `/sdcard`.
 
@@ -475,16 +484,19 @@ The GUI only exposes `clicked`, so the video app:
 4. **System monitor**: disk / CPU / memory data; CPU / GPU temperatures in the
    gauge center; `HIGH!` above 90 °C; PC metrics and DISK I/O after starting
    `scripts/pc_agent.py`.
-5. **Music**: opens on the player and stays silent; "list" opens the 5-row drawer
-   (over the main view) and a row starts playback and closes it; play / pause /
-   previous / next / seek / volume; detail line shows sample rate, bit depth,
+5. **Music**: opens on the player and stays silent; "list" (rightmost button)
+   opens the 5-row drawer (over the main view) and a row starts playback and
+   closes it; play / pause / previous / next / seek / volume; auto-next is off by
+   default and advances when enabled; detail line shows sample rate, bit depth,
    bitrate and size; playback continues on the launcher.
-6. **Gallery**: opens on the first picture; "list" opens the 5-row drawer and a
-   row switches the preview and closes it; previous / next; resolution / size /
-   format / depth details; slideshow every 4 s; wallpaper applies on the launcher.
-7. **Video**: opens on the empty player; "list" opens the 5-row drawer and a row
-   loads and plays that movie; double tap pauses / resumes; progress row plus
-   centered buttons; seek; previous / next switching without stutter.
+6. **Gallery**: opens on the first picture; "list" (rightmost button) opens the
+   5-row drawer and a row switches the preview and closes it; previous / next;
+   resolution / size / format / depth details; slideshow is off by default;
+   wallpaper applies on the launcher.
+7. **Video**: opens on the empty player; "list" (rightmost button) opens the
+   5-row drawer and a row loads and plays that movie; double tap pauses /
+   resumes; progress row plus centered buttons; auto-next is off by default;
+   seek; previous / next switching without stutter.
 8. **Settings**: Wi-Fi shows IP / MAC and reconnects; BLE scan and advertising
    are mutually exclusive.
 

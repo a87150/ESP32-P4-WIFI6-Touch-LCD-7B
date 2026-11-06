@@ -58,6 +58,7 @@ constexpr const char *PATH_TIME_LABEL = "/music/page/player_card/info/time_label
 constexpr const char *PATH_VOLUME_SLIDER = "/music/page/player_card/info/volume/volume_slider";
 constexpr const char *PATH_VOLUME_TEXT = "/music/page/player_card/info/volume/volume_text";
 constexpr const char *PATH_TOGGLE_TEXT = "/music/page/controls/toggle/text";
+constexpr const char *PATH_AUTO_NEXT_TEXT = "/music/page/controls/auto_next/text";
 constexpr const char *PATH_STATUS = "/music/page/status";
 
 // The playlist is paged so a full SD card never builds hundreds of views.
@@ -72,6 +73,7 @@ constexpr const char *ACTION_PAGE_NEXT = "music.page.next";
 constexpr const char *ACTION_PREV = "music.prev";
 constexpr const char *ACTION_TOGGLE = "music.toggle";
 constexpr const char *ACTION_NEXT = "music.next";
+constexpr const char *ACTION_AUTO_NEXT = "music.auto_next";
 constexpr const char *ACTION_REFRESH = "music.refresh";
 constexpr const char *ACTION_SEEK = "music.seek";
 constexpr const char *ACTION_VOLUME = "music.volume";
@@ -297,9 +299,11 @@ std::expected<void, std::string> MusicApp::on_start(system::core::AppContext &co
     requested_seek_ = -1;
     seek_hold_until_ms_ = 0;
     list_page_ = 0;
+    auto_next_ = false;
     scan_tracks();
     subscribe_actions(context);
     start_engine();
+    (void)context.gui().set_binding_value(PATH_AUTO_NEXT_TEXT, "auto_next_text", "连播：关");
 
     auto timer = context.timer().start_periodic(PLAYBACK_TIMER_NAME, PLAYBACK_PERIOD_MS);
     if (!timer) {
@@ -388,8 +392,24 @@ std::expected<void, std::string> MusicApp::on_timer(
     }
 
     if (finished && !tracks_.empty()) {
-        // Auto-advance to the next track.
-        play_index((index_ + 1) % tracks_.size(), true);
+        if (auto_next_) {
+            // 连播打开：播完自动切下一首。
+            play_index((index_ + 1) % tracks_.size(), true);
+        } else {
+            // 连播关闭：停在当前曲目，下次按播放从头重放。
+            {
+                std::lock_guard<std::mutex> lock(state_.mutex);
+                state_.play_requested = false;
+                state_.paused = false;
+                state_.byte_pos = 0;
+                state_.track_finished = false;
+            }
+            notify_engine();
+            if (!paused_ui_) {
+                refresh_status("播放完毕（连播已关闭）");
+                refresh_ui(context);
+            }
+        }
     }
 
     if (requested_seek_ >= 0) {
@@ -503,6 +523,19 @@ void MusicApp::subscribe_actions(system::core::AppContext &context)
         .action = ACTION_NEXT,
         .handler = [this](const gui::Event &) {
             step_track(1);
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_AUTO_NEXT,
+        .handler = [this](const gui::Event &) {
+            auto_next_ = !auto_next_;
+            if (context_ == nullptr) {
+                return;
+            }
+            (void)context_->gui().set_binding_value(
+                PATH_AUTO_NEXT_TEXT, "auto_next_text", auto_next_ ? "连播：开" : "连播：关"
+            );
+            refresh_status(auto_next_ ? "播完自动播放下一首" : "播完停在当前曲目");
         },
     });
     subscriptions.push_back({

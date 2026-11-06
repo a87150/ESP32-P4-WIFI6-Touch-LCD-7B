@@ -275,47 +275,6 @@
                             "children": [
                                 {
                                     "type": "button",
-                                    "id": "back",
-                                    "events": [
-                                        {
-                                            "type": "clicked",
-                                            "action": "video.list"
-                                        }
-                                    ],
-                                    "style": {
-                                        "bgColor": "#18223a",
-                                        "radius": "${constant.video.layout.buttonRadius}",
-                                        "borderWidth": "0dp"
-                                    },
-                                    "layout": {
-                                        "type": "flex",
-                                        "mainAlign": "center",
-                                        "crossAlign": "center"
-                                    },
-                                    "placement": {
-                                        "mode": "flow",
-                                        "width": "84dp",
-                                        "height": "match"
-                                    },
-                                    "children": [
-                                        {
-                                            "type": "label",
-                                            "id": "text",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "labelProps": {
-                                                "text": "列表"
-                                            },
-                                            "style": {
-                                                "textColor": "#dbe4f2",
-                                                "fontSize": "${constant.video.font.button}"
-                                            }
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "button",
                                     "id": "prev",
                                     "events": [
                                         {
@@ -476,6 +435,91 @@
                                             },
                                             "style": {
                                                 "textColor": "#c8e8d9",
+                                                "fontSize": "${constant.video.font.button}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "auto_next",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "video.auto_next"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#1b2540",
+                                        "radius": "${constant.video.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "96dp",
+                                        "height": "${constant.video.layout.buttonHeight}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "bindings": {
+                                                "labelProps.text": "auto_next_text"
+                                            },
+                                            "labelProps": {
+                                                "text": "连播：关"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.video.font.button}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "back",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "video.list"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#18223a",
+                                        "radius": "${constant.video.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "84dp",
+                                        "height": "match"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "列表"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
                                                 "fontSize": "${constant.video.font.button}"
                                             }
                                         }

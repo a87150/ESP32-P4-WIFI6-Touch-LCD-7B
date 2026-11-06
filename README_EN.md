@@ -226,10 +226,12 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
   not restart the codec continuously); a separate 0–100 volume slider applies
   immediately.
 - The detail line shows track index / total, sample rate, channel layout, bit
-  depth, bitrate (sample rate × channels × bit depth) and file size; tracks
-  advance automatically.
+  depth, bitrate (sample rate × channels × bit depth) and file size.
 - Folders: `/littlefs/sounds`, `/sdcard/music`, `/sdcard`.
-- The bottom bar holds list, previous, play / pause, next and refresh, centered.
+- The bottom bar holds previous, play / pause, next, refresh, auto-next and list,
+  centered, with **"List" on the far right** next to the drawer.
+- **Auto-next is optional** (off by default): turn it on to advance to the next
+  track when one ends; turn it off to stop on the current track.
 - The cover is 300 dp; the page starts right under the status bar so the player
   gets as much room as possible.
 
@@ -245,9 +247,10 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 - PNG / JPEG are supported; the detail line shows resolution, file size, format
   and color depth (for example `1024x600 · 1.2 MB · PNG · 24-bit`).
 - Layout: a near-full-width preview on top, then a bottom bar with details,
-  centered action buttons and a status line.
-- Previous / next browsing; **slideshow** advances every 4 s; **set wallpaper**
-  writes `/littlefs/system/super/wallpaper.txt` and takes effect on the launcher.
+  centered action buttons and a status line; the last button is the list toggle.
+- Previous / next browsing; **slideshow is optional** (off by default) and
+  advances every 4 s while enabled; **set wallpaper** writes
+  `/littlefs/system/super/wallpaper.txt` and takes effect on the launcher.
 - Images reuse one resource id, so switching releases the previous decoded frame
   and long browsing sessions do not leak memory.
 
@@ -260,8 +263,9 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
   movie as playing.
 - Format: `.mjpeg` / `.mjpg` / `.mjp`, i.e. concatenated JPEG frames with no
   container and no audio track.
-- Fixed **12 fps** playback (MJPEG carries no timestamps); the next movie starts
-  automatically.
+- Fixed **12 fps** playback (MJPEG carries no timestamps).
+- **Auto-next is optional** (off by default): turn it on to advance to the next
+  movie when one ends; turn it off to stop on the last frame.
 - **Double tap on the picture pauses / resumes**: the JSON DSL has no double-click
   event, so `video.tap` merges two clicks inside a 400 ms window.
 - Hardware JPEG decoding (`esp_driver_jpeg`) outputs RGB565 with double
@@ -269,7 +273,8 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
   and do not block the UI.
 - The stage is 976 × 432; smaller movies are centered at their native 1:1 size
   (LVGL does not upscale, which keeps the frame rate). The bottom 76 dp bar holds
-  the progress slider plus time on the first row and centered buttons below.
+  the progress slider plus time on the first row and centered buttons below, with
+  the list toggle on the far right.
 - Folders: `/littlefs/videos`, `/sdcard/videos`, `/sdcard`.
 
 ### Settings

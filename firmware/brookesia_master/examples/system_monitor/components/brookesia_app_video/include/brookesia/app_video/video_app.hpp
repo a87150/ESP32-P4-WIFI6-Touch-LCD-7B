@@ -135,6 +135,8 @@ private:
     size_t movie_index_ = 0;
     bool paused_ui_ = false;
     std::atomic<bool> playing_{false};
+    // Optional "play the next movie when this one ends" mode (off by default).
+    bool auto_next_ = false;
 
     Source source_;
     jpeg_decoder_handle_t decoder_ = nullptr;
@@ -148,8 +150,8 @@ private:
     int32_t shown_height_ = 0;
     bool images_registered_ = false;
     bool frame_area_valid_ = false;
-    int32_t frame_area_width_ = 1024;
-    int32_t frame_area_height_ = 524;
+    int32_t frame_area_width_ = 976;
+    int32_t frame_area_height_ = 432;
 
     PlaybackState state_;
     boost::thread worker_;

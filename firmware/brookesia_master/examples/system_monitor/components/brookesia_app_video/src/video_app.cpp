@@ -51,6 +51,7 @@ constexpr const char *PATH_STATUS = "/video/page/stage/hint/status";
 constexpr const char *PATH_TIME = "/video/page/bar/row_progress/time";
 constexpr const char *PATH_PROGRESS = "/video/page/bar/row_progress/progress";
 constexpr const char *PATH_TOGGLE_TEXT = "/video/page/bar/row_buttons/toggle/text";
+constexpr const char *PATH_AUTO_NEXT_TEXT = "/video/page/bar/row_buttons/auto_next/text";
 
 // The movie picker is paged so a full SD card never builds hundreds of views.
 constexpr const char *LIST_TEMPLATE_ID = "video_list_item";
@@ -64,6 +65,7 @@ constexpr const char *ACTION_PAGE_NEXT = "video.page.next";
 constexpr const char *ACTION_PREV = "video.prev";
 constexpr const char *ACTION_TOGGLE = "video.toggle";
 constexpr const char *ACTION_NEXT = "video.next";
+constexpr const char *ACTION_AUTO_NEXT = "video.auto_next";
 constexpr const char *ACTION_SEEK = "video.seek";
 constexpr const char *ACTION_REFRESH = "video.refresh";
 // Emitted when the picture area is tapped. Two taps inside the window toggle
@@ -332,6 +334,8 @@ std::expected<void, std::string> VideoApp::on_start(system::core::AppContext &co
     context_ = &context;
     paused_ui_ = false;
     playing_ = false;
+    auto_next_ = false;
+    (void)context.gui().set_binding_value(PATH_AUTO_NEXT_TEXT, "auto_next_text", "连播：关");
 
     if (decoder_ == nullptr) {
         jpeg_decode_engine_cfg_t engine_config = {
@@ -449,13 +453,25 @@ std::expected<void, std::string> VideoApp::on_timer(
         playing_ = false;
         set_status(error_text.empty() ? "无法解码这个视频" : error_text);
     } else if (finished) {
-        // Auto advance to the next movie. The switch is queued for the playback
-        // worker: loading a movie reads the file, re-arms the decoder and swaps
-        // the frame buffers, which must not run on the timer task.
-        bool queued = false;
-        {
-            std::lock_guard<std::mutex> lock(state_.mutex);
-            if (!movies_.empty()) {
+        if (!auto_next_) {
+            // 连播关闭：停在最后一帧，同时把位置归零，按播放即可从头重看。
+            {
+                std::lock_guard<std::mutex> lock(state_.mutex);
+                state_.seek_request = 0;
+                state_.paused = true;
+                state_.finished = false;
+            }
+            notify_worker();
+            playing_ = false;
+            set_status("播放完毕（连播已关闭），按播放重看");
+        } else if (!movies_.empty()) {
+            // Auto advance to the next movie. The switch is queued for the
+            // playback worker: loading a movie reads the file, re-arms the
+            // decoder and swaps the frame buffers, which must not run on the
+            // timer task.
+            bool queued = false;
+            {
+                std::lock_guard<std::mutex> lock(state_.mutex);
                 state_.pending_index = (movie_index_ + 1) % movies_.size();
                 state_.request_load = true;
                 state_.seek_request = UINT32_MAX;
@@ -463,13 +479,15 @@ std::expected<void, std::string> VideoApp::on_timer(
                 state_.paused = false;
                 queued = true;
             }
-        }
-        if (!queued) {
-            playing_ = false;
-        } else if (!worker_started_) {
-            start_worker();
+            if (!queued) {
+                playing_ = false;
+            } else if (!worker_started_) {
+                start_worker();
+            } else {
+                notify_worker();
+            }
         } else {
-            notify_worker();
+            playing_ = false;
         }
     }
 
@@ -872,6 +890,19 @@ void VideoApp::subscribe_actions(system::core::AppContext &context)
             if (context_ != nullptr) {
                 step_movie(1);
             }
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_AUTO_NEXT,
+        .handler = [this](const gui::Event &) {
+            auto_next_ = !auto_next_;
+            if (context_ == nullptr) {
+                return;
+            }
+            (void)context_->gui().set_binding_value(
+                PATH_AUTO_NEXT_TEXT, "auto_next_text", auto_next_ ? "连播：开" : "连播：关"
+            );
+            set_status(auto_next_ ? "播完自动播放下一部" : "播完停在当前影片");
         },
     });
     subscriptions.push_back({

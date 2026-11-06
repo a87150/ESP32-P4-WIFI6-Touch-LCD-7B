@@ -104,6 +104,8 @@ private:
     // timer never stats the filesystem.
     uint32_t track_bytes_ = 0;
     bool paused_ui_ = false;
+    // Optional "play the next track when this one ends" mode (off by default).
+    bool auto_next_ = false;
 
     // Last values written to the sliders. LVGL emits a value-changed event for
     // programmatic updates too, so remember them to avoid seek/volume loops.
