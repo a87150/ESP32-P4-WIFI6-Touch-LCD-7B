@@ -18,6 +18,7 @@
 #include "lvgl.h"
 #include "brookesia/gui_interface.hpp"
 #include "brookesia/hal_interface.hpp"
+#include "brookesia/hal_interface/interfaces/audio/codec_player.hpp"
 #include "brookesia/system_core.hpp"
 
 namespace esp_brookesia::app::video {
@@ -127,6 +128,7 @@ private:
     /* ---- UI (app task) ---- */
     void refresh_ui(system::core::AppContext &context);
     void set_status(const std::string &text);
+    void adjust_volume(int delta);
 
     system::core::AppContext *context_ = nullptr;
     std::vector<std::string> movies_;
@@ -137,6 +139,10 @@ private:
     std::atomic<bool> playing_{false};
     // Optional "play the next movie when this one ends" mode (off by default).
     bool auto_next_ = false;
+    // Shared codec volume (the movie itself has no audio, but the same codec may
+    // still be playing music in the background).
+    hal::InterfaceHandle<hal::audio::CodecPlayerIface> audio_;
+    int32_t volume_ = 75;
 
     Source source_;
     jpeg_decoder_handle_t decoder_ = nullptr;

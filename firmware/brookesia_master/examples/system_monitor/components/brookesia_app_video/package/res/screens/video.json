@@ -401,6 +401,88 @@
                                 },
                                 {
                                     "type": "button",
+                                    "id": "vol_down",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "video.volume.down"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#18223a",
+                                        "radius": "${constant.video.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "56dp",
+                                        "height": "${constant.video.layout.buttonHeight}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "−"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.video.font.button}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "vol_up",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "video.volume.up"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#18223a",
+                                        "radius": "${constant.video.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "56dp",
+                                        "height": "${constant.video.layout.buttonHeight}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "+"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.video.font.button}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
                                     "id": "refresh",
                                     "events": [
                                         {

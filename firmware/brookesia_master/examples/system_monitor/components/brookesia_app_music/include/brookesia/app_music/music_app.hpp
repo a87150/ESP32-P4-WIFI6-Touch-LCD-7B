@@ -4,6 +4,7 @@
 #pragma once
 
 #include <condition_variable>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -85,9 +86,11 @@ private:
     void step_track(int direction);
     void seek_to(int32_t permille);
     void apply_seek(int32_t permille);
+    void adjust_volume(int delta);
     void set_volume(int volume);
     void refresh_status(const std::string &text);
     void refresh_ui(system::core::AppContext &context);
+    void tick_wave(system::core::AppContext &context);
 
     void start_engine();
     void stop_engine();
@@ -107,13 +110,14 @@ private:
     // Optional "play the next track when this one ends" mode (off by default).
     bool auto_next_ = false;
 
-    // Last values written to the sliders. LVGL emits a value-changed event for
-    // programmatic updates too, so remember them to avoid seek/volume loops.
+    // Last value written to the progress slider. LVGL emits a value-changed
+    // event for programmatic updates too, so remember it to avoid seek loops.
     int32_t last_programmed_permille_ = -1;
-    int32_t last_programmed_volume_ = -1;
     int32_t requested_seek_ = -1;
     int32_t volume_ = 75;
     int64_t seek_hold_until_ms_ = 0;
+    // Height of every spectrum bar in the current frame; -1 forces a refresh.
+    std::array<int32_t, 22> wave_heights_{};
 
     EngineState state_;
     hal::InterfaceHandle<hal::audio::CodecPlayerIface> player_;

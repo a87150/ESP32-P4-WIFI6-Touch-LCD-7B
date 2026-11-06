@@ -52,7 +52,13 @@
                         "radius": "${constant.music.layout.cardRadius}",
                         "borderWidth": "1dp",
                         "borderColor": "#1b2740",
-                        "padding": "${constant.music.layout.cardPadding}"
+                        "padding": "${constant.music.layout.cardPadding}",
+                        "bgGradientColor": "#152039",
+                        "bgGradientDirection": "vertical",
+                        "bgGradientStop": 140,
+                        "shadowWidth": "18dp",
+                        "shadowColor": "#05080f",
+                        "shadowOffsetY": "6dp"
                     },
                     "placement": {
                         "mode": "flow",
@@ -158,6 +164,536 @@
                                     }
                                 },
                                 {
+                                    "type": "container",
+                                    "id": "wave",
+                                    "commonProps": {
+                                        "clickable": false
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "flexFlow": "row",
+                                        "mainAlign": "start",
+                                        "crossAlign": "end",
+                                        "gap": "4dp"
+                                    },
+                                    "style": {
+                                        "padding": "0dp"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "match",
+                                        "height": "${constant.music.layout.waveHeight}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "container",
+                                            "id": "bar_0",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_0"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_1",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_1"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_2",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_2"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_3",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_3"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_4",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_4"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_5",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_5"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_6",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_6"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_7",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_7"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_8",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_8"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_9",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_9"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_10",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_10"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_11",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_11"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_12",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_12"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_13",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_13"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_14",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_14"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_15",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_15"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_16",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_16"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_17",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_17"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_18",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_18"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_19",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_19"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_20",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_20"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        },
+                                        {
+                                            "type": "container",
+                                            "id": "bar_21",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "style": {
+                                                "bgColor": "#22d3ee",
+                                                "bgGradientColor": "#6366f1",
+                                                "bgGradientDirection": "vertical",
+                                                "radius": "3dp",
+                                                "borderWidth": "0dp"
+                                            },
+                                            "bindings": {
+                                                "placement.height": "wave_21"
+                                            },
+                                            "placement": {
+                                                "mode": "flow",
+                                                "width": "wrap",
+                                                "height": "20dp",
+                                                "flexGrow": 1
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
                                     "type": "label",
                                     "id": "time_label",
                                     "labelProps": {
@@ -227,101 +763,6 @@
                                         "width": "match",
                                         "height": "1dp"
                                     }
-                                },
-                                {
-                                    "type": "container",
-                                    "id": "volume",
-                                    "commonProps": {
-                                        "clickable": false
-                                    },
-                                    "layout": {
-                                        "type": "flex",
-                                        "flexFlow": "row",
-                                        "mainAlign": "start",
-                                        "crossAlign": "center",
-                                        "gap": "10dp"
-                                    },
-                                    "style": {
-                                        "padding": "0dp"
-                                    },
-                                    "placement": {
-                                        "mode": "flow",
-                                        "width": "match",
-                                        "height": "${constant.music.layout.volumeHeight}"
-                                    },
-                                    "children": [
-                                        {
-                                            "type": "label",
-                                            "id": "volume_label",
-                                            "labelProps": {
-                                                "text": "音量"
-                                            },
-                                            "style": {
-                                                "textColor": "#7f8ea3",
-                                                "fontSize": "${constant.music.font.status}"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "wrap"
-                                            }
-                                        },
-                                        {
-                                            "type": "slider",
-                                            "id": "volume_slider",
-                                            "rangeProps": {
-                                                "min": 0,
-                                                "max": 100,
-                                                "value": 70
-                                            },
-                                            "events": [
-                                                {
-                                                    "type": "valueChanged",
-                                                    "action": "music.volume"
-                                                }
-                                            ],
-                                            "style": {
-                                                "bgColor": "#1a2334",
-                                                "radius": "5dp"
-                                            },
-                                            "partStyles": {
-                                                "indicator": {
-                                                    "bgColor": "#3ddc97",
-                                                    "radius": "5dp"
-                                                },
-                                                "knob": {
-                                                    "bgColor": "#f8fafc",
-                                                    "radius": "7dp"
-                                                }
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "18dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "label",
-                                            "id": "volume_text",
-                                            "labelProps": {
-                                                "text": "70%"
-                                            },
-                                            "style": {
-                                                "textColor": "#a9b8cd",
-                                                "fontSize": "${constant.music.font.status}",
-                                                "textAlign": "right"
-                                            },
-                                            "bindings": {
-                                                "labelProps.text": "volume_text"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "${constant.music.layout.volumeTextWidth}",
-                                                "height": "wrap"
-                                            }
-                                        }
-                                    ]
                                 }
                             ]
                         }
@@ -471,6 +912,88 @@
                                     },
                                     "labelProps": {
                                         "text": "下一首"
+                                    },
+                                    "style": {
+                                        "textColor": "#dbe4f2",
+                                        "fontSize": "${constant.music.font.button}"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "button",
+                            "id": "vol_down",
+                            "events": [
+                                {
+                                    "type": "clicked",
+                                    "action": "music.volume.down"
+                                }
+                            ],
+                            "style": {
+                                "bgColor": "#18223a",
+                                "radius": "${constant.music.layout.buttonRadius}",
+                                "borderWidth": "0dp"
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "56dp",
+                                "height": "${constant.music.layout.buttonHeight}"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "text",
+                                    "commonProps": {
+                                        "clickable": false
+                                    },
+                                    "labelProps": {
+                                        "text": "−"
+                                    },
+                                    "style": {
+                                        "textColor": "#dbe4f2",
+                                        "fontSize": "${constant.music.font.button}"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "button",
+                            "id": "vol_up",
+                            "events": [
+                                {
+                                    "type": "clicked",
+                                    "action": "music.volume.up"
+                                }
+                            ],
+                            "style": {
+                                "bgColor": "#18223a",
+                                "radius": "${constant.music.layout.buttonRadius}",
+                                "borderWidth": "0dp"
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "56dp",
+                                "height": "${constant.music.layout.buttonHeight}"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "text",
+                                    "commonProps": {
+                                        "clickable": false
+                                    },
+                                    "labelProps": {
+                                        "text": "+"
                                     },
                                     "style": {
                                         "textColor": "#dbe4f2",

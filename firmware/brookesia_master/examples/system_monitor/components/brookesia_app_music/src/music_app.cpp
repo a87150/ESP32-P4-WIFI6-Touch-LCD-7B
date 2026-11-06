@@ -4,8 +4,10 @@
 #include "brookesia/app_music/music_app.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <memory>
@@ -43,6 +45,8 @@ constexpr const char *GUI_ROOT = "res/root.json";
 constexpr const char *MUSIC_FLOW_ID = "music_flow";
 constexpr const char *PLAYBACK_TIMER_NAME = "music_playback";
 constexpr int32_t PLAYBACK_PERIOD_MS = 500;
+constexpr const char *WAVE_TIMER_NAME = "music_wave";
+constexpr int32_t WAVE_PERIOD_MS = 90;
 
 // Absolute paths inside the music screen document.
 constexpr const char *PATH_DRAWER = "/music/drawer";
@@ -55,8 +59,10 @@ constexpr const char *PATH_TRACK_META = "/music/page/player_card/info/track_meta
 constexpr const char *PATH_TRACK_DETAIL = "/music/page/player_card/info/track_detail";
 constexpr const char *PATH_PROGRESS = "/music/page/player_card/info/progress";
 constexpr const char *PATH_TIME_LABEL = "/music/page/player_card/info/time_label";
-constexpr const char *PATH_VOLUME_SLIDER = "/music/page/player_card/info/volume/volume_slider";
-constexpr const char *PATH_VOLUME_TEXT = "/music/page/player_card/info/volume/volume_text";
+constexpr const char *PATH_WAVE_BAR_PREFIX = "/music/page/player_card/info/wave/bar_";
+constexpr int WAVE_BAR_COUNT = 22;
+constexpr int WAVE_BAR_MIN_DP = 6;
+constexpr int WAVE_BAR_MAX_DP = 70;
 constexpr const char *PATH_TOGGLE_TEXT = "/music/page/controls/toggle/text";
 constexpr const char *PATH_AUTO_NEXT_TEXT = "/music/page/controls/auto_next/text";
 constexpr const char *PATH_STATUS = "/music/page/status";
@@ -76,7 +82,8 @@ constexpr const char *ACTION_NEXT = "music.next";
 constexpr const char *ACTION_AUTO_NEXT = "music.auto_next";
 constexpr const char *ACTION_REFRESH = "music.refresh";
 constexpr const char *ACTION_SEEK = "music.seek";
-constexpr const char *ACTION_VOLUME = "music.volume";
+constexpr const char *ACTION_VOLUME_DOWN = "music.volume.down";
+constexpr const char *ACTION_VOLUME_UP = "music.volume.up";
 
 constexpr const char *TRACK_DIRS[] = {
     "/littlefs/sounds",
@@ -96,6 +103,11 @@ int64_t now_ms()
     return std::chrono::duration_cast<std::chrono::milliseconds>(
                std::chrono::steady_clock::now().time_since_epoch()
            ).count();
+}
+
+std::string wave_bar_path(int index)
+{
+    return std::string(PATH_WAVE_BAR_PREFIX) + std::to_string(index);
 }
 
 bool has_wav_extension(const std::string &name)
@@ -295,9 +307,9 @@ std::expected<void, std::string> MusicApp::on_start(system::core::AppContext &co
     context_ = &context;
     paused_ui_ = false;
     last_programmed_permille_ = -1;
-    last_programmed_volume_ = -1;
     requested_seek_ = -1;
     seek_hold_until_ms_ = 0;
+    wave_heights_.fill(-1);
     list_page_ = 0;
     auto_next_ = false;
     scan_tracks();
@@ -308,6 +320,10 @@ std::expected<void, std::string> MusicApp::on_start(system::core::AppContext &co
     auto timer = context.timer().start_periodic(PLAYBACK_TIMER_NAME, PLAYBACK_PERIOD_MS);
     if (!timer) {
         BROOKESIA_LOGW("Failed to start music UI timer: %1%", timer.error());
+    }
+    auto wave_timer = context.timer().start_periodic(WAVE_TIMER_NAME, WAVE_PERIOD_MS);
+    if (!wave_timer) {
+        BROOKESIA_LOGW("Failed to start music wave timer: %1%", wave_timer.error());
     }
 
     if (tracks_.empty()) {
@@ -367,6 +383,10 @@ std::expected<void, std::string> MusicApp::on_timer(
 )
 {
     (void)timer_id;
+    if (name == WAVE_TIMER_NAME) {
+        tick_wave(context);
+        return {};
+    }
     if (name != PLAYBACK_TIMER_NAME) {
         return {};
     }
@@ -562,11 +582,15 @@ void MusicApp::subscribe_actions(system::core::AppContext &context)
         },
     });
     subscriptions.push_back({
-        .action = ACTION_VOLUME,
-        .handler = [this](const gui::Event &event) {
-            if (const auto value = event.get_int64("value")) {
-                set_volume(static_cast<int>(*value));
-            }
+        .action = ACTION_VOLUME_DOWN,
+        .handler = [this](const gui::Event &) {
+            adjust_volume(-10);
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_VOLUME_UP,
+        .handler = [this](const gui::Event &) {
+            adjust_volume(10);
         },
     });
 
@@ -804,10 +828,16 @@ void MusicApp::apply_seek(int32_t permille)
     BROOKESIA_LOGI("Music: seek to %1%%%", permille / 10);
 }
 
+void MusicApp::adjust_volume(int delta)
+{
+    set_volume(volume_ + delta);
+}
+
 void MusicApp::set_volume(int volume)
 {
     volume = std::clamp(volume, 0, 100);
-    if (volume == last_programmed_volume_) {
+    if (volume == volume_) {
+        refresh_status("音量 " + std::to_string(volume) + "%");
         return;
     }
     {
@@ -817,9 +847,7 @@ void MusicApp::set_volume(int volume)
     }
     volume_ = volume;
     notify_engine();
-    if (context_ != nullptr && !paused_ui_) {
-        refresh_ui(*context_);
-    }
+    refresh_status("音量 " + std::to_string(volume) + "%");
 }
 
 
@@ -842,10 +870,6 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
         (void)context.gui().set_binding_value(PATH_TIME_LABEL, "time_label", "00:00 / 00:00");
         (void)context.gui().set_value(PATH_PROGRESS, 0);
         (void)context.gui().set_binding_value(PATH_TOGGLE_TEXT, "toggle_text", "播放");
-        (void)context.gui().set_value(PATH_VOLUME_SLIDER, volume_);
-        (void)context.gui().set_binding_value(
-            PATH_VOLUME_TEXT, "volume_text", std::to_string(volume_) + "%"
-        );
         return;
     }
 
@@ -854,7 +878,6 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
     uint32_t sample_rate = 0;
     uint16_t channels = 0;
     uint16_t bits = 16;
-    int32_t volume = volume_;
     bool playing = false;
     bool paused = false;
     bool has_track = false;
@@ -865,7 +888,6 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
         sample_rate = state_.sample_rate;
         channels = state_.channels;
         bits = state_.bits;
-        volume = state_.volume;
         playing = state_.play_requested && !state_.paused;
         paused = state_.paused;
         has_track = !state_.path.empty();
@@ -882,10 +904,6 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
         (void)context.gui().set_binding_value(PATH_TIME_LABEL, "time_label", "00:00 / 00:00");
         (void)context.gui().set_value(PATH_PROGRESS, 0);
         (void)context.gui().set_binding_value(PATH_TOGGLE_TEXT, "toggle_text", "播放");
-        (void)context.gui().set_value(PATH_VOLUME_SLIDER, volume);
-        (void)context.gui().set_binding_value(
-            PATH_VOLUME_TEXT, "volume_text", std::to_string(volume) + "%"
-        );
         return;
     }
 
@@ -921,7 +939,6 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
     (void)context.gui().set_binding_value(
         PATH_TIME_LABEL, "time_label", format_time(elapsed) + " / " + format_time(total)
     );
-
     int32_t permille = 0;
     if (data_size > 0) {
         permille = static_cast<int32_t>((static_cast<uint64_t>(byte_pos) * 1000U) / data_size);
@@ -933,16 +950,43 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
         (void)context.gui().set_value(PATH_PROGRESS, permille);
     }
 
-    (void)context.gui().set_binding_value(
-        PATH_VOLUME_TEXT, "volume_text", std::to_string(volume) + "%"
-    );
-    if (volume != last_programmed_volume_) {
-        last_programmed_volume_ = volume;
-        (void)context.gui().set_value(PATH_VOLUME_SLIDER, volume);
-    }
-
     const char *toggle_text = playing ? "暂停" : (paused ? "继续" : "播放");
     (void)context.gui().set_binding_value(PATH_TOGGLE_TEXT, "toggle_text", toggle_text);
+}
+
+void MusicApp::tick_wave(system::core::AppContext &context)
+{
+    if (paused_ui_) {
+        return;
+    }
+    bool playing = false;
+    {
+        std::lock_guard<std::mutex> lock(state_.mutex);
+        playing = state_.play_requested && !state_.paused;
+    }
+
+    const float seconds = static_cast<float>(now_ms() % 1000000) / 1000.0f;
+    // Idle bars keep a slow, shallow ripple so the card never looks frozen.
+    const float level = playing ? (0.30f + 0.70f * static_cast<float>(volume_) / 100.0f) : 0.12f;
+    const float speed = playing ? 7.0f : 1.6f;
+    const int span = WAVE_BAR_MAX_DP - WAVE_BAR_MIN_DP;
+
+    for (int i = 0; i < WAVE_BAR_COUNT; i++) {
+        const float phase = static_cast<float>(i) * 0.55f;
+        const float wave =
+            std::sin(seconds * speed + phase) * 0.55f +
+            std::sin(seconds * speed * 1.7f + phase * 1.9f) * 0.30f +
+            std::sin(seconds * speed * 0.6f - phase * 0.7f) * 0.15f;
+        const float normalized = std::clamp(0.5f + 0.5f * wave, 0.0f, 1.0f) * level;
+        const int32_t height = WAVE_BAR_MIN_DP + static_cast<int32_t>(span * normalized);
+        if (height == wave_heights_[i]) {
+            continue;
+        }
+        wave_heights_[i] = height;
+        (void)context.gui().set_binding_value(
+            wave_bar_path(i), "wave_" + std::to_string(i), std::to_string(height) + "dp"
+        );
+    }
 }
 
 void MusicApp::start_engine()

@@ -14,9 +14,9 @@ Full description (features, partition layout, media formats, known limitations):
 | `brookesia.system.super.shell` | vendored `system/brookesia_system_super` | Desktop, status bar, recents (CLEAR ALL), wallpaper, gestures |
 | `brookesia.general.settings` | vendored `app/brookesia_app_settings` | Wi-Fi (IP/MAC, auto-reconnect), Bluetooth (BLE scan), display, sound, time zone, language |
 | `brookesia.waveshare.system_monitor` | `components/brookesia_app_system_monitor` | Disk aggregate + 90 % alarm, CPU/GPU temperature in the ring centres, DISK I/O, `TEMP_ALARM_C = 90.0` → `HIGH!` |
-| `brookesia.waveshare.music` | `components/brookesia_app_music` | Opens on the player (no autoplay); a 320 dp drawer lists 5 tracks per page, WAV only, background playback, 300 dp cover, seek + volume + sample rate / bit depth / bitrate / size |
+| `brookesia.waveshare.music` | `components/brookesia_app_music` | Opens on the player (no autoplay); a 320 dp drawer lists 5 tracks per page, WAV only, background playback, 300 dp cover + animated spectrum bars, seek + volume−/+ buttons + sample rate / bit depth / bitrate / size |
 | `brookesia.waveshare.gallery` | `components/brookesia_app_gallery` | Opens on the first picture (no autoplay); a 320 dp drawer lists 5 rows per page (name, resolution, size); slideshow (4 s), format / depth, set wallpaper |
-| `brookesia.waveshare.video` | `components/brookesia_app_video` | Opens on the player (no autoplay); a 320 dp drawer lists 5 movies per page; MJPEG (concatenated JPEG), hardware decode, 12 fps, no audio, double-tap pause |
+| `brookesia.waveshare.video` | `components/brookesia_app_video` | Opens on the player (no autoplay); a 320 dp drawer lists 5 movies per page; MJPEG (concatenated JPEG), hardware decode, 12 fps, no audio, double-tap pause, volume−/+ buttons |
 
 ## Board support
 

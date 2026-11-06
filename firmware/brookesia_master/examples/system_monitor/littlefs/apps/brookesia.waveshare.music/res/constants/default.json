@@ -34,7 +34,8 @@
                 "rowTagWidth": "84dp",
                 "pagerHeight": "32dp",
                 "pagerButtonWidth": "76dp",
-                "pagerTextWidth": "84dp"
+                "pagerTextWidth": "84dp",
+                "waveHeight": "88dp"
             },
             "font": {
                 "name": "24sp",

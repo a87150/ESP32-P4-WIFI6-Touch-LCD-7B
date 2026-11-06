@@ -66,6 +66,8 @@ constexpr const char *ACTION_PREV = "video.prev";
 constexpr const char *ACTION_TOGGLE = "video.toggle";
 constexpr const char *ACTION_NEXT = "video.next";
 constexpr const char *ACTION_AUTO_NEXT = "video.auto_next";
+constexpr const char *ACTION_VOLUME_DOWN = "video.volume.down";
+constexpr const char *ACTION_VOLUME_UP = "video.volume.up";
 constexpr const char *ACTION_SEEK = "video.seek";
 constexpr const char *ACTION_REFRESH = "video.refresh";
 // Emitted when the picture area is tapped. Two taps inside the window toggle
@@ -336,6 +338,12 @@ std::expected<void, std::string> VideoApp::on_start(system::core::AppContext &co
     playing_ = false;
     auto_next_ = false;
     (void)context.gui().set_binding_value(PATH_AUTO_NEXT_TEXT, "auto_next_text", "连播：关");
+    if (!audio_) {
+        audio_ = hal::acquire_first_interface<hal::audio::CodecPlayerIface>();
+    }
+    if (audio_) {
+        (void)audio_->set_volume(static_cast<uint8_t>(volume_));
+    }
 
     if (decoder_ == nullptr) {
         jpeg_decode_engine_cfg_t engine_config = {
@@ -903,6 +911,18 @@ void VideoApp::subscribe_actions(system::core::AppContext &context)
                 PATH_AUTO_NEXT_TEXT, "auto_next_text", auto_next_ ? "连播：开" : "连播：关"
             );
             set_status(auto_next_ ? "播完自动播放下一部" : "播完停在当前影片");
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_VOLUME_DOWN,
+        .handler = [this](const gui::Event &) {
+            adjust_volume(-10);
+        },
+    });
+    subscriptions.push_back({
+        .action = ACTION_VOLUME_UP,
+        .handler = [this](const gui::Event &) {
+            adjust_volume(10);
         },
     });
     subscriptions.push_back({
@@ -1509,6 +1529,15 @@ void VideoApp::set_status(const std::string &text)
         return;
     }
     (void)context_->gui().set_binding_value(PATH_STATUS, "status_text", text);
+}
+
+void VideoApp::adjust_volume(int delta)
+{
+    volume_ = std::clamp<int32_t>(volume_ + delta, 0, 100);
+    if (audio_) {
+        (void)audio_->set_volume(static_cast<uint8_t>(volume_));
+    }
+    set_status("音量 " + std::to_string(volume_) + "%");
 }
 
 } // namespace esp_brookesia::app::video

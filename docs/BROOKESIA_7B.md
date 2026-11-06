@@ -129,12 +129,16 @@ In-house components:
   thread, **keeps playing when the app is in the background**.
 - Seeking is applied at most every 500 ms so dragging does not restart the codec
   repeatedly.
-- A separate **0–100 volume slider** applies immediately.
+- Volume is adjusted with **−** / **+** buttons in the bottom bar (10 % steps,
+  0–100) and echoed as a percentage on the status line.
 - The detail area shows track index / total, sample rate, channel layout, bit
   depth, **bitrate** (sample rate × channels × bit depth) and file size;
   returning from the background keeps the player page while a track is loaded.
 - There is no title bar: the enlarged player card (**300 dp cover**) fills the
-  upper area, and the bottom control bar centers previous, play / pause, next,
+  upper area with a vertical gradient and a soft shadow; **22 spectrum bars**
+  next to the cover animate at ~11 fps (they follow the volume while playing and
+  keep a slow ripple while paused), with the seek bar and time below.
+- The bottom control bar centers previous, play / pause, next, volume−, volume+,
   refresh, auto-next and list. **"List" sits on the far right**, next to the
   drawer that slides in from that side.
 - **Auto-next is an optional switch** (off by default): when on, a finished
@@ -191,8 +195,10 @@ In-house components:
   1:1 scale** (LVGL does not upscale, which protects the frame rate); the stage is
   976 × 432 and larger movies are scaled down. The bottom 76 dp is a separate
   control bar: progress and time on the first row, centered buttons below
-  (previous / pause / next / refresh / auto-next / list), **"List" on the far
-  right** next to the drawer.
+  (previous / pause / next / volume− / volume+ / refresh / auto-next / list),
+  **"List" on the far right** next to the drawer. The volume buttons drive the
+  board codec (MJPEG has no audio track; they mainly serve background music and
+  keep the controls consistent).
   Authoring at **976 × 432** gives full-screen 1:1 playback at 12 fps.
 - Folders: `/littlefs/videos`, `/sdcard/videos`, `/sdcard`.
 
@@ -486,17 +492,18 @@ The GUI only exposes `clicked`, so the video app:
    `scripts/pc_agent.py`.
 5. **Music**: opens on the player and stays silent; "list" (rightmost button)
    opens the 5-row drawer (over the main view) and a row starts playback and
-   closes it; play / pause / previous / next / seek / volume; auto-next is off by
-   default and advances when enabled; detail line shows sample rate, bit depth,
-   bitrate and size; playback continues on the launcher.
+   closes it; play / pause / previous / next / seek / volume− volume+; the
+   spectrum bars animate; auto-next is off by default and advances when enabled;
+   detail line shows sample rate, bit depth, bitrate and size; playback continues
+   on the launcher.
 6. **Gallery**: opens on the first picture; "list" (rightmost button) opens the
    5-row drawer and a row switches the preview and closes it; previous / next;
    resolution / size / format / depth details; slideshow is off by default;
    wallpaper applies on the launcher.
 7. **Video**: opens on the empty player; "list" (rightmost button) opens the
    5-row drawer and a row loads and plays that movie; double tap pauses /
-   resumes; progress row plus centered buttons; auto-next is off by default;
-   seek; previous / next switching without stutter.
+   resumes; progress row plus centered buttons; volume− / volume+ work; auto-next
+   is off by default; seek; previous / next switching without stutter.
 8. **Settings**: Wi-Fi shows IP / MAC and reconnects; BLE scan and advertising
    are mutually exclusive.
 
