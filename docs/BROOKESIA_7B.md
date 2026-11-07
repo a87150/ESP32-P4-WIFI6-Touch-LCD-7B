@@ -135,12 +135,14 @@ In-house components:
   depth, **bitrate** (sample rate × channels × bit depth) and file size;
   returning from the background keeps the player page while a track is loaded.
 - There is no title bar: the enlarged player card (**300 dp cover**) fills the
-  upper area with a vertical gradient and a soft shadow; **22 spectrum bars**
-  next to the cover animate at ~11 fps (they follow the volume while playing and
-  keep a slow ripple while paused), with the seek bar and time below.
-- The bottom control bar centers previous, play / pause, next, volume−, volume+,
-  refresh, auto-next and list. **"List" sits on the far right**, next to the
-  drawer that slides in from that side.
+  upper area with a vertical gradient and a soft shadow; a **flowing waveform
+  line** (a bright line over a wider glow line, ~11 fps) runs next to the cover
+  and follows the volume while playing, keeping a slow ripple while paused, with
+  the seek bar and time below.
+- The bottom control bar keeps **play / pause exactly in the centre**: refresh,
+  volume−, volume+ and previous sit on the left, next, auto-next and list on the
+  right. **"List" is the rightmost button**, next to the drawer that slides in
+  from that side.
 - **Auto-next is an optional switch** (off by default): when on, a finished
   track advances to the next one; when off, playback stops on the current track
   with the position reset.
@@ -194,9 +196,10 @@ In-house components:
 - Display policy: movies smaller than the stage are shown **centered at native
   1:1 scale** (LVGL does not upscale, which protects the frame rate); the stage is
   976 × 432 and larger movies are scaled down. The bottom 76 dp is a separate
-  control bar: progress and time on the first row, centered buttons below
-  (previous / pause / next / volume− / volume+ / refresh / auto-next / list),
-  **"List" on the far right** next to the drawer. The volume buttons drive the
+  control bar: progress and time on the first row, with **play / pause pinned in
+  the centre of the second row** (label "Play" while paused, "Pause" while
+  playing); refresh, volume−, volume+ and previous on its left, next, auto-next
+  and list on its right, **"List" on the far right** next to the drawer. The volume buttons drive the
   board codec (MJPEG has no audio track; they mainly serve background music and
   keep the controls consistent).
   Authoring at **976 × 432** gives full-screen 1:1 playback at 12 fps.
@@ -492,18 +495,19 @@ The GUI only exposes `clicked`, so the video app:
    `scripts/pc_agent.py`.
 5. **Music**: opens on the player and stays silent; "list" (rightmost button)
    opens the 5-row drawer (over the main view) and a row starts playback and
-   closes it; play / pause / previous / next / seek / volume− volume+; the
-   spectrum bars animate; auto-next is off by default and advances when enabled;
-   detail line shows sample rate, bit depth, bitrate and size; playback continues
-   on the launcher.
+   closes it; play / pause (pinned in the centre) / previous / next / seek /
+   volume− volume+; the waveform line flows; auto-next is off by default and
+   advances when enabled; detail line shows sample rate, bit depth, bitrate and
+   size; playback continues on the launcher.
 6. **Gallery**: opens on the first picture; "list" (rightmost button) opens the
    5-row drawer and a row switches the preview and closes it; previous / next;
    resolution / size / format / depth details; slideshow is off by default;
    wallpaper applies on the launcher.
 7. **Video**: opens on the empty player; "list" (rightmost button) opens the
    5-row drawer and a row loads and plays that movie; double tap pauses /
-   resumes; progress row plus centered buttons; volume− / volume+ work; auto-next
-   is off by default; seek; previous / next switching without stutter.
+   resumes; play / pause pinned in the centre (label "Play" while paused) with
+   the other buttons on both sides; volume− / volume+ work; auto-next is off by
+   default; seek; previous / next switching without stutter.
 8. **Settings**: Wi-Fi shows IP / MAC and reconnects; BLE scan and advertising
    are mutually exclusive.
 

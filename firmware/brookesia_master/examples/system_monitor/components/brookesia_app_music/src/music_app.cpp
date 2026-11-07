@@ -43,10 +43,11 @@ constexpr const char *APP_NAME_ZH_CN = "音乐";
 constexpr const char *APP_ICON_ID = "launcher_icon";
 constexpr const char *GUI_ROOT = "res/root.json";
 constexpr const char *MUSIC_FLOW_ID = "music_flow";
-constexpr const char *PLAYBACK_TIMER_NAME = "music_playback";
-constexpr int32_t PLAYBACK_PERIOD_MS = 500;
-constexpr const char *WAVE_TIMER_NAME = "music_wave";
-constexpr int32_t WAVE_PERIOD_MS = 90;
+constexpr const char *UI_TIMER_NAME = "music_ui";
+constexpr int32_t UI_PERIOD_MS = 110;
+// The timer also drives the waveform, so only every N-th tick refreshes the
+// text bindings (~440 ms, close to the old 500 ms progress cadence).
+constexpr int32_t UI_REFRESH_TICKS = 4;
 
 // Absolute paths inside the music screen document.
 constexpr const char *PATH_DRAWER = "/music/drawer";
@@ -59,12 +60,15 @@ constexpr const char *PATH_TRACK_META = "/music/page/player_card/info/track_meta
 constexpr const char *PATH_TRACK_DETAIL = "/music/page/player_card/info/track_detail";
 constexpr const char *PATH_PROGRESS = "/music/page/player_card/info/progress";
 constexpr const char *PATH_TIME_LABEL = "/music/page/player_card/info/time_label";
-constexpr const char *PATH_WAVE_BAR_PREFIX = "/music/page/player_card/info/wave/bar_";
-constexpr int WAVE_BAR_COUNT = 22;
-constexpr int WAVE_BAR_MIN_DP = 6;
-constexpr int WAVE_BAR_MAX_DP = 70;
+constexpr const char *PATH_WAVE_GLOW = "/music/page/player_card/info/wave/wave_glow";
+constexpr const char *PATH_WAVE_LINE = "/music/page/player_card/info/wave/wave_line";
+constexpr int WAVE_POINT_COUNT = 49;
+constexpr int WAVE_WIDTH_PX = 632;
+constexpr int WAVE_HEIGHT_PX = 88;
+constexpr int WAVE_CENTER_Y = WAVE_HEIGHT_PX / 2;
+constexpr int WAVE_AMPLITUDE_PX = 30;
 constexpr const char *PATH_TOGGLE_TEXT = "/music/page/controls/toggle/text";
-constexpr const char *PATH_AUTO_NEXT_TEXT = "/music/page/controls/auto_next/text";
+constexpr const char *PATH_AUTO_NEXT_TEXT = "/music/page/controls/right_group/auto_next/text";
 constexpr const char *PATH_STATUS = "/music/page/status";
 
 // The playlist is paged so a full SD card never builds hundreds of views.
@@ -105,9 +109,27 @@ int64_t now_ms()
            ).count();
 }
 
-std::string wave_bar_path(int index)
+std::string make_wave_points(const std::array<int32_t, WAVE_POINT_COUNT> &ys, int32_t y_offset)
 {
-    return std::string(PATH_WAVE_BAR_PREFIX) + std::to_string(index);
+    std::string result;
+    result.reserve(16 + WAVE_POINT_COUNT * 20);
+    result += '[';
+    for (int i = 0; i < WAVE_POINT_COUNT; i++) {
+        if (i != 0) {
+            result += ',';
+        }
+        const int32_t x = static_cast<int32_t>(
+                              std::lround(static_cast<double>(i) * (WAVE_WIDTH_PX - 1) / (WAVE_POINT_COUNT - 1))
+                          );
+        const int32_t y = std::clamp<int32_t>(ys[i] + y_offset, 2, WAVE_HEIGHT_PX - 2);
+        result += "{\"x\":";
+        result += std::to_string(x);
+        result += ",\"y\":";
+        result += std::to_string(y);
+        result += '}';
+    }
+    result += ']';
+    return result;
 }
 
 bool has_wav_extension(const std::string &name)
@@ -309,7 +331,7 @@ std::expected<void, std::string> MusicApp::on_start(system::core::AppContext &co
     last_programmed_permille_ = -1;
     requested_seek_ = -1;
     seek_hold_until_ms_ = 0;
-    wave_heights_.fill(-1);
+    wave_points_.fill(-1000);
     list_page_ = 0;
     auto_next_ = false;
     scan_tracks();
@@ -317,13 +339,9 @@ std::expected<void, std::string> MusicApp::on_start(system::core::AppContext &co
     start_engine();
     (void)context.gui().set_binding_value(PATH_AUTO_NEXT_TEXT, "auto_next_text", "连播：关");
 
-    auto timer = context.timer().start_periodic(PLAYBACK_TIMER_NAME, PLAYBACK_PERIOD_MS);
+    auto timer = context.timer().start_periodic(UI_TIMER_NAME, UI_PERIOD_MS);
     if (!timer) {
         BROOKESIA_LOGW("Failed to start music UI timer: %1%", timer.error());
-    }
-    auto wave_timer = context.timer().start_periodic(WAVE_TIMER_NAME, WAVE_PERIOD_MS);
-    if (!wave_timer) {
-        BROOKESIA_LOGW("Failed to start music wave timer: %1%", wave_timer.error());
     }
 
     if (tracks_.empty()) {
@@ -383,13 +401,17 @@ std::expected<void, std::string> MusicApp::on_timer(
 )
 {
     (void)timer_id;
-    if (name == WAVE_TIMER_NAME) {
-        tick_wave(context);
+    if (name != UI_TIMER_NAME) {
         return {};
     }
-    if (name != PLAYBACK_TIMER_NAME) {
+
+    // All GUI writes for this app happen from this single timer, so the
+    // waveform and the text bindings are never applied concurrently.
+    tick_wave(context);
+    if (++ui_tick_ < UI_REFRESH_TICKS) {
         return {};
     }
+    ui_tick_ = 0;
 
     bool finished = false;
     bool restart_failed = false;
@@ -965,28 +987,32 @@ void MusicApp::tick_wave(system::core::AppContext &context)
         playing = state_.play_requested && !state_.paused;
     }
 
-    const float seconds = static_cast<float>(now_ms() % 1000000) / 1000.0f;
-    // Idle bars keep a slow, shallow ripple so the card never looks frozen.
-    const float level = playing ? (0.30f + 0.70f * static_cast<float>(volume_) / 100.0f) : 0.12f;
-    const float speed = playing ? 7.0f : 1.6f;
-    const int span = WAVE_BAR_MAX_DP - WAVE_BAR_MIN_DP;
+    const float seconds = static_cast<float>(now_ms() % 100000) / 1000.0f;
+    // The idle line keeps a slow, shallow ripple so the card never looks frozen.
+    const float level = playing ? (0.30f + 0.70f * static_cast<float>(volume_) / 100.0f) : 0.14f;
+    const float speed = playing ? 6.0f : 1.4f;
 
-    for (int i = 0; i < WAVE_BAR_COUNT; i++) {
-        const float phase = static_cast<float>(i) * 0.55f;
+    bool changed = false;
+    const int32_t amplitude = static_cast<int32_t>(WAVE_AMPLITUDE_PX * level);
+    for (int i = 0; i < WAVE_POINT_COUNT; i++) {
+        const float phase = static_cast<float>(i) * 0.34f;
         const float wave =
             std::sin(seconds * speed + phase) * 0.55f +
             std::sin(seconds * speed * 1.7f + phase * 1.9f) * 0.30f +
             std::sin(seconds * speed * 0.6f - phase * 0.7f) * 0.15f;
-        const float normalized = std::clamp(0.5f + 0.5f * wave, 0.0f, 1.0f) * level;
-        const int32_t height = WAVE_BAR_MIN_DP + static_cast<int32_t>(span * normalized);
-        if (height == wave_heights_[i]) {
-            continue;
+        const int32_t y = WAVE_CENTER_Y + static_cast<int32_t>(wave * amplitude);
+        if (y != wave_points_[i]) {
+            wave_points_[i] = y;
+            changed = true;
         }
-        wave_heights_[i] = height;
-        (void)context.gui().set_binding_value(
-            wave_bar_path(i), "wave_" + std::to_string(i), std::to_string(height) + "dp"
-        );
     }
+    if (!changed) {
+        return;
+    }
+    const auto glow = make_wave_points(wave_points_, 3);
+    const auto line = make_wave_points(wave_points_, 0);
+    (void)context.gui().set_binding_value(PATH_WAVE_GLOW, "wave_glow", glow);
+    (void)context.gui().set_binding_value(PATH_WAVE_LINE, "wave_line", line);
 }
 
 void MusicApp::start_engine()

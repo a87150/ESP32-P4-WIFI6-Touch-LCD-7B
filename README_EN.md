@@ -228,12 +228,12 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 - The detail line shows track index / total, sample rate, channel layout, bit
   depth, bitrate (sample rate × channels × bit depth) and file size.
 - Folders: `/littlefs/sounds`, `/sdcard/music`, `/sdcard`.
-- The player card has a vertical gradient and a soft shadow, with **22 spectrum
-  bars** animating at ~11 fps next to the cover (they follow the volume while
-  playing and ripple slowly while paused).
-- The bottom bar holds previous, play / pause, next, volume−, volume+, refresh,
-  auto-next and list, centered, with **"List" on the far right** next to the
-  drawer.
+- The player card has a vertical gradient and a soft shadow, with a **flowing
+  waveform line** (bright line over a wider glow line, ~11 fps) next to the cover
+  that follows the volume while playing and ripples slowly while paused.
+- The bottom bar keeps **play / pause exactly in the centre**: refresh, volume−,
+  volume+ and previous on the left, next, auto-next and list on the right, with
+  **"List" on the far right** next to the drawer.
 - **Auto-next is optional** (off by default): turn it on to advance to the next
   track when one ends; turn it off to stop on the current track.
 - The cover is 300 dp; the page starts right under the status bar so the player
@@ -277,10 +277,10 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
   and do not block the UI.
 - The stage is 976 × 432; smaller movies are centered at their native 1:1 size
   (LVGL does not upscale, which keeps the frame rate). The bottom 76 dp bar holds
-  the progress slider plus time on the first row and centered buttons below
-  (previous / pause / next / volume− / volume+ / refresh / auto-next / list), with
-  the list toggle on the far right. The volume buttons drive the board codec
-  (MJPEG has no audio track).
+  the progress slider plus time on the first row, with **play / pause pinned in
+  the centre** of the second row (label "Play" while paused); refresh, volume−,
+  volume+ and previous sit on the left, next, auto-next and list on the right.
+  The volume buttons drive the board codec (MJPEG has no audio track).
 - Folders: `/littlefs/videos`, `/sdcard/videos`, `/sdcard`.
 
 ### Settings

@@ -116,8 +116,11 @@ private:
     int32_t requested_seek_ = -1;
     int32_t volume_ = 75;
     int64_t seek_hold_until_ms_ = 0;
-    // Height of every spectrum bar in the current frame; -1 forces a refresh.
-    std::array<int32_t, 22> wave_heights_{};
+    // Vertical position of every waveform point in the current frame; a value
+    // of -1000 forces the first refresh.
+    std::array<int32_t, 49> wave_points_{};
+    // Counts waveform ticks between two text-binding refreshes.
+    int32_t ui_tick_ = 0;
 
     EngineState state_;
     hal::InterfaceHandle<hal::audio::CodecPlayerIface> player_;

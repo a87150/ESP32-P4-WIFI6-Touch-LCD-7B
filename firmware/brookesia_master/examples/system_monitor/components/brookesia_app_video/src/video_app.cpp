@@ -51,7 +51,7 @@ constexpr const char *PATH_STATUS = "/video/page/stage/hint/status";
 constexpr const char *PATH_TIME = "/video/page/bar/row_progress/time";
 constexpr const char *PATH_PROGRESS = "/video/page/bar/row_progress/progress";
 constexpr const char *PATH_TOGGLE_TEXT = "/video/page/bar/row_buttons/toggle/text";
-constexpr const char *PATH_AUTO_NEXT_TEXT = "/video/page/bar/row_buttons/auto_next/text";
+constexpr const char *PATH_AUTO_NEXT_TEXT = "/video/page/bar/row_buttons/right_group/auto_next/text";
 
 // The movie picker is paged so a full SD card never builds hundreds of views.
 constexpr const char *LIST_TEMPLATE_ID = "video_list_item";
@@ -1519,7 +1519,7 @@ void VideoApp::refresh_ui(system::core::AppContext &context)
     last_programmed_permille_ = permille;
     (void)context.gui().set_value(PATH_PROGRESS, permille);
 
-    const char *toggle_text = paused ? "继续" : "暂停";
+    const char *toggle_text = paused ? "播放" : "暂停";
     (void)context.gui().set_binding_value(PATH_TOGGLE_TEXT, "toggle_text", toggle_text);
 }
 

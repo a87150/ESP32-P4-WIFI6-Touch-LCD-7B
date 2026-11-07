@@ -169,13 +169,6 @@
                                     "commonProps": {
                                         "clickable": false
                                     },
-                                    "layout": {
-                                        "type": "flex",
-                                        "flexFlow": "row",
-                                        "mainAlign": "start",
-                                        "crossAlign": "end",
-                                        "gap": "4dp"
-                                    },
                                     "style": {
                                         "padding": "0dp"
                                     },
@@ -186,509 +179,445 @@
                                     },
                                     "children": [
                                         {
-                                            "type": "container",
-                                            "id": "bar_0",
+                                            "type": "line",
+                                            "id": "wave_glow",
                                             "commonProps": {
                                                 "clickable": false
                                             },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
+                                            "lineProps": {
+                                                "points": [
+                                                    {
+                                                        "x": 0,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 13,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 26,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 39,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 53,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 66,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 79,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 92,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 105,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 118,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 131,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 145,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 158,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 171,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 184,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 197,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 210,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 223,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 237,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 250,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 263,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 276,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 289,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 302,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 316,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 329,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 342,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 355,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 368,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 381,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 394,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 408,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 421,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 434,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 447,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 460,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 473,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 486,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 500,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 513,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 526,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 539,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 552,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 565,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 578,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 592,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 605,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 618,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 631,
+                                                        "y": 44
+                                                    }
+                                                ]
                                             },
                                             "bindings": {
-                                                "placement.height": "wave_0"
+                                                "lineProps.points": "wave_glow"
+                                            },
+                                            "style": {
+                                                "lineColor": "#4338ca",
+                                                "lineWidth": "5dp"
                                             },
                                             "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
+                                                "mode": "absolute",
+                                                "x": "0dp",
+                                                "y": "0dp",
+                                                "width": "match",
+                                                "height": "match"
                                             }
                                         },
                                         {
-                                            "type": "container",
-                                            "id": "bar_1",
+                                            "type": "line",
+                                            "id": "wave_line",
                                             "commonProps": {
                                                 "clickable": false
                                             },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
+                                            "lineProps": {
+                                                "points": [
+                                                    {
+                                                        "x": 0,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 13,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 26,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 39,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 53,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 66,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 79,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 92,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 105,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 118,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 131,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 145,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 158,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 171,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 184,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 197,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 210,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 223,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 237,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 250,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 263,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 276,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 289,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 302,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 316,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 329,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 342,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 355,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 368,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 381,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 394,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 408,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 421,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 434,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 447,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 460,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 473,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 486,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 500,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 513,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 526,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 539,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 552,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 565,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 578,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 592,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 605,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 618,
+                                                        "y": 44
+                                                    },
+                                                    {
+                                                        "x": 631,
+                                                        "y": 44
+                                                    }
+                                                ]
                                             },
                                             "bindings": {
-                                                "placement.height": "wave_1"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_2",
-                                            "commonProps": {
-                                                "clickable": false
+                                                "lineProps.points": "wave_line"
                                             },
                                             "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_2"
+                                                "lineColor": "#22d3ee",
+                                                "lineWidth": "2dp"
                                             },
                                             "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_3",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_3"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_4",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_4"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_5",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_5"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_6",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_6"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_7",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_7"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_8",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_8"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_9",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_9"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_10",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_10"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_11",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_11"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_12",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_12"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_13",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_13"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_14",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_14"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_15",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_15"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_16",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_16"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_17",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_17"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_18",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_18"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_19",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_19"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_20",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_20"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
-                                            }
-                                        },
-                                        {
-                                            "type": "container",
-                                            "id": "bar_21",
-                                            "commonProps": {
-                                                "clickable": false
-                                            },
-                                            "style": {
-                                                "bgColor": "#22d3ee",
-                                                "bgGradientColor": "#6366f1",
-                                                "bgGradientDirection": "vertical",
-                                                "radius": "3dp",
-                                                "borderWidth": "0dp"
-                                            },
-                                            "bindings": {
-                                                "placement.height": "wave_21"
-                                            },
-                                            "placement": {
-                                                "mode": "flow",
-                                                "width": "wrap",
-                                                "height": "20dp",
-                                                "flexGrow": 1
+                                                "mode": "absolute",
+                                                "x": "0dp",
+                                                "y": "0dp",
+                                                "width": "match",
+                                                "height": "match"
                                             }
                                         }
                                     ]
@@ -795,43 +724,191 @@
                     },
                     "children": [
                         {
-                            "type": "button",
-                            "id": "prev",
-                            "events": [
-                                {
-                                    "type": "clicked",
-                                    "action": "music.prev"
-                                }
-                            ],
-                            "style": {
-                                "bgColor": "#18223a",
-                                "radius": "${constant.music.layout.buttonRadius}",
-                                "borderWidth": "0dp"
+                            "type": "container",
+                            "id": "left_group",
+                            "commonProps": {
+                                "clickable": false
                             },
                             "layout": {
                                 "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
+                                "flexFlow": "row",
+                                "mainAlign": "end",
+                                "crossAlign": "center",
+                                "gap": "${constant.music.layout.buttonGap}"
+                            },
+                            "style": {
+                                "padding": "0dp"
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "${constant.music.layout.smallButtonWidth}",
-                                "height": "${constant.music.layout.buttonHeight}"
+                                "width": "wrap",
+                                "height": "match",
+                                "flexGrow": 1
                             },
                             "children": [
                                 {
-                                    "type": "label",
-                                    "id": "text",
-                                    "commonProps": {
-                                        "clickable": false
-                                    },
-                                    "labelProps": {
-                                        "text": "上一首"
-                                    },
+                                    "type": "button",
+                                    "id": "scan",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "music.refresh"
+                                        }
+                                    ],
                                     "style": {
-                                        "textColor": "#dbe4f2",
-                                        "fontSize": "${constant.music.font.button}"
-                                    }
+                                        "bgColor": "#14251f",
+                                        "radius": "${constant.music.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "110dp",
+                                        "height": "${constant.music.layout.buttonHeight}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "刷新"
+                                            },
+                                            "style": {
+                                                "textColor": "#c8e8d9",
+                                                "fontSize": "${constant.music.font.button}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "vol_down",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "music.volume.down"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#18223a",
+                                        "radius": "${constant.music.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "56dp",
+                                        "height": "${constant.music.layout.buttonHeight}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "-"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.music.font.button}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "vol_up",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "music.volume.up"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#18223a",
+                                        "radius": "${constant.music.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "56dp",
+                                        "height": "${constant.music.layout.buttonHeight}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "+"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.music.font.button}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "prev",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "music.prev"
+                                        }
+                                    ],
+                                    "style": {
+                                        "bgColor": "#18223a",
+                                        "radius": "${constant.music.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
+                                    },
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
+                                    },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "${constant.music.layout.smallButtonWidth}",
+                                        "height": "${constant.music.layout.buttonHeight}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "上一首"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.music.font.button}"
+                                            }
+                                        }
+                                    ]
                                 }
                             ]
                         },
@@ -880,251 +957,153 @@
                             ]
                         },
                         {
-                            "type": "button",
-                            "id": "next",
-                            "events": [
-                                {
-                                    "type": "clicked",
-                                    "action": "music.next"
-                                }
-                            ],
-                            "style": {
-                                "bgColor": "#18223a",
-                                "radius": "${constant.music.layout.buttonRadius}",
-                                "borderWidth": "0dp"
+                            "type": "container",
+                            "id": "right_group",
+                            "commonProps": {
+                                "clickable": false
                             },
                             "layout": {
                                 "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
+                                "flexFlow": "row",
+                                "mainAlign": "start",
+                                "crossAlign": "center",
+                                "gap": "${constant.music.layout.buttonGap}"
                             },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "${constant.music.layout.smallButtonWidth}",
-                                "height": "${constant.music.layout.buttonHeight}"
-                            },
-                            "children": [
-                                {
-                                    "type": "label",
-                                    "id": "text",
-                                    "commonProps": {
-                                        "clickable": false
-                                    },
-                                    "labelProps": {
-                                        "text": "下一首"
-                                    },
-                                    "style": {
-                                        "textColor": "#dbe4f2",
-                                        "fontSize": "${constant.music.font.button}"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "type": "button",
-                            "id": "vol_down",
-                            "events": [
-                                {
-                                    "type": "clicked",
-                                    "action": "music.volume.down"
-                                }
-                            ],
                             "style": {
-                                "bgColor": "#18223a",
-                                "radius": "${constant.music.layout.buttonRadius}",
-                                "borderWidth": "0dp"
-                            },
-                            "layout": {
-                                "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
+                                "padding": "0dp"
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "56dp",
-                                "height": "${constant.music.layout.buttonHeight}"
+                                "width": "wrap",
+                                "height": "match",
+                                "flexGrow": 1
                             },
                             "children": [
                                 {
-                                    "type": "label",
-                                    "id": "text",
-                                    "commonProps": {
-                                        "clickable": false
-                                    },
-                                    "labelProps": {
-                                        "text": "−"
-                                    },
+                                    "type": "button",
+                                    "id": "next",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "music.next"
+                                        }
+                                    ],
                                     "style": {
-                                        "textColor": "#dbe4f2",
-                                        "fontSize": "${constant.music.font.button}"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "type": "button",
-                            "id": "vol_up",
-                            "events": [
-                                {
-                                    "type": "clicked",
-                                    "action": "music.volume.up"
-                                }
-                            ],
-                            "style": {
-                                "bgColor": "#18223a",
-                                "radius": "${constant.music.layout.buttonRadius}",
-                                "borderWidth": "0dp"
-                            },
-                            "layout": {
-                                "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "56dp",
-                                "height": "${constant.music.layout.buttonHeight}"
-                            },
-                            "children": [
-                                {
-                                    "type": "label",
-                                    "id": "text",
-                                    "commonProps": {
-                                        "clickable": false
+                                        "bgColor": "#18223a",
+                                        "radius": "${constant.music.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
                                     },
-                                    "labelProps": {
-                                        "text": "+"
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
                                     },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "${constant.music.layout.smallButtonWidth}",
+                                        "height": "${constant.music.layout.buttonHeight}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "下一首"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.music.font.button}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "auto_next",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "music.auto_next"
+                                        }
+                                    ],
                                     "style": {
-                                        "textColor": "#dbe4f2",
-                                        "fontSize": "${constant.music.font.button}"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "type": "button",
-                            "id": "scan",
-                            "events": [
-                                {
-                                    "type": "clicked",
-                                    "action": "music.refresh"
-                                }
-                            ],
-                            "style": {
-                                "bgColor": "#14251f",
-                                "radius": "${constant.music.layout.buttonRadius}",
-                                "borderWidth": "0dp"
-                            },
-                            "layout": {
-                                "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "110dp",
-                                "height": "${constant.music.layout.buttonHeight}"
-                            },
-                            "children": [
-                                {
-                                    "type": "label",
-                                    "id": "text",
-                                    "commonProps": {
-                                        "clickable": false
+                                        "bgColor": "#1b2540",
+                                        "radius": "${constant.music.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
                                     },
-                                    "labelProps": {
-                                        "text": "刷新"
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
                                     },
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "112dp",
+                                        "height": "${constant.music.layout.buttonHeight}"
+                                    },
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "bindings": {
+                                                "labelProps.text": "auto_next_text"
+                                            },
+                                            "labelProps": {
+                                                "text": "连播：关"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.music.font.button}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "button",
+                                    "id": "back",
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "music.list"
+                                        }
+                                    ],
                                     "style": {
-                                        "textColor": "#c8e8d9",
-                                        "fontSize": "${constant.music.font.button}"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "type": "button",
-                            "id": "auto_next",
-                            "events": [
-                                {
-                                    "type": "clicked",
-                                    "action": "music.auto_next"
-                                }
-                            ],
-                            "style": {
-                                "bgColor": "#1b2540",
-                                "radius": "${constant.music.layout.buttonRadius}",
-                                "borderWidth": "0dp"
-                            },
-                            "layout": {
-                                "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "112dp",
-                                "height": "${constant.music.layout.buttonHeight}"
-                            },
-                            "children": [
-                                {
-                                    "type": "label",
-                                    "id": "text",
-                                    "commonProps": {
-                                        "clickable": false
+                                        "bgColor": "#18223a",
+                                        "radius": "${constant.music.layout.buttonRadius}",
+                                        "borderWidth": "0dp"
                                     },
-                                    "bindings": {
-                                        "labelProps.text": "auto_next_text"
+                                    "layout": {
+                                        "type": "flex",
+                                        "mainAlign": "center",
+                                        "crossAlign": "center"
                                     },
-                                    "labelProps": {
-                                        "text": "连播：关"
+                                    "placement": {
+                                        "mode": "flow",
+                                        "width": "96dp",
+                                        "height": "${constant.music.layout.buttonHeight}"
                                     },
-                                    "style": {
-                                        "textColor": "#dbe4f2",
-                                        "fontSize": "${constant.music.font.button}"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "type": "button",
-                            "id": "back",
-                            "events": [
-                                {
-                                    "type": "clicked",
-                                    "action": "music.list"
-                                }
-                            ],
-                            "style": {
-                                "bgColor": "#18223a",
-                                "radius": "${constant.music.layout.buttonRadius}",
-                                "borderWidth": "0dp"
-                            },
-                            "layout": {
-                                "type": "flex",
-                                "mainAlign": "center",
-                                "crossAlign": "center"
-                            },
-                            "placement": {
-                                "mode": "flow",
-                                "width": "96dp",
-                                "height": "${constant.music.layout.buttonHeight}"
-                            },
-                            "children": [
-                                {
-                                    "type": "label",
-                                    "id": "text",
-                                    "commonProps": {
-                                        "clickable": false
-                                    },
-                                    "labelProps": {
-                                        "text": "列表"
-                                    },
-                                    "style": {
-                                        "textColor": "#dbe4f2",
-                                        "fontSize": "${constant.music.font.button}"
-                                    }
+                                    "children": [
+                                        {
+                                            "type": "label",
+                                            "id": "text",
+                                            "commonProps": {
+                                                "clickable": false
+                                            },
+                                            "labelProps": {
+                                                "text": "列表"
+                                            },
+                                            "style": {
+                                                "textColor": "#dbe4f2",
+                                                "fontSize": "${constant.music.font.button}"
+                                            }
+                                        }
+                                    ]
                                 }
                             ]
                         }
