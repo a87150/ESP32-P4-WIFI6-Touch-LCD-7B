@@ -585,7 +585,8 @@ The GUI only exposes `clicked`, so the video app:
 - Video: MJPEG is fixed at 12 fps with no audio; MP4 (H.264 constrained
   baseline) is software-decoded at about 10 fps for 976 × 432 and about 5 fps
   for 720p, and its audio track is ignored. Keep MJPEG at or below 976 × 432.
-- Battery readings depend on hardware sampling and are indicative only.
+- The battery pill has no fuel-gauge data: it shows `USB` when the USB port
+  supplies power and `BATTERY` when it does not.
 - Real CPU / GPU temperatures on the monitor need `scripts/pc_agent.py`.
 - Final color and touch-calibration quality must be checked on the device.
 - This firmware and **XiaoZhi AI** are mutually exclusive: the Waveshare wiki

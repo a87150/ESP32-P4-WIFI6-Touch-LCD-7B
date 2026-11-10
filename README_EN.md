@@ -371,8 +371,9 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
   [main desktop document](docs/BROOKESIA_7B.md).
 - MP4 software decoding runs at about 10 fps for 976 × 432 and 5 fps for 720p.
 - Music supports PCM WAV and MP3.
-- Battery level and temperatures depend on the hardware and are indicative only;
-  real CPU / GPU temperatures need the PC side.
+- The battery pill shows the detected power source (`USB` / `BATTERY`); this
+  board has no fuel gauge, so no percentage is shown. Real CPU / GPU
+  temperatures need the PC side.
 - Audio cannot be routed to a classic Bluetooth speaker (BLE only on the C6).
 - Final color and touch-calibration quality must be checked on the device.
 

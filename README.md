@@ -312,7 +312,8 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
   [桌面系统主文档](docs/BROOKESIA_7B_ZH.md) 第 7.4 节的 ffmpeg 命令。
 - MP4 软解速度：976 × 432 约 10 fps，720p 约 5 fps；分辨率越小越流畅。
 - 音乐支持 PCM WAV 与 MP3。
-- 电池电量与实际温度受硬件限制，读数仅供参考；CPU / GPU 真实温度需要 PC 端配合。
+- 电池图标旁显示检测到的供电来源（插 USB 为 `USB`，否则为 `BATTERY`）；
+  本板没有电量计，不显示百分比。CPU / GPU 真实温度需要 PC 端配合。
 - 无法把音频投到经典蓝牙音箱（C6 仅 BLE）。
 - 屏幕与触摸的最终观感（颜色、触控校准）需要上机确认。
 
