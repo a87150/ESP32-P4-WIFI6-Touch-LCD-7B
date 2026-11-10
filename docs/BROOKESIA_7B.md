@@ -83,9 +83,9 @@ In-house components:
 | Component | Package id | Notes |
 | --- | --- | --- |
 | `brookesia_app_system_monitor` | `brookesia.waveshare.system_monitor` | System monitor |
-| `brookesia_app_music` | `brookesia.waveshare.music` | WAV music player |
+| `brookesia_app_music` | `brookesia.waveshare.music` | WAV / MP3 music player |
 | `brookesia_app_gallery` | `brookesia.waveshare.gallery` | Image browser / wallpaper |
-| `brookesia_app_video` | `brookesia.waveshare.video` | MJPEG player |
+| `brookesia_app_video` | `brookesia.waveshare.video` | MJPEG / MP4 player |
 | `bt_service` | —(service, not an app) | BLE scan / advertising |
 
 ---
@@ -94,9 +94,9 @@ In-house components:
 
 ### 3.1 Desktop (Super Shell)
 
-- **Status bar**: centered clock; on the right the Wi-Fi signal (white icon tinted
-  at runtime by signal strength), Bluetooth and battery; on the left up to three
-  paused apps.
+- **Status bar**: centered clock; on the right the Wi-Fi signal (ascending bars
+  driven by RSSI, with a red slash when disconnected), Bluetooth and battery
+  (USB / BATTERY power label); on the left up to three paused apps.
 - **Icon pages**: apps flow left to right across pages with swipe paging.
 - **Gestures**: swipe up quickly on any page to return home; press and hold to
   open recents.
@@ -125,15 +125,19 @@ In-house components:
   and closes the drawer, so the main view is never replaced.
 - The drawer shows **5 rows per page** (previous / next page) with file name and
   size; the row being played is tagged "playing / paused".
-- **PCM WAV only**, JSON-described UI, decoding and playback on a dedicated
-  thread, **keeps playing when the app is in the background**.
+- **PCM WAV and MP3 (MPEG-1/2/2.5 Layer III)**; WAV is parsed from its RIFF
+  chunks, MP3 is decoded in software with minimp3. JSON-described UI, decoding
+  and playback on a dedicated thread, **keeps playing when the app is in the
+  background**.
 - Seeking is applied at most every 500 ms so dragging does not restart the codec
-  repeatedly.
+  repeatedly. MP3 files are indexed frame by frame (ID3v2 tags are skipped) so
+  the seek bar works on them too, and single frames can be jumped to directly.
 - Volume is adjusted with **−** / **+** buttons in the bottom bar (10 % steps,
   0–100) and echoed as a percentage on the status line.
 - The detail area shows track index / total, sample rate, channel layout, bit
-  depth, **bitrate** (sample rate × channels × bit depth) and file size;
-  returning from the background keeps the player page while a track is loaded.
+  depth, **bitrate** (WAV: sample rate × channels × bit depth, MP3: average
+  bitrate from the frame headers) and file size; returning from the background
+  keeps the player page while a track is loaded.
 - There is no title bar: the enlarged player card (**300 dp cover**) fills the
   upper area with a vertical gradient and a soft shadow; a **flowing waveform
   line** (a bright line over a wider glow line, ~11 fps) runs next to the cover
@@ -181,12 +185,19 @@ In-house components:
   stays responsive.
 - The drawer shows **5 rows per page** (previous / next page) with file name and
   size; the movie being played is tagged "playing".
-- Format: `.mjpeg` / `.mjpg` / `.mjp`, i.e. **concatenated JPEG frames**, no
-  container and no audio track.
-- Fixed **12 fps** playback (MJPEG has no timestamps); pause / previous / next /
-  seek are supported. **Auto-next is an optional switch** (off by default): when
-  on, a finished movie advances to the next one; when off, it stops on the last
-  frame.
+- Formats: `.mjpeg` / `.mjpg` / `.mjp` (concatenated JPEG frames, no container
+  and no audio) and `.mp4` / `.m4v` / `.mov` (ISO BMFF container with
+  **H.264/AVC constrained baseline** video).
+- MJPEG is decoded by the hardware JPEG codec at a fixed **12 fps** (MJPEG has
+  no timestamps). MP4 is demuxed by the app and decoded in software with the
+  `esp_h264` tinyH264 decoder — the ESP32-P4 only has a hardware H.264
+  **encoder** — then converted from I420 to RGB565. MP4 audio tracks (AAC) are
+  ignored, so MP4 playback is silent; the frame rate follows the container and
+  is limited by software decoding (about 10 fps at 976 × 432 on the 360 MHz
+  P4). A seek snaps to the nearest IDR keyframe.
+- Pause / previous / next / seek are supported. **Auto-next is an optional
+  switch** (off by default): when on, a finished movie advances to the next
+  one; when off, it stops on the last frame.
 - **Double tap on the picture pauses / resumes**; the GUI has no double-click
   event, so `video.tap` merges two clicks inside a 400 ms window.
 - Hardware JPEG decoding (`esp_driver_jpeg`) outputs RGB565 with double
@@ -200,9 +211,9 @@ In-house components:
   the centre of the second row** (label "Play" while paused, "Pause" while
   playing); refresh, volume−, volume+ and previous on its left, next, auto-next
   and list on its right, **"List" on the far right** next to the drawer. The volume buttons drive the
-  board codec (MJPEG has no audio track; they mainly serve background music and
-  keep the controls consistent).
-  Authoring at **976 × 432** gives full-screen 1:1 playback at 12 fps.
+  board codec (neither MJPEG nor MP4 carries played audio; they mainly serve
+  background music and keep the controls consistent).
+  Authoring MJPEG at **976 × 432** gives full-screen 1:1 playback at 12 fps.
 - Folders: `/littlefs/videos`, `/sdcard/videos`, `/sdcard`.
 
 ### 3.6 Settings (`brookesia.general.settings`)
@@ -331,15 +342,18 @@ Serial log: USB-Serial/JTAG, 115200 baud.
 
 ### 7.2 Music
 
-- **PCM WAV only**; put files in `/littlefs/sounds` (reflash `storage`) or on the
-  SD card under `/music` or the root directory.
+- **PCM WAV and MP3 (Layer III)**; put files in `/littlefs/sounds` (reflash
+  `storage`) or on the SD card under `/music` or the root directory.
 - Sample rate, channels, bit depth, bitrate and file size are shown; 44.1 kHz /
-  16-bit / stereo is recommended.
+  16-bit / stereo is recommended (MP3 is decoded to 16-bit PCM by minimp3).
 - The cover is a generated **300 × 300** PNG; regenerate it with
   `python tools/make_app_art.py`.
 - The track drawer shows 5 rows per page; tapping anywhere on a row starts that
   track and closes the drawer, while "refresh" only rescans and never starts
   playback.
+- MP3 files are indexed once per track: the ID3v2 tag is skipped, then every
+  valid MPEG Layer III frame is located and validated, so seeking jumps straight
+  to a frame instead of scanning the whole file.
 
 ### 7.3 Pictures
 
@@ -359,11 +373,26 @@ python tools/make_mjpeg.py clip.gif video.mjpeg --size 640x360
 
 # Regenerate the bundled sample videos
 python tools/make_demo_videos.py
+
+# H.264 baseline MP4 (silent) from the same MJPEG frames
+ffmpeg -f mjpeg -framerate 12 -i video.mjpeg \
+       -c:v libx264 -profile:v baseline -level 3.1 -pix_fmt yuv420p \
+       -crf 24 -g 24 -keyint_min 12 -sc_threshold 0 -an \
+       -movflags +faststart video.mp4
+
+# MP3 sample for the music app
+ffmpeg -f lavfi -i "sine=frequency=440:duration=9" -ac 2 -ar 44100 \
+       -c:a libmp3lame -b:a 128k sound.mp3
 ```
 
 - Use `--size 976x432` for the best full-screen 1:1 result.
 - Other sizes are shown centered at native scale (with black borders); only
   material larger than 976 × 432 is scaled down.
+- MP4 must be **H.264 constrained baseline** (8-bit 4:2:0). High profile,
+  10-bit, interlaced and HEVC/VP9/AV1 files are rejected with an error message.
+  Keep MP4 at or below 720p and prefer 976 × 432: software decoding runs at
+  about 10 fps for 976 × 432 and roughly 5 fps for 720p, so the picture is
+  smoother with smaller frames.
 - Without ffmpeg, export the video to an image sequence with another tool and
   merge it with `make_mjpeg.py`.
 
@@ -536,9 +565,13 @@ The GUI only exposes `clicked`, so the video app:
 - **Wi-Fi connected without internet**: check IP / MAC in settings; slow DHCP is
   handled by automatic reconnection.
 - **Video stutters**: material larger than 976 × 432 is scaled; regenerate with
-  `--size 976x432`.
-- **No music sound**: make sure the file is PCM WAV and volume is not zero;
-  A2DP is unavailable so Bluetooth speakers cannot be used.
+  `--size 976x432`. MP4 is software-decoded, so it is slower than MJPEG: 720p
+  runs at roughly 5 fps, 976 × 432 at about 10 fps.
+- **MP4 does not open**: only H.264 constrained baseline MP4 with 4-byte NAL
+  lengths is supported; re-encode with the `ffmpeg` line in section 7.4. MP4 has
+  no audio playback (AAC is ignored).
+- **No music sound**: make sure the file is PCM WAV or MP3 and volume is not
+  zero; A2DP is unavailable so Bluetooth speakers cannot be used.
 - **Picture does not open**: only PNG / JPEG are supported; long names are
   truncated in the UI but still load.
 
@@ -549,7 +582,9 @@ The GUI only exposes `clicked`, so the video app:
 - Without an SD card the boot log prints `sdmmc_init_ocr ... 0x107` /
   `Failed to initialize SD card`; this is expected.
 - No classic Bluetooth / A2DP (the C6 ships BLE 5 only).
-- Video is fixed at 12 fps with no audio; keep MJPEG at or below 976 × 432.
+- Video: MJPEG is fixed at 12 fps with no audio; MP4 (H.264 constrained
+  baseline) is software-decoded at about 10 fps for 976 × 432 and about 5 fps
+  for 720p, and its audio track is ignored. Keep MJPEG at or below 976 × 432.
 - Battery readings depend on hardware sampling and are indicative only.
 - Real CPU / GPU temperatures on the monitor need `scripts/pc_agent.py`.
 - Final color and touch-calibration quality must be checked on the device.

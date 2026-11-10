@@ -21,11 +21,12 @@
 namespace esp_brookesia::app::music {
 
 /**
- * @brief Simple WAV music player for the board speaker.
+ * @brief WAV / MP3 music player for the board speaker.
  *
  * Tracks are scanned from the SD card and the littlefs sounds folder. Decoding
- * and playback run on a dedicated thread so the GUI stays responsive and the
- * music keeps playing while the app sits in the background.
+ * (PCM WAV passthrough or MP3 via minimp3) and playback run on a dedicated
+ * thread so the GUI stays responsive and the music keeps playing while the app
+ * sits in the background.
  */
 class MusicApp final: public system::core::IApp {
 public:
@@ -62,9 +63,14 @@ private:
         bool track_finished = false;
         bool error = false;
         std::string error_text;
+        // Position/size units depend on the format: bytes for PCM WAV and
+        // frame indexes for MP3 (where samples_per_frame > 0).
         uint32_t byte_pos = 0;
         uint32_t data_size = 0;
         uint32_t sample_rate = 0;
+        // Non-zero for MP3: samples produced by one compressed frame (1152 for
+        // MPEG-1 Layer III, 576 for MPEG-2/2.5).
+        uint32_t samples_per_frame = 0;
         uint16_t channels = 0;
         uint16_t bits = 16;
         bool seek_pending = false;
@@ -97,6 +103,19 @@ private:
     void engine_loop();
     void notify_engine();
 
+    // Frame index for the MP3 currently (or last) played by the engine thread.
+    // Only the engine thread touches it.
+    struct Mp3Index {
+        std::string path;
+        uint32_t sample_rate = 0;
+        uint16_t channels = 0;
+        uint32_t samples_per_frame = 0;
+        uint32_t total_frames = 0;
+        std::vector<uint32_t> offsets;
+        std::vector<uint16_t> lengths;
+    };
+    bool ensure_mp3_index(const std::string &path);
+
     system::core::AppContext *context_ = nullptr;
     std::vector<std::string> tracks_;
     std::vector<uint32_t> track_bytes_list_;
@@ -123,6 +142,7 @@ private:
     int32_t ui_tick_ = 0;
 
     EngineState state_;
+    Mp3Index mp3_index_;
     hal::InterfaceHandle<hal::audio::CodecPlayerIface> player_;
     boost::thread engine_thread_;
     bool engine_started_ = false;

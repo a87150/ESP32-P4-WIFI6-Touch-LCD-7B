@@ -10,24 +10,74 @@ std::vector<FileManagerApp::VolumeEntry> FileManagerApp::build_volumes() const
     if (!storage_layout_) {
         return result;
     }
-    if (storage_layout_->internal.available) {
+
+    auto append = [this, &result](const system::core::StorageVolume &volume, const char *name_key) {
         result.push_back(VolumeEntry{
-            .volume = storage_layout_->internal,
-            .display_name = tr("internal"),
+            .volume = volume,
+            .display_name = tr(name_key),
             .capacity_text = {},
         });
+    };
+    auto has_root = [&result](std::string_view root) {
+        return std::any_of(result.begin(), result.end(), [root](const VolumeEntry & entry) {
+            return entry.volume.root_path == root;
+        });
+    };
+
+    if (storage_layout_->internal.available) {
+        append(storage_layout_->internal, "volume_internal");
     }
-    for (size_t i = 0; i < storage_layout_->external.size(); ++i) {
-        const auto &volume = storage_layout_->external[i];
+
+    bool has_sd = false;
+    for (const auto &volume : storage_layout_->external) {
         if (!volume.available) {
             continue;
         }
-        result.push_back(VolumeEntry{
-            .volume = volume,
-            .display_name = tr("external_prefix") + std::to_string(i + 1),
-            .capacity_text = {},
-        });
+        if (volume.medium_type == hal::storage::FileSystemIface::MediumType::SDCard) {
+            has_sd = true;
+            append(volume, "volume_sd");
+        } else {
+            append(volume, "volume_external");
+        }
     }
+
+    // Present a "My Computer"-style volume list even when removable media are
+    // absent. These placeholders are marked unavailable so opening them shows a
+    // hint instead of trying to browse a non-existent mount point.
+    if (!has_sd && !has_root("/sdcard")) {
+        system::core::StorageVolume volume = {};
+        volume.id = "sdcard";
+        volume.partition = system::core::StoragePartition::External;
+        volume.mount_point = "/sdcard";
+        volume.root_path = "/sdcard";
+        volume.medium_type = hal::storage::FileSystemIface::MediumType::SDCard;
+        volume.fs_type = hal::storage::FileSystemIface::FileSystemType::FATFS;
+        volume.available = false;
+        append(volume, "volume_sd");
+    }
+    if (!has_root("/usb")) {
+        system::core::StorageVolume volume = {};
+        volume.id = "usb";
+        volume.partition = system::core::StoragePartition::External;
+        volume.mount_point = "/usb";
+        volume.root_path = "/usb";
+        volume.medium_type = hal::storage::FileSystemIface::MediumType::Flash;
+        volume.fs_type = hal::storage::FileSystemIface::FileSystemType::FATFS;
+        volume.available = false;
+        append(volume, "volume_usb");
+    }
+    if (!has_root("/network")) {
+        system::core::StorageVolume volume = {};
+        volume.id = "network";
+        volume.partition = system::core::StoragePartition::External;
+        volume.mount_point = "/network";
+        volume.root_path = "/network";
+        volume.medium_type = hal::storage::FileSystemIface::MediumType::Flash;
+        volume.fs_type = hal::storage::FileSystemIface::FileSystemType::LittleFS;
+        volume.available = false;
+        append(volume, "volume_network");
+    }
+
     return result;
 }
 
@@ -46,6 +96,15 @@ std::filesystem::path FileManagerApp::current_root() const
         return {};
     }
     return std::filesystem::path(volumes_[*index].volume.root_path).lexically_normal();
+}
+
+std::filesystem::path FileManagerApp::current_directory_path() const
+{
+    const auto root = current_root();
+    if (root.empty()) {
+        return {};
+    }
+    return (root / current_directory_).lexically_normal();
 }
 
 bool FileManagerApp::is_inside_current_root(const std::filesystem::path &path) const

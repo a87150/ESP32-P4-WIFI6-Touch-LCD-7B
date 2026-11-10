@@ -4,7 +4,9 @@ set(COMPONENT_INCLUDE_DIRS ${COMPONENT_DIR}/include)
 set(COMPONENT_PRIVATE_INCLUDE_DIRS ${COMPONENT_SRC_DIR})
 # The hardware JPEG codec decodes frames into PSRAM; LVGL image descriptors let
 # the panel draw those buffers without copying them into a GUI-side texture.
-set(COMPONENT_REQUIRES "esp_driver_jpeg" "lvgl" "heap")
+# MP4 files are decoded by the software H.264 decoder from esp_h264 (the
+# ESP32-P4 only has a hardware H.264 encoder).
+set(COMPONENT_REQUIRES "esp_driver_jpeg" "lvgl" "heap" "esp_h264")
 set(COMPONENT_SRCS_C "")
 set(COMPONENT_SRCS_CPP "")
 file(GLOB_RECURSE APP_VIDEO_SRCS_C ${COMPONENT_SRC_DIR}/*.c)

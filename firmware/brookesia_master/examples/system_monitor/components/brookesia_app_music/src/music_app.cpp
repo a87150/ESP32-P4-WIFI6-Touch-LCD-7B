@@ -21,6 +21,7 @@
 
 #include "brookesia/lib_utils/thread_config.hpp"
 
+#include "minimp3.h"
 #include "private/utils.hpp"
 
 namespace esp_brookesia::app::music {
@@ -132,19 +133,35 @@ std::string make_wave_points(const std::array<int32_t, WAVE_POINT_COUNT> &ys, in
     return result;
 }
 
-bool has_wav_extension(const std::string &name)
+bool has_extension(const std::string &name, const char *extension)
 {
-    if (name.size() < 4) {
+    const size_t length = std::strlen(extension);
+    if (name.size() < length) {
         return false;
     }
-    const auto ends_with_wav = std::equal(
-                                   name.end() - 4, name.end(), ".wav",
-                                   [](char a, char b) {
+    return std::equal(
+               name.end() - static_cast<std::ptrdiff_t>(length), name.end(), extension,
+               [](char a, char b) {
         return std::tolower(static_cast<unsigned char>(a)) ==
                std::tolower(static_cast<unsigned char>(b));
     }
-                               );
-    return ends_with_wav;
+           );
+}
+
+bool has_wav_extension(const std::string &name)
+{
+    return has_extension(name, ".wav");
+}
+
+bool has_mp3_extension(const std::string &name)
+{
+    return has_extension(name, ".mp3");
+}
+
+bool has_audio_extension(const std::string &name)
+{
+    // Only formats the player can actually stream: PCM WAV and MPEG Layer III.
+    return has_wav_extension(name) || has_mp3_extension(name);
 }
 
 std::string file_name_of(const std::string &path)
@@ -244,6 +261,69 @@ bool parse_wav_header(std::FILE *file, WavInfo &info)
         }
         std::fseek(file, static_cast<long>(size), SEEK_CUR);
     }
+}
+
+struct Mp3Header {
+    uint32_t sample_rate = 0;
+    uint32_t frame_bytes = 0;
+    uint32_t samples = 0;
+    uint32_t bitrate_kbps = 0;
+    uint16_t channels = 0;
+};
+
+// Parse a 4-byte MPEG audio frame header. Only Layer III is accepted; that is
+// what every .mp3 file in the wild uses.
+bool parse_mp3_header(const uint8_t *data, Mp3Header &header)
+{
+    if (data[0] != 0xFF || (data[1] & 0xE0) != 0xE0) {
+        return false;
+    }
+    const uint8_t version = (data[1] >> 3) & 0x03; // 0 = 2.5, 2 = 2, 3 = 1
+    const uint8_t layer = (data[1] >> 1) & 0x03;   // 1 = Layer III
+    const uint8_t bitrate_index = (data[2] >> 4) & 0x0F;
+    const uint8_t rate_index = (data[2] >> 2) & 0x03;
+    const uint8_t padding = (data[2] >> 1) & 0x01;
+    const uint8_t channel_mode = (data[3] >> 6) & 0x03;
+
+    if (version == 1 || layer != 1 || bitrate_index == 0 || bitrate_index == 15 || rate_index == 3) {
+        return false;
+    }
+
+    static const uint16_t BITRATES_MPEG1[16] = {
+        0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0
+    };
+    static const uint16_t BITRATES_MPEG2[16] = {
+        0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0
+    };
+    static const uint32_t SAMPLE_RATES[3] = {44100, 48000, 32000};
+
+    const uint32_t base_rate = SAMPLE_RATES[rate_index];
+    if (version == 3) {
+        header.bitrate_kbps = BITRATES_MPEG1[bitrate_index];
+        header.sample_rate = base_rate;
+        header.samples = 1152;
+        header.frame_bytes = (144000U * header.bitrate_kbps) / header.sample_rate + padding;
+    } else {
+        header.bitrate_kbps = BITRATES_MPEG2[bitrate_index];
+        header.sample_rate = (version == 2) ? (base_rate / 2U) : (base_rate / 4U);
+        header.samples = 576;
+        header.frame_bytes = (72000U * header.bitrate_kbps) / header.sample_rate + padding;
+    }
+    header.channels = (channel_mode == 3) ? 1 : 2;
+    return header.frame_bytes >= 4;
+}
+
+uint32_t read_synchsafe(const uint8_t *data)
+{
+    return (static_cast<uint32_t>(data[0] & 0x7F) << 21) |
+           (static_cast<uint32_t>(data[1] & 0x7F) << 14) |
+           (static_cast<uint32_t>(data[2] & 0x7F) << 7) |
+           static_cast<uint32_t>(data[3] & 0x7F);
+}
+
+const char *format_tag_of(const std::string &path)
+{
+    return has_mp3_extension(path) ? "MP3" : "WAV";
 }
 
 std::string format_time(uint32_t seconds)
@@ -346,9 +426,9 @@ std::expected<void, std::string> MusicApp::on_start(system::core::AppContext &co
 
     if (tracks_.empty()) {
         (void)context.gui().set_binding_value(PATH_TRACK_NAME, "track_name", "未在播放");
-        (void)context.gui().set_binding_value(PATH_TRACK_META, "track_meta", "没有找到 WAV 文件");
+        (void)context.gui().set_binding_value(PATH_TRACK_META, "track_meta", "没有找到 WAV / MP3 文件");
         (void)context.gui().set_binding_value(
-            PATH_TRACK_DETAIL, "track_detail", "把 WAV 放进 /littlefs/sounds 或 SD 卡后点「重新扫描」"
+            PATH_TRACK_DETAIL, "track_detail", "把 WAV / MP3 放进 /littlefs/sounds 或 SD 卡后点「重新扫描」"
         );
         (void)context.gui().set_binding_value(PATH_STATUS, "status_text", "");
     }
@@ -428,7 +508,7 @@ std::expected<void, std::string> MusicApp::on_timer(
     }
 
     if (restart_failed && !paused_ui_) {
-        refresh_status("无法播放这个 WAV 文件（仅支持 PCM WAV）");
+        refresh_status("无法播放这个文件（支持 PCM WAV 与 MP3）");
         refresh_ui(context);
         return {};
     }
@@ -477,7 +557,7 @@ void MusicApp::scan_tracks()
         }
         while (auto *entry = readdir(dir)) {
             const std::string name = entry->d_name;
-            if (name == "." || name == ".." || !has_wav_extension(name)) {
+            if (name == "." || name == ".." || !has_audio_extension(name)) {
                 continue;
             }
             const std::string full_path = std::string(dir_path) + "/" + name;
@@ -591,7 +671,7 @@ void MusicApp::subscribe_actions(system::core::AppContext &context)
             close_list(*context_);
             rebuild_list(*context_);
             if (tracks_.empty()) {
-                refresh_status("没有找到 WAV 文件");
+                refresh_status("没有找到 WAV / MP3 文件");
             }
         },
     });
@@ -663,7 +743,7 @@ void MusicApp::rebuild_list(system::core::AppContext &context)
         const uint32_t bytes = (i < track_bytes_list_.size()) ? track_bytes_list_[i] : 0;
         const std::string meta = (bytes > 0) ? format_size(bytes) : std::string("--");
         const bool current = has_track && (i == index_);
-        const char *tag = current ? (track_playing ? "播放中" : "已暂停") : "WAV";
+        const char *tag = current ? (track_playing ? "播放中" : "已暂停") : format_tag_of(tracks_[i]);
 
         (void)context.gui().set_binding_value(path, "commonProps.hidden", "false");
         (void)context.gui().set_binding_value(path + "/text/title", "title", file_name_of(tracks_[i]));
@@ -673,7 +753,7 @@ void MusicApp::rebuild_list(system::core::AppContext &context)
 
     std::string info;
     if (total == 0) {
-        info = "没有找到音乐，把 WAV 放进 /littlefs/sounds 或 SD 卡";
+        info = "没有找到音乐，把 WAV / MP3 放进 /littlefs/sounds 或 SD 卡";
     } else {
         info = "共 " + std::to_string(total) + " 首 · 第 " + std::to_string(start + 1) + "-" +
                std::to_string(end) + " 首";
@@ -746,6 +826,7 @@ void MusicApp::play_index(size_t index, bool start_playback)
         state_.seek_pending = false;
         state_.data_size = 0;
         state_.sample_rate = 0;
+        state_.samples_per_frame = 0;
         state_.channels = 0;
         state_.bits = 16;
         state_.track_finished = false;
@@ -765,7 +846,7 @@ void MusicApp::play_index(size_t index, bool start_playback)
 void MusicApp::toggle_playback()
 {
     if (tracks_.empty()) {
-        refresh_status("没有找到 WAV 文件");
+        refresh_status("没有找到 WAV / MP3 文件");
         return;
     }
     bool now_playing = false;
@@ -797,7 +878,7 @@ void MusicApp::toggle_playback()
 void MusicApp::step_track(int direction)
 {
     if (tracks_.empty()) {
-        refresh_status("没有找到 WAV 文件");
+        refresh_status("没有找到 WAV / MP3 文件");
         return;
     }
     const int count = static_cast<int>(tracks_.size());
@@ -885,9 +966,9 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
 {
     if (tracks_.empty()) {
         (void)context.gui().set_binding_value(PATH_TRACK_NAME, "track_name", "未在播放");
-        (void)context.gui().set_binding_value(PATH_TRACK_META, "track_meta", "没有找到 WAV 文件");
+        (void)context.gui().set_binding_value(PATH_TRACK_META, "track_meta", "没有找到 WAV / MP3 文件");
         (void)context.gui().set_binding_value(
-            PATH_TRACK_DETAIL, "track_detail", "把 WAV 放进 /littlefs/sounds 或 SD 卡后点「重新扫描」"
+            PATH_TRACK_DETAIL, "track_detail", "把 WAV / MP3 放进 /littlefs/sounds 或 SD 卡后点「重新扫描」"
         );
         (void)context.gui().set_binding_value(PATH_TIME_LABEL, "time_label", "00:00 / 00:00");
         (void)context.gui().set_value(PATH_PROGRESS, 0);
@@ -898,6 +979,7 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
     uint32_t byte_pos = 0;
     uint32_t data_size = 0;
     uint32_t sample_rate = 0;
+    uint32_t samples_per_frame = 0;
     uint16_t channels = 0;
     uint16_t bits = 16;
     bool playing = false;
@@ -908,6 +990,7 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
         byte_pos = state_.byte_pos;
         data_size = state_.data_size;
         sample_rate = state_.sample_rate;
+        samples_per_frame = state_.samples_per_frame;
         channels = state_.channels;
         bits = state_.bits;
         playing = state_.play_requested && !state_.paused;
@@ -929,11 +1012,34 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
         return;
     }
 
+    const bool is_mp3 = samples_per_frame > 0;
     (void)context.gui().set_binding_value(PATH_TRACK_NAME, "track_name", file_name_of(tracks_[index_]));
     std::string meta = "第 " + std::to_string(index_ + 1) + " / " + std::to_string(tracks_.size()) +
-                       " 首 · WAV";
+                       " 首 · " + (is_mp3 ? "MP3" : "WAV");
     std::string detail;
-    if (sample_rate > 0) {
+    uint32_t total = 0;
+    if (is_mp3 && sample_rate > 0 && data_size > 0) {
+        total = static_cast<uint32_t>(
+                    (static_cast<uint64_t>(data_size) * samples_per_frame) / sample_rate
+                );
+        const auto kbps = (total > 0 && track_bytes_ > 0) ?
+                          static_cast<unsigned>((static_cast<uint64_t>(track_bytes_) * 8U) / total / 1000U) :
+                          0U;
+        const char *layout = (channels >= 2) ? "立体声" : "单声道";
+        char text[96] = {};
+        if (track_bytes_ > 0) {
+            std::snprintf(
+                text, sizeof(text), "%.1f kHz · %s · 16-bit · %u kbps · %s", sample_rate / 1000.0,
+                layout, kbps, format_size(track_bytes_).c_str()
+            );
+        } else {
+            std::snprintf(
+                text, sizeof(text), "%.1f kHz · %s · 16-bit · %u kbps", sample_rate / 1000.0,
+                layout, kbps
+            );
+        }
+        detail = text;
+    } else if (sample_rate > 0) {
         char text[96] = {};
         const auto kbps = static_cast<unsigned>(
                               (static_cast<uint64_t>(sample_rate) * channels * bits) / 1000U
@@ -955,9 +1061,18 @@ void MusicApp::refresh_ui(system::core::AppContext &context)
     (void)context.gui().set_binding_value(PATH_TRACK_META, "track_meta", meta);
     (void)context.gui().set_binding_value(PATH_TRACK_DETAIL, "track_detail", detail);
 
-    const uint32_t bytes_per_second = sample_rate * channels * (bits / 8U);
-    const uint32_t elapsed = (bytes_per_second > 0) ? (byte_pos / bytes_per_second) : 0;
-    const uint32_t total = (bytes_per_second > 0 && data_size > 0) ? (data_size / bytes_per_second) : 0;
+    uint32_t elapsed = 0;
+    if (is_mp3) {
+        if (sample_rate > 0 && data_size > 0) {
+            elapsed = static_cast<uint32_t>(
+                          (static_cast<uint64_t>(byte_pos) * samples_per_frame) / sample_rate
+                      );
+        }
+    } else {
+        const uint32_t bytes_per_second = sample_rate * channels * (bits / 8U);
+        elapsed = (bytes_per_second > 0) ? (byte_pos / bytes_per_second) : 0;
+        total = (bytes_per_second > 0 && data_size > 0) ? (data_size / bytes_per_second) : 0;
+    }
     (void)context.gui().set_binding_value(
         PATH_TIME_LABEL, "time_label", format_time(elapsed) + " / " + format_time(total)
     );
@@ -1046,7 +1161,7 @@ void MusicApp::start_engine()
     }
     {
         BROOKESIA_THREAD_CONFIG_GUARD({
-            .stack_size = 10240,
+            .stack_size = 32 * 1024,
             .stack_in_ext = true,
         });
         engine_thread_ = boost::thread([this]() {
@@ -1077,6 +1192,109 @@ void MusicApp::stop_engine()
 void MusicApp::notify_engine()
 {
     state_.cv.notify_all();
+}
+
+bool MusicApp::ensure_mp3_index(const std::string &path)
+{
+    if (mp3_index_.path == path && mp3_index_.total_frames > 0) {
+        return true;
+    }
+    mp3_index_ = Mp3Index{};
+
+    std::FILE *file = std::fopen(path.c_str(), "rb");
+    if (file == nullptr) {
+        return false;
+    }
+    struct stat st {};
+    uint64_t file_size = 0;
+    if (stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
+        file_size = static_cast<uint64_t>(st.st_size);
+    }
+
+    // Skip an ID3v2 tag (and its optional footer) before the first frame.
+    uint8_t tag[10] = {};
+    uint64_t start = 0;
+    if (std::fread(tag, 1, sizeof(tag), file) == sizeof(tag) && std::memcmp(tag, "ID3", 3) == 0) {
+        start = 10 + read_synchsafe(tag + 6);
+        if ((tag[5] & 0x10) != 0) {
+            start += 10;
+        }
+    }
+    if (file_size > 0 && start >= file_size) {
+        std::fclose(file);
+        return false;
+    }
+
+    constexpr size_t CHUNK = 65536;
+    // Larger than the biggest possible Layer III frame (~1441 bytes).
+    constexpr size_t GUARD = 2048;
+    std::vector<uint8_t> buffer(CHUNK + GUARD);
+    uint64_t base = start;
+    size_t offset = 0;
+    size_t length = 0;
+    bool eof = false;
+
+    if (std::fseek(file, static_cast<long>(start), SEEK_SET) != 0) {
+        std::fclose(file);
+        return false;
+    }
+    length = std::fread(buffer.data(), 1, CHUNK, file);
+    eof = (length < CHUNK);
+
+    while (offset + 4 <= length) {
+        if (length - offset < GUARD && !eof) {
+            // Slide the tail to the front and top up the window.
+            const size_t remaining = length - offset;
+            std::memmove(buffer.data(), buffer.data() + offset, remaining);
+            base += offset;
+            offset = 0;
+            const size_t got = std::fread(buffer.data() + remaining, 1, CHUNK - remaining, file);
+            length = remaining + got;
+            if (got == 0) {
+                eof = true;
+            }
+            if (length < 4) {
+                break;
+            }
+            continue;
+        }
+
+        Mp3Header header;
+        if (!parse_mp3_header(buffer.data() + offset, header)) {
+            ++offset;
+            continue;
+        }
+        if (mp3_index_.total_frames == 0) {
+            mp3_index_.sample_rate = header.sample_rate;
+            mp3_index_.channels = header.channels;
+            mp3_index_.samples_per_frame = header.samples;
+        } else if (header.samples != mp3_index_.samples_per_frame ||
+                   header.sample_rate != mp3_index_.sample_rate) {
+            // Mixed sample rates inside one file are out of scope.
+            ++offset;
+            continue;
+        }
+        if (offset + header.frame_bytes > length) {
+            // Truncated final frame.
+            break;
+        }
+        mp3_index_.offsets.push_back(static_cast<uint32_t>(base + offset));
+        mp3_index_.lengths.push_back(static_cast<uint16_t>(header.frame_bytes));
+        ++mp3_index_.total_frames;
+        offset += header.frame_bytes;
+    }
+    std::fclose(file);
+
+    mp3_index_.path = path;
+    if (mp3_index_.total_frames == 0) {
+        BROOKESIA_LOGW("Music: no MP3 frames found in %1%", path);
+        return false;
+    }
+    BROOKESIA_LOGI(
+        "Music: indexed %1% MP3 frame(s), %2% Hz, %3% ch", mp3_index_.total_frames,
+        mp3_index_.sample_rate, mp3_index_.channels
+    );
+    return true;
 }
 
 void MusicApp::engine_loop()
@@ -1112,44 +1330,82 @@ void MusicApp::engine_loop()
             continue;
         }
 
-        std::FILE *file = std::fopen(path.c_str(), "rb");
+        const bool is_mp3 = has_mp3_extension(path);
+        std::FILE *file = nullptr;
         WavInfo info;
-        if (file == nullptr || !parse_wav_header(file, info)) {
-            if (file != nullptr) {
-                std::fclose(file);
+
+        if (is_mp3) {
+            if (!ensure_mp3_index(path)) {
+                BROOKESIA_LOGW("Music: cannot index MP3 file: %1%", path);
+                std::lock_guard<std::mutex> lock(state_.mutex);
+                if (state_.generation == generation) {
+                    state_.error = true;
+                    state_.error_text = "invalid mp3";
+                    state_.play_requested = false;
+                    state_.byte_pos = 0;
+                    state_.data_size = 0;
+                }
+                continue;
             }
-            BROOKESIA_LOGW("Music: cannot read WAV file: %1%", path);
-            std::lock_guard<std::mutex> lock(state_.mutex);
-            if (state_.generation == generation) {
-                state_.error = true;
-                state_.error_text = "invalid wav";
-                state_.play_requested = false;
-                state_.byte_pos = 0;
-                state_.data_size = 0;
+            if (start_pos >= mp3_index_.total_frames) {
+                start_pos = 0;
             }
-            continue;
+            file = std::fopen(path.c_str(), "rb");
+            if (file == nullptr) {
+                BROOKESIA_LOGW("Music: cannot open MP3 file: %1%", path);
+                std::lock_guard<std::mutex> lock(state_.mutex);
+                if (state_.generation == generation) {
+                    state_.error = true;
+                    state_.error_text = "invalid mp3";
+                    state_.play_requested = false;
+                }
+                continue;
+            }
+        } else {
+            file = std::fopen(path.c_str(), "rb");
+            if (file == nullptr || !parse_wav_header(file, info)) {
+                if (file != nullptr) {
+                    std::fclose(file);
+                }
+                BROOKESIA_LOGW("Music: cannot read WAV file: %1%", path);
+                std::lock_guard<std::mutex> lock(state_.mutex);
+                if (state_.generation == generation) {
+                    state_.error = true;
+                    state_.error_text = "invalid wav";
+                    state_.play_requested = false;
+                    state_.byte_pos = 0;
+                    state_.data_size = 0;
+                }
+                continue;
+            }
+            if (start_pos >= info.data_size) {
+                start_pos = 0;
+            }
         }
 
-        if (start_pos >= info.data_size) {
-            start_pos = 0;
-        }
+        // WAV positions are byte offsets, MP3 positions are frame indexes.
+        const uint32_t total_units = is_mp3 ? mp3_index_.total_frames : info.data_size;
+        const uint32_t sample_rate = is_mp3 ? mp3_index_.sample_rate : info.sample_rate;
+        const uint16_t channels = is_mp3 ? mp3_index_.channels : info.channels;
+        const uint16_t bits = is_mp3 ? 16 : info.bits;
         {
             std::lock_guard<std::mutex> lock(state_.mutex);
             if (state_.generation != generation) {
                 std::fclose(file);
                 continue;
             }
-            state_.data_size = info.data_size;
-            state_.sample_rate = info.sample_rate;
-            state_.channels = info.channels;
-            state_.bits = info.bits;
+            state_.data_size = total_units;
+            state_.sample_rate = sample_rate;
+            state_.samples_per_frame = is_mp3 ? mp3_index_.samples_per_frame : 0;
+            state_.channels = channels;
+            state_.bits = bits;
             state_.byte_pos = start_pos;
         }
 
         hal::audio::CodecPlayerIface::Config config = {
-            .bits = static_cast<uint8_t>(info.bits),
-            .channels = static_cast<uint8_t>(info.channels),
-            .sample_rate = info.sample_rate,
+            .bits = static_cast<uint8_t>(bits),
+            .channels = static_cast<uint8_t>(channels),
+            .sample_rate = sample_rate,
         };
         if (!player_->open(config)) {
             BROOKESIA_LOGW("Music: failed to open the codec player");
@@ -1172,7 +1428,19 @@ void MusicApp::engine_loop()
             player_->set_pa_on_off(true);
         }
 
-        (void)std::fseek(file, static_cast<long>(info.data_offset + start_pos), SEEK_SET);
+        // The minimp3 state is ~7 KiB (MDCT overlap + QMF history). Keep it on
+        // the heap: the engine thread stack is only 10 KiB and a stack-allocated
+        // decoder overflows it as soon as an MP3 starts playing.
+        std::unique_ptr<mp3dec_t> decoder;
+        std::vector<int16_t> pcm;
+        if (is_mp3) {
+            decoder = std::make_unique<mp3dec_t>();
+            mp3dec_init(decoder.get());
+            pcm.resize(MINIMP3_MAX_SAMPLES_PER_FRAME);
+        } else {
+            (void)std::fseek(file, static_cast<long>(info.data_offset + start_pos), SEEK_SET);
+        }
+
         uint32_t pos = start_pos;
         while (true) {
             bool should_stop = false;
@@ -1198,17 +1466,44 @@ void MusicApp::engine_loop()
             if (should_stop) {
                 break;
             }
-            const uint32_t remaining = (pos < info.data_size) ? (info.data_size - pos) : 0;
+            const uint32_t remaining = (pos < total_units) ? (total_units - pos) : 0;
             if (remaining == 0) {
                 break;
             }
-            const size_t want = std::min<size_t>(remaining, buffer.size());
-            const size_t read = std::fread(buffer.data(), 1, want, file);
-            if (read == 0) {
-                break;
+
+            if (is_mp3) {
+                const uint32_t frame_offset = mp3_index_.offsets[pos];
+                const uint16_t frame_length = mp3_index_.lengths[pos];
+                if (std::ftell(file) != static_cast<long>(frame_offset)) {
+                    if (std::fseek(file, static_cast<long>(frame_offset), SEEK_SET) != 0) {
+                        break;
+                    }
+                }
+                const size_t read = std::fread(buffer.data(), 1, frame_length, file);
+                if (read < 4) {
+                    break;
+                }
+                mp3dec_frame_info_t frame_info{};
+                const int decoded = mp3dec_decode_frame(
+                                        decoder.get(), buffer.data(), static_cast<int>(read), pcm.data(), &frame_info
+                                    );
+                if (decoded > 0 && frame_info.channels > 0) {
+                    player_->write_data(
+                        reinterpret_cast<const uint8_t *>(pcm.data()),
+                        static_cast<size_t>(decoded) * static_cast<size_t>(frame_info.channels) *
+                        sizeof(int16_t)
+                    );
+                }
+                ++pos;
+            } else {
+                const size_t want = std::min<size_t>(remaining, buffer.size());
+                const size_t read = std::fread(buffer.data(), 1, want, file);
+                if (read == 0) {
+                    break;
+                }
+                player_->write_data(buffer.data(), read);
+                pos += static_cast<uint32_t>(read);
             }
-            player_->write_data(buffer.data(), read);
-            pos += static_cast<uint32_t>(read);
             {
                 std::lock_guard<std::mutex> lock(state_.mutex);
                 state_.byte_pos = pos;

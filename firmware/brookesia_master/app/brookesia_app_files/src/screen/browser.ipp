@@ -115,6 +115,18 @@ std::expected<void, std::string> FileManagerApp::refresh_ui(system::core::AppCon
         "labelProps.text",
         item_count_text(entries_.size(), tr("empty"), tr("items_suffix"))
     );
+    add_binding(
+        updates,
+        HEADER_CREATE_PATH,
+        "commonProps.disabled",
+        bool_text(!current_volume_index_.has_value())
+    );
+    add_binding(
+        updates,
+        HEADER_CREATE_PATH,
+        "style.opacity",
+        std::to_string(current_volume_index_ ? ENABLED_OPACITY : DISABLED_OPACITY)
+    );
 
     for (const auto &entry : entries_) {
         add_binding(updates, entry.view_path, "commonProps.hidden", "false");

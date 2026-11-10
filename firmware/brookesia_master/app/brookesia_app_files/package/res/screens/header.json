@@ -23,7 +23,8 @@
                 "gridTemplateColumns": [
                     "${constant.files.layout.headerBackColumn}",
                     "match",
-                    "${constant.files.layout.headerCountWidth}"
+                    "${constant.files.layout.headerCountWidth}",
+                    "${constant.files.layout.headerCreateWidth}"
                 ],
                 "gridTemplateRows": [
                     "match"
@@ -34,7 +35,7 @@
             "placement": {
                 "mode": "absolute",
                 "x": "${constant.files.layout.pagePadding}",
-                "y": "${constant.files.layout.pagePadding}",
+                "y": "${constant.files.layout.headerTop}",
                 "width": "${expr(${env.widthDp} - ${constant.files.layout.pagePadding} * 2)}",
                 "height": "${constant.files.layout.headerHeight}"
             },
@@ -157,6 +158,48 @@
                             ],
                             "labelProps": {
                                 "text": "${constant.files.i18n.empty}"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "button",
+                    "id": "create",
+                    "bindings": {
+                        "commonProps.disabled": "commonProps.disabled",
+                        "style.opacity": "style.opacity"
+                    },
+                    "events": [
+                        {
+                            "type": "clicked",
+                            "action": "files.create"
+                        }
+                    ],
+                    "styleRefs": [
+                        "app.secondaryChip"
+                    ],
+                    "layout": {
+                        "type": "flex",
+                        "mainAlign": "center",
+                        "crossAlign": "center"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "gridColumn": 3,
+                        "gridRow": 0,
+                        "width": "${constant.files.layout.headerCreateWidth}",
+                        "height": "${constant.files.layout.headerCountHeight}",
+                        "alignSelf": "center"
+                    },
+                    "children": [
+                        {
+                            "type": "label",
+                            "id": "label",
+                            "styleRefs": [
+                                "app.cardTitle"
+                            ],
+                            "labelProps": {
+                                "text": "+"
                             }
                         }
                     ]

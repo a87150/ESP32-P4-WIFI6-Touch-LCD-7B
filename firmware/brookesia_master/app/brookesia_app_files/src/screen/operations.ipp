@@ -17,10 +17,17 @@ std::expected<void, std::string> FileManagerApp::show_operations(
     add_binding(updates, OP_INFO_DETAIL_PATH, "labelProps.text", entry.path.generic_string());
     add_binding(updates, OP_INFO_CHEVRON_PATH, "labelProps.text", "");
     add_binding(updates, OP_RENAME_PATH, "commonProps.disabled", bool_text(!can_operate_selected()));
+    add_binding(updates, OP_MOVE_PATH, "commonProps.disabled", bool_text(!can_operate_selected()));
     add_binding(updates, OP_DELETE_PATH, "commonProps.disabled", bool_text(!can_operate_selected()));
     add_binding(
         updates,
         OP_RENAME_PATH,
+        "style.opacity",
+        std::to_string(can_operate_selected() ? ENABLED_OPACITY : DISABLED_OPACITY)
+    );
+    add_binding(
+        updates,
+        OP_MOVE_PATH,
         "style.opacity",
         std::to_string(can_operate_selected() ? ENABLED_OPACITY : DISABLED_OPACITY)
     );

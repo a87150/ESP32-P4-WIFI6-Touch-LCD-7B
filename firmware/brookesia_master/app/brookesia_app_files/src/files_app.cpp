@@ -40,17 +40,21 @@ static constexpr const char *ACTION_ENTRY_CLICK = "files.entry.click";
 static constexpr const char *ACTION_ENTRY_LONG = "files.entry.long";
 static constexpr const char *ACTION_RENAME = "files.rename";
 static constexpr const char *ACTION_DELETE = "files.delete";
+static constexpr const char *ACTION_CREATE = "files.create";
+static constexpr const char *ACTION_MOVE = "files.move";
 static constexpr const char *ENTRY_TEMPLATE_ID = "file_entry";
 static constexpr const char *LIST_CONTAINER_PATH = "/browser/page/list";
 static constexpr const char *LIST_PATH = "/browser/page/list/items";
 static constexpr const char *HEADER_TITLE_PATH = "/files_header/bar/text/title";
 static constexpr const char *HEADER_SUBTITLE_PATH = "/files_header/bar/text/subtitle";
 static constexpr const char *HEADER_COUNT_PATH = "/files_header/bar/count/label";
+static constexpr const char *HEADER_CREATE_PATH = "/files_header/bar/create";
 static constexpr const char *OP_INFO_TITLE_PATH = "/operations/page/selection_card/selected/content/title";
 static constexpr const char *OP_INFO_DETAIL_PATH = "/operations/page/selection_card/selected/content/detail";
 static constexpr const char *OP_INFO_ICON_PATH = "/operations/page/selection_card/selected/icon";
 static constexpr const char *OP_INFO_CHEVRON_PATH = "/operations/page/selection_card/selected/chevron";
 static constexpr const char *OP_RENAME_PATH = "/operations/page/actions_card/rename";
+static constexpr const char *OP_MOVE_PATH = "/operations/page/actions_card/move";
 static constexpr const char *OP_DELETE_PATH = "/operations/page/actions_card/delete";
 static constexpr const char *INITIAL_REFRESH_TIMER_NAME = "files.initial.refresh";
 static constexpr const char *FILE_OPERATION_DIALOG_TIMER_NAME = "files.operation.dialog";
@@ -203,10 +207,17 @@ bool path_has_prefix(std::string_view path, std::string_view prefix)
     return path.size() == prefix.size() || path[prefix.size()] == '/';
 }
 
-std::string describe_volume(const system::core::StorageVolume &volume, std::string_view capacity_text)
+std::string describe_volume(
+    const system::core::StorageVolume &volume,
+    std::string_view capacity_text,
+    std::string_view not_mounted_text
+)
 {
-    auto text = volume.id + " - " + volume.root_path;
-    if (!capacity_text.empty()) {
+    auto text = volume.root_path;
+    if (!volume.available) {
+        text += " | ";
+        text += not_mounted_text;
+    } else if (!capacity_text.empty()) {
         text += " | ";
         text += capacity_text;
     }

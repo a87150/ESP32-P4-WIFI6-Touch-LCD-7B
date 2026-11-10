@@ -80,9 +80,9 @@ docs/
 | 组件 | 包 id | 说明 |
 | --- | --- | --- |
 | `brookesia_app_system_monitor` | `brookesia.waveshare.system_monitor` | 系统监视器 |
-| `brookesia_app_music` | `brookesia.waveshare.music` | WAV 音乐播放器 |
+| `brookesia_app_music` | `brookesia.waveshare.music` | WAV / MP3 音乐播放器 |
 | `brookesia_app_gallery` | `brookesia.waveshare.gallery` | 图片浏览 / 壁纸 |
-| `brookesia_app_video` | `brookesia.waveshare.video` | MJPEG 视频播放器 |
+| `brookesia_app_video` | `brookesia.waveshare.video` | MJPEG / MP4 视频播放器 |
 | `bt_service` | —（服务，不是 App） | BLE 扫描 / 广播服务 |
 
 ---
@@ -91,8 +91,9 @@ docs/
 
 ### 3.1 桌面（Super Shell）
 
-- **状态栏**：时间居中；右侧为 Wi-Fi 信号（纯白图标，运行时按信号强度重着色）、蓝牙、
-  电量；左上角显示处于后台（Paused）的应用图标，最多 3 个槽位。
+- **状态栏**：时间居中；右侧为 Wi-Fi 信号（向上递增的信号条，按 RSSI 分级；未连接时
+  显示红色斜线）、蓝牙、电量（USB / BATTERY 供电标签）；左上角显示处于后台（Paused）
+  的应用图标，最多 3 个槽位。
 - **图标页**：应用图标从左往右排列，支持多页与滑动。
 - **手势**：任意页面**快速上滑**回到桌面；**按住**（长按）进入最近任务。
 - **最近任务**：卡片式预览，带 **CLEAR ALL** 一键清理。
@@ -115,11 +116,14 @@ docs/
   宽 320 dp 的**选曲抽屉**，点某一行才开始播放并自动收起，不遮挡主画面。
 - 抽屉内每页 5 首（可上一页 / 下一页），行内显示文件名与文件大小，正在播放的一行标记
   「播放中 / 已暂停」。
-- 仅支持 **WAV**（PCM），JSON 描述的 GUI，独立线程解码播放，**离开 App 后继续播放**。
-- 进度条可拖动 **seek**（每 500 ms 应用一次，避免拖动风暴重启 codec）。
+- 支持 **WAV（PCM）与 MP3（MPEG-1/2/2.5 Layer III）**：WAV 解析 RIFF 块，MP3 由
+  minimp3 软解；JSON 描述的 GUI，独立线程解码播放，**离开 App 后继续播放**。
+- 进度条可拖动 **seek**（每 500 ms 应用一次，避免拖动风暴重启 codec）；MP3 会预先
+  逐帧建立索引（跳过 ID3v2 标签），因此可以直接跳到目标帧，不必全文件扫描。
 - 音量改用底部 **「−」「+」按钮**调节（每步 10%，0–100），状态行回显当前百分比。
-- 详情区显示：曲目序号 / 总数、采样率、声道、位深、**码率**（采样率 × 声道 × 位深）
-  与文件大小；从后台返回时若仍有曲目在播，直接回到播放页。
+- 详情区显示：曲目序号 / 总数、采样率、声道、位深、**码率**（WAV 为
+  采样率 × 声道 × 位深，MP3 取帧头平均码率）与文件大小；从后台返回时若仍有曲目在播，
+  直接回到播放页。
 - 界面没有标题栏：整页上方是放大后的播放器卡片（**封面 300 dp**），卡片带纵向渐变
   背景与柔和投影；封面右侧是一条**流动的波形线**（双层描边，约 11 fps），播放时
   随音量起伏、暂停时缓慢低幅波动，卡片底部是进度条与时间。
@@ -152,8 +156,14 @@ docs/
 - 进入 App 直接显示**播放器主界面**（空态提示），点底部「列表」按钮，
   右侧滑出宽 320 dp 的**选片抽屉**，点某一部才开始载入并播放，抽屉自动收起。
 - 抽屉内每页 5 部，行内显示文件名与大小，正在播放的一部标记「播放中」。
-- 格式：**纯 JPEG 串接**的 `.mjpeg` / `.mjpg` / `.mjp`，**无容器、无音轨**。
-- 固定 **12 fps** 定速播放（MJPEG 不含时间戳），支持暂停 / 上一部 / 下一部 / 拖动进度；
+- 支持两种格式：
+  - `.mjpeg` / `.mjpg` / `.mjp`：**纯 JPEG 串接**，**无容器、无音轨**；
+  - `.mp4` / `.m4v` / `.mov`：ISO BMFF 容器 + **H.264/AVC constrained baseline**
+    视频。P4 只有硬件 H.264 **编码器**，所以 MP4 由 `esp_h264` 的 tinyH264
+    **软解**，再把 I420 转成 RGB565；AAC 音轨会被忽略（MP4 无声）。
+- MJPEG 固定 **12 fps** 定速播放（不含时间戳）；MP4 按容器帧率播放，速度受软解
+  限制：976 × 432 约 10 fps，720p 约 5 fps。MP4 拖动进度会吸附到最近的 IDR 关键帧。
+- 支持暂停 / 上一部 / 下一部 / 拖动进度；
   **连播**为可选开关（默认关闭），打开后一部播完自动接下一部，关闭则停在最后一帧。
 - **双击画面暂停 / 继续**（GUI 没有双击事件，由 `video.tap` 在 400 ms 窗口内合并两次点击）。
 - 硬件 JPEG 解码（`esp_driver_jpeg`）输出 RGB565，双缓冲逐帧切换。
@@ -163,8 +173,8 @@ docs/
   底部 76 dp 为独立控制栏：上一行是进度条与时长，下一行**「播放 / 暂停」固定在正中**，
   左侧是刷新 / 音量− / 音量+ / 上一部，右侧是下一部 / 连播 / 列表，
   「列表」在最右侧，不遮挡画面。暂停时按钮文字为「播放」，播放时为「暂停」。
-  音量按钮控制板载 codec（MJPEG 本身无音轨，主要用于后台音乐与统一操作习惯）。
-  建议素材直接做成 **976 × 432**，可 1:1 满幅播放且 12 fps 稳定。
+  音量按钮控制板载 codec（MJPEG 与 MP4 都没有实际播放的音轨，主要用于后台音乐与
+  统一操作习惯）。建议素材直接做成 **976 × 432**，可 1:1 满幅播放且 12 fps 稳定。
 - 目录：`/littlefs/videos`、`/sdcard/videos`、`/sdcard`。
 - 生成工具见第 7 节。
 
@@ -287,11 +297,14 @@ python -m esptool --chip esp32p4 -p COMx -b 460800 `
 
 ### 7.2 音乐
 
-- 只接受 **WAV（PCM）**；把文件放进 `/littlefs/sounds`（需重新烧 `storage`），
-  或放进 SD 卡的 `/music`、根目录（插卡即用）。
-- 采样率 / 声道 / 位深 / 码率 / 文件大小会在界面显示，推荐 44.1 kHz / 16 bit / 立体声。
+- 接受 **WAV（PCM）与 MP3（Layer III）**；把文件放进 `/littlefs/sounds`（需重新烧
+  `storage`），或放进 SD 卡的 `/music`、根目录（插卡即用）。
+- 采样率 / 声道 / 位深 / 码率 / 文件大小会在界面显示，推荐 44.1 kHz / 16 bit / 立体声；
+  MP3 由 minimp3 解成 16 bit PCM 后送 codec。
 - 界面封面是内置生成的 PNG（**300 × 300**），可用 `python tools/make_app_art.py` 重新生成或替换。
 - 曲目抽屉每页 5 首，点击行内任意位置即开始播放并收起抽屉；「刷新」只重新扫描，不会自动播放。
+- 首次播放某首 MP3 时会先建立帧索引：跳过 ID3v2 标签，逐个校验 MPEG Layer III 帧头并
+  记录偏移与帧长，之后拖动进度可直接跳到目标帧。
 
 ### 7.3 图片
 
@@ -308,10 +321,23 @@ python tools/make_mjpeg.py clip.gif video.mjpeg --size 640x360
 
 # 重新生成内置示例视频
 python tools/make_demo_videos.py
+
+# 生成 H.264 baseline 的无声 MP4（与 mjpeg 同源）
+ffmpeg -f mjpeg -framerate 12 -i video.mjpeg \
+       -c:v libx264 -profile:v baseline -level 3.1 -pix_fmt yuv420p \
+       -crf 24 -g 24 -keyint_min 12 -sc_threshold 0 -an \
+       -movflags +faststart video.mp4
+
+# 生成音乐 App 用的 MP3
+ffmpeg -f lavfi -i "sine=frequency=440:duration=9" -ac 2 -ar 44100 \
+       -c:a libmp3lame -b:a 128k sound.mp3
 ```
 
 - 用 `--size 976x432` 可获得 1:1 满幅 + 流畅的最佳效果。
 - 非 976 × 432 的素材会按原始尺寸居中显示（小尺寸留黑边），超过画面区（976 × 432）才缩放。
+- MP4 必须是 **H.264 constrained baseline**、8 bit 4:2:0；High profile、10 bit、隔行、
+  HEVC / VP9 / AV1 会被拒绝并给出错误提示。建议不超过 720p，且优先 976 × 432：
+  软解在 976 × 432 约 10 fps，720p 约 5 fps，分辨率越小越流畅。
 - 无 ffmpeg 时，可先用其他工具把视频导出为图片序列，再用 `make_mjpeg.py` 合并。
 
 ### 7.5 壁纸
@@ -464,7 +490,10 @@ GUI 只提供 `clicked` 事件，视频 App 的处理方式是：
   同批构建；分区表改过的话需要同时烧 `0x8000`。
 - **Wi-Fi 连上但没网**：先在设置页确认 IP 与 MAC；DHCP 较慢时可直接等待自动重连。
 - **视频卡顿**：素材超过 976 × 432 会触发缩放，建议按 `--size 976x432` 重新生成。
-- **音乐没声音**：确认是 PCM WAV、音量不为 0；A2DP 不可用，蓝牙音箱无法出声。
+  MP4 是软解，比 MJPEG 慢：976 × 432 约 10 fps，720p 约 5 fps。
+- **MP4 打不开**：只支持 H.264 constrained baseline、4 字节 NAL 长度的 MP4；
+  可用第 7.4 节的 `ffmpeg` 命令重新编码。MP4 的 AAC 音轨会被忽略（无声）。
+- **音乐没声音**：确认是 PCM WAV 或 MP3、音量不为 0；A2DP 不可用，蓝牙音箱无法出声。
 - **图片打不开**：只支持 PNG / JPEG；文件名过长会被截断显示，但不影响加载。
 
 ---
@@ -473,7 +502,9 @@ GUI 只提供 `clicked` 事件，视频 App 的处理方式是：
 
 - **未插 SD 卡时**启动日志会打印 `sdmmc_init_ocr ... 0x107` / `Failed to initialize SD card`，属预期噪声。
 - **不支持经典蓝牙 / A2DP**（C6 仅 BLE 5）。
-- 视频 12 fps 定速、无音轨；MJPEG 越大越吃带宽，建议 ≤ 976 × 432。
+- 视频：MJPEG 为 12 fps 定速、无音轨；MP4（H.264 constrained baseline）为软解，
+  976 × 432 约 10 fps、720p 约 5 fps，AAC 音轨会被忽略。MJPEG 越大越吃带宽，
+  建议 ≤ 976 × 432。
 - 电池电量依赖硬件采样，部分批次读数仅供参考。
 - 系统监视器的 CPU/GPU 真实温度需要 PC 端配合（`scripts/pc_agent.py`）。
 - 屏幕与触摸的实际观感（颜色、触控校准）需要上机确认。
@@ -505,9 +536,10 @@ This document is Chinese-first; the full English text lives in
   Wi-Fi 6 / BLE over ESP-Hosted SDIO), built with ESP-IDF 6.1 and LVGL 9.
 - **Apps**: desktop shell (status bar, launcher, recents, wallpaper), settings
   (Wi-Fi / BLE / display / sound / time / language), system monitor (90 %
-  disk alarm, 90 °C temperature alarm, DISK I/O), WAV music player with
+  disk alarm, 90 °C temperature alarm, DISK I/O), WAV / MP3 music player with
   background playback, PNG/JPEG gallery with slideshow and wallpaper support,
-  and a 12 fps hardware-decoded MJPEG player with double-tap pause.
+  and a video player for 12 fps hardware-decoded MJPEG plus software-decoded
+  H.264 baseline MP4, both with double-tap pause.
 - **Partitions**: `factory` at `0x110000` (14.94 MB) and a 16 MB littlefs
   `storage` volume at `0x1000000`; OTA and assets partitions were removed.
   Flash only these two images (or `flash_app.ps1`), never the whole chip.
@@ -518,5 +550,6 @@ This document is Chinese-first; the full English text lives in
   `components/*/package/res/`; the build copies them into `littlefs/apps/` and
   packs them into `storage.bin`.
 - **Known limits**: no SD card means littlefs-only media, no classic Bluetooth /
-  A2DP, MJPEG video only (no audio), and real CPU / GPU temperatures on the
-  monitor need `scripts/pc_agent.py` broadcasting to UDP 9999.
+  A2DP, MP4 support is limited to H.264 baseline without audio (software decoded,
+  ~10 fps at 976 × 432), and real CPU / GPU temperatures on the monitor need
+  `scripts/pc_agent.py` broadcasting to UDP 9999.

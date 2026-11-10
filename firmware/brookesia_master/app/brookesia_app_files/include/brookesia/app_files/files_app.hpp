@@ -95,6 +95,9 @@ private:
     enum class FileOperationKind {
         Rename,
         Delete,
+        Move,
+        CreateDirectory,
+        CreateFile,
     };
 
     struct PendingFileOperation {
@@ -123,6 +126,10 @@ private:
     std::expected<void, std::string> hide_operations(system::core::AppContext &context);
     void request_rename(system::core::AppContext &context);
     void request_delete(system::core::AppContext &context);
+    void request_create(system::core::AppContext &context);
+    void prompt_create_entry(system::core::AppContext &context, bool directory);
+    void request_move(system::core::AppContext &context);
+    std::filesystem::path current_directory_path() const;
     std::expected<void, std::string> schedule_file_operation(
         system::core::AppContext &context,
         PendingFileOperation operation

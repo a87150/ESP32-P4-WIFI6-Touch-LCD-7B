@@ -57,3 +57,7 @@ dependencies:
     version: "0.8.*"
     override_path: ../../../app/brookesia_app_settings
     require: public
+  espressif/brookesia_app_files:
+    version: "0.8.*"
+    override_path: ../../../app/brookesia_app_files
+    require: public

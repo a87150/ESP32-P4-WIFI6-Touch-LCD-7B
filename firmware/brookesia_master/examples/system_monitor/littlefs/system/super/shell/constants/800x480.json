@@ -53,7 +53,7 @@
                     "statusBrandWidth": "112dp",
                     "statusTitleWidth": "216dp",
                     "statusRightWidth": "210dp",
-                    "statusBatteryWidth": "52dp",
+                    "statusBatteryWidth": "112dp",
                     "statusPillWidth": "72dp",
                     "statusPillHeight": "26dp",
                     "statusPillFont": "14sp",

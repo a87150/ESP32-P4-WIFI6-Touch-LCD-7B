@@ -89,22 +89,31 @@ constexpr size_t MAX_MOVIE_BYTES = 24U * 1024U * 1024U;
 constexpr size_t MAX_FRAME_BYTES = 2U * 1024U * 1024U;   // one 1024x1024 RGB565 picture
 constexpr size_t MAX_NAME_LENGTH = 34;
 
+bool ends_with_ci(const std::string &name, const char *suffix)
+{
+    const auto suffix_length = std::strlen(suffix);
+    if (name.size() < suffix_length) {
+        return false;
+    }
+    return std::equal(
+               suffix, suffix + suffix_length, name.end() - static_cast<std::ptrdiff_t>(suffix_length),
+               [](char a, char b) {
+        return std::tolower(static_cast<unsigned char>(a)) ==
+               std::tolower(static_cast<unsigned char>(b));
+    }
+           );
+}
+
+bool has_mp4_extension(const std::string &name)
+{
+    return ends_with_ci(name, ".mp4") || ends_with_ci(name, ".m4v") || ends_with_ci(name, ".mov");
+}
+
 bool has_movie_extension(const std::string &name)
 {
-    const auto ends_with = [&name](const char *suffix) {
-        const auto suffix_length = std::strlen(suffix);
-        if (name.size() < suffix_length) {
-            return false;
-        }
-        return std::equal(
-                   suffix, suffix + suffix_length, name.end() - static_cast<std::ptrdiff_t>(suffix_length),
-                   [](char a, char b) {
-            return std::tolower(static_cast<unsigned char>(a)) ==
-                   std::tolower(static_cast<unsigned char>(b));
-        }
-               );
-    };
-    return ends_with(".mjpeg") || ends_with(".mjpg") || ends_with(".mjp");
+    // MJPEG (hardware JPEG decoder) and H.264 inside an ISO BMFF container.
+    return ends_with_ci(name, ".mjpeg") || ends_with_ci(name, ".mjpg") ||
+           ends_with_ci(name, ".mjp") || has_mp4_extension(name);
 }
 
 std::string file_name_of(const std::string &path)
@@ -259,6 +268,90 @@ uint8_t *alloc_psram(size_t bytes)
     return static_cast<uint8_t *>(
                heap_caps_aligned_alloc(256, bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
            );
+}
+
+/**
+ * @brief Convert a planar I420 (YUV420) picture to little-endian RGB565.
+ *
+ * H.264 video is studio swing (BT.601 limited range), so the luma term is
+ * scaled from 16..235 to 0..255. Clamping and the 5/6/5 bit truncation are
+ * folded into two small lookup tables: the inner loop only adds the scaled
+ * luma to a chroma offset and reads the pre-shifted component. Two pixels
+ * share one chroma pair and are written with a single 32-bit store.
+ */
+void convert_i420_to_rgb565(
+    const uint8_t *yuv, int32_t width, int32_t height, uint16_t *dst, int32_t stride_px
+)
+{
+    struct Tables {
+        uint8_t y[256];       // limited range luma, 0..255
+        uint8_t rb[1024];     // clamped offset value >> 3 (red / blue position)
+        uint8_t g[1024];      // clamped offset value >> 2 (green position)
+    };
+    static const Tables tables = [] {
+        Tables t{};
+        for (int i = 0; i < 256; i++) {
+            const int y = ((1192 * (i - 16)) + 512) >> 10;
+            t.y[i] = static_cast<uint8_t>(std::clamp(y, 0, 255));
+        }
+        for (int i = 0; i < 1024; i++) {
+            const int value = i - 320;
+            const int clamped = std::clamp(value, 0, 255);
+            t.rb[i] = static_cast<uint8_t>(clamped >> 3);
+            t.g[i] = static_cast<uint8_t>(clamped >> 2);
+        }
+        return t;
+    }();
+
+    const uint8_t *y_plane = yuv;
+    const uint8_t *u_plane = y_plane + static_cast<size_t>(width) * static_cast<size_t>(height);
+    const uint8_t *v_plane = u_plane + static_cast<size_t>(width / 2) * static_cast<size_t>(height / 2);
+    const int32_t half_width = width / 2;
+
+    for (int32_t row = 0; row < height; ++row) {
+        const uint8_t *yp = y_plane + static_cast<size_t>(row) * static_cast<size_t>(width);
+        const uint8_t *up = u_plane + static_cast<size_t>(row / 2) * static_cast<size_t>(half_width);
+        const uint8_t *vp = v_plane + static_cast<size_t>(row / 2) * static_cast<size_t>(half_width);
+        uint16_t *out = dst + static_cast<size_t>(row) * static_cast<size_t>(stride_px);
+        int32_t col = 0;
+        for (; col + 1 < width; col += 2) {
+            const int32_t uu = static_cast<int32_t>(up[col >> 1]) - 128;
+            const int32_t vv = static_cast<int32_t>(vp[col >> 1]) - 128;
+            const int32_t rv = (1634 * vv) >> 10;
+            const int32_t gu = (400 * uu) >> 10;
+            const int32_t gv = (832 * vv) >> 10;
+            const int32_t bu = (2066 * uu) >> 10;
+            const int32_t rb_off = rv + 320;
+            const int32_t g_off = 320 - gu - gv;
+            const int32_t b_off = bu + 320;
+            const int32_t y0 = tables.y[yp[col]];
+            const int32_t y1 = tables.y[yp[col + 1]];
+            const uint16_t p0 = static_cast<uint16_t>(
+                                    (tables.rb[y0 + rb_off] << 11) | (tables.g[y0 + g_off] << 5) |
+                                    tables.rb[y0 + b_off]
+                                );
+            const uint16_t p1 = static_cast<uint16_t>(
+                                    (tables.rb[y1 + rb_off] << 11) | (tables.g[y1 + g_off] << 5) |
+                                    tables.rb[y1 + b_off]
+                                );
+            // The frame buffer is aligned and the stride is even, so two
+            // RGB565 pixels can be stored with one 32-bit write.
+            *reinterpret_cast<uint32_t *>(out + col) =
+                static_cast<uint32_t>(p0) | (static_cast<uint32_t>(p1) << 16);
+        }
+        if (col < width) {
+            const int32_t uu = static_cast<int32_t>(up[col >> 1]) - 128;
+            const int32_t vv = static_cast<int32_t>(vp[col >> 1]) - 128;
+            const int32_t yv = tables.y[yp[col]];
+            const int32_t rb_off = ((1634 * vv) >> 10) + 320;
+            const int32_t g_off = 320 - ((400 * uu) >> 10) - ((832 * vv) >> 10);
+            const int32_t b_off = ((2066 * uu) >> 10) + 320;
+            out[col] = static_cast<uint16_t>(
+                           (tables.rb[yv + rb_off] << 11) | (tables.g[yv + g_off] << 5) |
+                           tables.rb[yv + b_off]
+                       );
+        }
+    }
 }
 
 } // namespace
@@ -416,7 +509,7 @@ std::expected<void, std::string> VideoApp::on_resume(system::core::AppContext &c
     bool has_source = false;
     {
         std::lock_guard<std::mutex> lock(state_.mutex);
-        has_source = !source_.frames.empty();
+        has_source = !source_.frames.empty() || !source_.samples.empty();
         if (playing_ && has_source) {
             state_.paused = false;
         }
@@ -570,54 +663,90 @@ bool VideoApp::load_source_impl(size_t index)
         return false;
     }
 
-    auto *file = std::fopen(path.c_str(), "rb");
-    if (file == nullptr) {
-        set_status("无法打开：" + file_name_of(path));
-        return false;
-    }
-    const size_t file_size = static_cast<size_t>(st.st_size);
-    uint8_t *data = alloc_psram(file_size + 64);
-    if (data == nullptr) {
-        std::fclose(file);
-        set_status("内存不足，无法载入视频");
-        return false;
-    }
-    const size_t read = std::fread(data, 1, file_size, file);
-    std::fclose(file);
-    if (read != file_size) {
-        heap_caps_free(data);
-        set_status("读取失败：" + file_name_of(path));
-        return false;
-    }
-
-    std::vector<std::pair<uint32_t, uint32_t>> frames;
-    scan_jpeg_frames(data, file_size, frames);
-    if (frames.empty()) {
-        heap_caps_free(data);
-        set_status("不是有效的 MJPEG 文件：" + file_name_of(path));
-        return false;
-    }
-
-    jpeg_decode_picture_info_t info = {};
-    if (jpeg_decoder_get_info(data + frames[0].first, frames[0].second, &info) != ESP_OK ||
-            info.width == 0 || info.height == 0) {
-        heap_caps_free(data);
-        set_status("无法解析第一帧：" + file_name_of(path));
-        return false;
-    }
-
     Source next;
-    next.data = data;
-    next.size = file_size;
-    next.frames.reserve(frames.size());
-    for (const auto &frame : frames) {
-        next.frames.push_back(FrameSpan{ .offset = frame.first, .length = frame.second });
-    }
-    next.width = static_cast<int32_t>(info.width);
-    next.height = static_cast<int32_t>(info.height);
-    next.padded_width = static_cast<int32_t>((info.width + 15U) & ~15U);
-    next.padded_height = static_cast<int32_t>((info.height + 15U) & ~15U);
     next.path = path;
+
+    if (has_mp4_extension(path)) {
+        std::FILE *file = std::fopen(path.c_str(), "rb");
+        if (file == nullptr) {
+            set_status("无法打开：" + file_name_of(path));
+            return false;
+        }
+        mp4::Track track;
+        if (!mp4::parse(file, static_cast<uint64_t>(st.st_size), track)) {
+            std::fclose(file);
+            set_status(
+                "无法播放该 MP4：" + file_name_of(path) +
+                (track.error.empty() ? std::string() : "（" + track.error + "）")
+            );
+            return false;
+        }
+        next.file = file;
+        next.format = SourceFormat::Mp4;
+        next.size = static_cast<size_t>(st.st_size);
+        next.samples = std::move(track.samples);
+        next.extradata = std::move(track.extradata);
+        next.width = track.width;
+        next.height = track.height;
+        next.fps = track.fps;
+        next.duration_ms = track.duration_ms;
+        next.frame_ms = (track.fps > 0) ? (1000U / track.fps) : PLAYBACK_FRAME_MS;
+        BROOKESIA_LOGI(
+            "Video MP4: %1% (%2%x%3%, %4% Hz, %5% sample(s))", file_name_of(path), track.width, track.height,
+            track.fps, track.samples.size()
+        );
+    } else {
+        std::FILE *file = std::fopen(path.c_str(), "rb");
+        if (file == nullptr) {
+            set_status("无法打开：" + file_name_of(path));
+            return false;
+        }
+        const size_t file_size = static_cast<size_t>(st.st_size);
+        uint8_t *data = alloc_psram(file_size + 64);
+        if (data == nullptr) {
+            std::fclose(file);
+            set_status("内存不足，无法载入视频");
+            return false;
+        }
+        const size_t read = std::fread(data, 1, file_size, file);
+        std::fclose(file);
+        if (read != file_size) {
+            heap_caps_free(data);
+            set_status("读取失败：" + file_name_of(path));
+            return false;
+        }
+
+        std::vector<std::pair<uint32_t, uint32_t>> frames;
+        scan_jpeg_frames(data, file_size, frames);
+        if (frames.empty()) {
+            heap_caps_free(data);
+            set_status("不是有效的 MJPEG 文件：" + file_name_of(path));
+            return false;
+        }
+
+        jpeg_decode_picture_info_t info = {};
+        if (jpeg_decoder_get_info(data + frames[0].first, frames[0].second, &info) != ESP_OK ||
+                info.width == 0 || info.height == 0) {
+            heap_caps_free(data);
+            set_status("无法解析第一帧：" + file_name_of(path));
+            return false;
+        }
+
+        next.data = data;
+        next.format = SourceFormat::Mjpeg;
+        next.size = file_size;
+        next.fps = PLAYBACK_FPS;
+        next.frame_ms = PLAYBACK_FRAME_MS;
+        next.frames.reserve(frames.size());
+        for (const auto &frame : frames) {
+            next.frames.push_back(FrameSpan{ .offset = frame.first, .length = frame.second });
+        }
+        next.width = static_cast<int32_t>(info.width);
+        next.height = static_cast<int32_t>(info.height);
+    }
+
+    next.padded_width = static_cast<int32_t>((next.width + 15) & ~15);
+    next.padded_height = static_cast<int32_t>((next.height + 15) & ~15);
 
     // Publish the new movie description in one step: the UI timer reads the
     // frame count, the picture size and the file name together, and must never
@@ -638,26 +767,43 @@ bool VideoApp::load_source_impl(size_t index)
     if (previous.data != nullptr) {
         heap_caps_free(previous.data);
     }
-
-    size_t largest_frame = 0;
-    for (const auto &frame : source_.frames) {
-        largest_frame = std::max<size_t>(largest_frame, frame.length);
+    if (previous.file != nullptr) {
+        std::fclose(previous.file);
     }
-    if (largest_frame + 64U > input_buffer_capacity_) {
+    close_h264_decoder();
+
+    size_t largest_input = 0;
+    if (source_.format == SourceFormat::Mp4) {
+        for (const auto &sample : source_.samples) {
+            largest_input = std::max<size_t>(largest_input, sample.size);
+        }
+        annexb_buffer_.clear();
+        annexb_buffer_.reserve(largest_input + source_.extradata.size() + 1024U);
+    } else {
+        for (const auto &frame : source_.frames) {
+            largest_input = std::max<size_t>(largest_input, frame.length);
+        }
+    }
+    if (largest_input + 64U > input_buffer_capacity_) {
         if (input_buffer_ != nullptr) {
             heap_caps_free(input_buffer_);
             input_buffer_ = nullptr;
             input_buffer_capacity_ = 0;
         }
-        input_buffer_ = alloc_psram(largest_frame + 64U);
+        input_buffer_ = alloc_psram(largest_input + 64U);
         if (input_buffer_ == nullptr) {
             release_source();
             set_status("内存不足，无法解码这个视频");
             return false;
         }
-        input_buffer_capacity_ = largest_frame + 64U;
+        input_buffer_capacity_ = largest_input + 64U;
     }
 
+    if (source_.format == SourceFormat::Mp4 && !ensure_h264_decoder()) {
+        release_source();
+        set_status("H.264 解码器初始化失败（内存不足？）");
+        return false;
+    }
     if (!ensure_decode_buffers(source_)) {
         release_source();
         set_status("显存不足，无法解码这个视频");
@@ -667,8 +813,8 @@ bool VideoApp::load_source_impl(size_t index)
     apply_frame_geometry();
 
     BROOKESIA_LOGI(
-        "Video loaded: %1% (%2%x%3%, %4% frame(s), %5% bytes)", file_name_of(source_.path), source_.width,
-        source_.height, source_.frames.size(), source_.size
+        "Video loaded: %1% (%2%x%3%, %4% media unit(s), %5% bytes)", file_name_of(source_.path), source_.width,
+        source_.height, source_.frames.size() + source_.samples.size(), source_.size
     );
 
     shown_width_ = 0;
@@ -694,7 +840,45 @@ void VideoApp::release_source()
     if (previous.data != nullptr) {
         heap_caps_free(previous.data);
     }
+    if (previous.file != nullptr) {
+        std::fclose(previous.file);
+    }
+    close_h264_decoder();
     decode_error_logged_ = false;
+}
+
+bool VideoApp::ensure_h264_decoder()
+{
+    if (h264_decoder_ != nullptr) {
+        return true;
+    }
+    esp_h264_dec_cfg_sw_t config = {
+        .pic_type = ESP_H264_RAW_FMT_I420,
+    };
+    if (esp_h264_dec_sw_new(&config, &h264_decoder_) != ESP_H264_ERR_OK || h264_decoder_ == nullptr) {
+        h264_decoder_ = nullptr;
+        BROOKESIA_LOGE("Video: failed to create the software H.264 decoder");
+        return false;
+    }
+    if (esp_h264_dec_open(h264_decoder_) != ESP_H264_ERR_OK) {
+        esp_h264_dec_del(h264_decoder_);
+        h264_decoder_ = nullptr;
+        BROOKESIA_LOGE("Video: failed to open the software H.264 decoder");
+        return false;
+    }
+    h264_param_ = nullptr;
+    (void)esp_h264_dec_sw_get_param_hd(h264_decoder_, &h264_param_);
+    return true;
+}
+
+void VideoApp::close_h264_decoder()
+{
+    if (h264_decoder_ != nullptr) {
+        (void)esp_h264_dec_close(h264_decoder_);
+        (void)esp_h264_dec_del(h264_decoder_);
+        h264_decoder_ = nullptr;
+    }
+    h264_param_ = nullptr;
 }
 
 bool VideoApp::ensure_decode_buffers(const Source &source)
@@ -971,7 +1155,7 @@ void VideoApp::subscribe_actions(system::core::AppContext &context)
                 count = movies_.size();
             }
             if (count == 0) {
-                set_status("把 .mjpeg / .mjpg 文件放到 /littlefs/videos 后点刷新");
+                set_status("把 .mjpeg / .mp4 文件放到 /littlefs/videos 后点刷新");
             }
         },
     });
@@ -1026,7 +1210,8 @@ void VideoApp::rebuild_list(system::core::AppContext &context)
         if (stat(movies[i].c_str(), &st) == 0) {
             bytes = static_cast<uint64_t>(st.st_size);
         }
-        const std::string meta = "MJPEG · " + ((bytes > 0) ? format_size(bytes) : std::string("--"));
+        const std::string meta = std::string(has_mp4_extension(movies[i]) ? "MP4" : "MJPEG") +
+                                 " · " + ((bytes > 0) ? format_size(bytes) : std::string("--"));
         const bool is_current = playing && (i == current);
 
         (void)context.gui().set_binding_value(path, "commonProps.hidden", "false");
@@ -1037,7 +1222,7 @@ void VideoApp::rebuild_list(system::core::AppContext &context)
 
     std::string info;
     if (total == 0) {
-        info = "没有找到影片，把 .mjpeg 放进 /littlefs/videos 或 SD 卡";
+        info = "没有找到影片，把 .mjpeg / .mp4 放进 /littlefs/videos 或 SD 卡";
     } else {
         info = "共 " + std::to_string(total) + " 部 · 第 " + std::to_string(start + 1) + "-" +
                std::to_string(end) + " 部";
@@ -1167,7 +1352,7 @@ void VideoApp::request_play()
 {
     {
         std::lock_guard<std::mutex> lock(state_.mutex);
-        if (source_.frames.empty()) {
+        if (source_.frames.empty() && source_.samples.empty()) {
             return;
         }
         state_.paused = false;
@@ -1194,7 +1379,7 @@ void VideoApp::toggle_playback()
             state_.paused = false;
             now_playing = true;
         } else {
-            has_frames = !source_.frames.empty();
+            has_frames = !source_.frames.empty() || !source_.samples.empty();
             if (has_frames) {
                 state_.paused = !state_.paused;
                 now_playing = !state_.paused;
@@ -1260,20 +1445,26 @@ void VideoApp::seek_to_permille(int32_t permille)
         return;
     }
     uint32_t total = 0;
+    uint32_t frame = 0;
     {
         std::lock_guard<std::mutex> lock(state_.mutex);
-        total = static_cast<uint32_t>(source_.frames.size());
-    }
-    if (total == 0) {
-        return;
-    }
-    uint32_t frame = static_cast<uint32_t>((static_cast<uint64_t>(permille) * total) / 1000U);
-    if (frame >= total) {
-        frame = total - 1;
-    }
-    last_programmed_permille_ = permille;
-    {
-        std::lock_guard<std::mutex> lock(state_.mutex);
+        const bool is_mp4 = (source_.format == SourceFormat::Mp4);
+        total = static_cast<uint32_t>(is_mp4 ? source_.samples.size() : source_.frames.size());
+        if (total == 0) {
+            return;
+        }
+        frame = static_cast<uint32_t>((static_cast<uint64_t>(permille) * total) / 1000U);
+        if (frame >= total) {
+            frame = total - 1;
+        }
+        if (is_mp4) {
+            // H.264 can only start decoding at an IDR frame: snap backwards to
+            // the nearest keyframe instead of showing corrupted pictures.
+            while (frame > 0 && !source_.samples[frame].keyframe) {
+                --frame;
+            }
+        }
+        last_programmed_permille_ = permille;
         state_.seek_request = frame;
         state_.finished = false;
         state_.paused = false;
@@ -1329,6 +1520,99 @@ bool VideoApp::decode_frame(uint32_t frame_index, int32_t buffer_index)
     return true;
 }
 
+bool VideoApp::decode_mp4_frame(uint32_t frame_index, int32_t buffer_index)
+{
+    if (source_.file == nullptr || frame_index >= source_.samples.size() ||
+            h264_decoder_ == nullptr || input_buffer_ == nullptr ||
+            frame_buffer_[buffer_index] == nullptr) {
+        return false;
+    }
+    const auto &sample = source_.samples[frame_index];
+    if (sample.size < 4 || sample.size > input_buffer_capacity_) {
+        return false;
+    }
+    if (std::fseek(source_.file, static_cast<long>(sample.offset), SEEK_SET) != 0 ||
+            std::fread(input_buffer_, 1, sample.size, source_.file) != sample.size) {
+        return false;
+    }
+
+    // MP4 stores H.264 as length-prefixed NAL units; the decoder wants the
+    // Annex-B start-code form. SPS/PPS are re-sent before every keyframe so
+    // playback can start (or resume after a seek) at any IDR frame.
+    annexb_buffer_.clear();
+    if (sample.keyframe && !source_.extradata.empty()) {
+        annexb_buffer_.insert(annexb_buffer_.end(), source_.extradata.begin(), source_.extradata.end());
+    }
+    static const uint8_t START_CODE[4] = {0, 0, 0, 1};
+    size_t pos = 0;
+    bool have_nal = false;
+    while (pos + 4 <= sample.size) {
+        const uint32_t nal_size = (static_cast<uint32_t>(input_buffer_[pos]) << 24) |
+                                  (static_cast<uint32_t>(input_buffer_[pos + 1]) << 16) |
+                                  (static_cast<uint32_t>(input_buffer_[pos + 2]) << 8) |
+                                  static_cast<uint32_t>(input_buffer_[pos + 3]);
+        pos += 4;
+        if (nal_size == 0 || nal_size > sample.size - pos) {
+            break;
+        }
+        annexb_buffer_.insert(annexb_buffer_.end(), START_CODE, START_CODE + 4);
+        annexb_buffer_.insert(
+            annexb_buffer_.end(), input_buffer_ + pos, input_buffer_ + pos + nal_size
+        );
+        pos += nal_size;
+        have_nal = true;
+    }
+    if (!have_nal) {
+        return false;
+    }
+
+    esp_h264_dec_in_frame_t in_frame = {};
+    in_frame.raw_data.buffer = annexb_buffer_.data();
+    in_frame.raw_data.len = static_cast<uint32_t>(annexb_buffer_.size());
+    bool got_picture = false;
+    while (in_frame.raw_data.len > 0) {
+        esp_h264_dec_out_frame_t out_frame = {};
+        const esp_h264_err_t result = esp_h264_dec_process(h264_decoder_, &in_frame, &out_frame);
+        if (result != ESP_H264_ERR_OK) {
+            if (!decode_error_logged_) {
+                decode_error_logged_ = true;
+                BROOKESIA_LOGE(
+                    "Video: H.264 decode failed (%1%) at sample %2%", static_cast<int>(result), frame_index
+                );
+            }
+            return false;
+        }
+        if (in_frame.consume == 0) {
+            break;
+        }
+        in_frame.raw_data.buffer += in_frame.consume;
+        in_frame.raw_data.len -= in_frame.consume;
+        if (out_frame.out_size > 0 && out_frame.outbuf != nullptr) {
+            const size_t expected = static_cast<size_t>(source_.width) *
+                                    static_cast<size_t>(source_.height) * 3U / 2U;
+            if (out_frame.out_size < expected) {
+                continue;
+            }
+            convert_i420_to_rgb565(
+                out_frame.outbuf, source_.width, source_.height,
+                reinterpret_cast<uint16_t *>(frame_buffer_[buffer_index]), source_.padded_width
+            );
+            got_picture = true;
+        }
+    }
+    if (got_picture && !first_frame_logged_) {
+        first_frame_logged_ = true;
+        const auto *pixels = reinterpret_cast<const uint16_t *>(frame_buffer_[buffer_index]);
+        char pixel_text[16] = {};
+        std::snprintf(pixel_text, sizeof(pixel_text), "0x%04X", static_cast<unsigned>(pixels[0]));
+        BROOKESIA_LOGI(
+            "Video first H.264 frame decoded: %1%x%2%, first pixel %3%", source_.width, source_.height,
+            pixel_text
+        );
+    }
+    return true;
+}
+
 void VideoApp::worker_loop()
 {
     auto next_deadline = std::chrono::steady_clock::now();
@@ -1337,6 +1621,8 @@ void VideoApp::worker_loop()
     while (true) {
         uint32_t frame_index = 0;
         int32_t buffer_index = 0;
+        bool is_mp4 = false;
+        uint32_t frame_ms = PLAYBACK_FRAME_MS;
         bool need_scan = false;
         bool need_load = false;
         size_t load_index = 0;
@@ -1345,7 +1631,7 @@ void VideoApp::worker_loop()
             state_.cv.wait(lock, [this]() {
                 return state_.quit || state_.request_scan || state_.request_load ||
                        state_.seek_request != UINT32_MAX ||
-                       (!state_.paused && !source_.frames.empty());
+                       (!state_.paused && (!source_.frames.empty() || !source_.samples.empty()));
             });
             if (state_.quit) {
                 break;
@@ -1359,6 +1645,12 @@ void VideoApp::worker_loop()
                 need_load = true;
                 load_index = state_.pending_index;
             }
+            const bool has_source = !source_.frames.empty() || !source_.samples.empty();
+            const uint32_t total_frames = has_source ?
+                                          static_cast<uint32_t>(
+                                              (source_.format == SourceFormat::Mp4) ? source_.samples.size() :
+                                              source_.frames.size()
+                                          ) : 0U;
             if (need_scan || need_load) {
                 // Freeze the position while the source is swapped, so a finished
                 // movie does not immediately re-trigger "finished" on the old
@@ -1371,18 +1663,24 @@ void VideoApp::worker_loop()
             } else if (state_.seek_request != UINT32_MAX) {
                 state_.cursor = state_.seek_request;
                 state_.seek_request = UINT32_MAX;
+                frame_index = state_.cursor;
+                buffer_index = front_buffer_;
+                is_mp4 = (source_.format == SourceFormat::Mp4);
+                frame_ms = source_.frame_ms;
                 next_deadline = std::chrono::steady_clock::now();
             } else if (state_.paused) {
                 // A seek may wake the worker while paused (to show the target
                 // frame); otherwise it goes straight back to waiting.
                 continue;
-            } else if (state_.cursor >= source_.frames.size()) {
+            } else if (state_.cursor >= total_frames) {
                 state_.paused = true;
                 state_.finished = true;
                 continue;
             } else {
                 frame_index = state_.cursor;
                 buffer_index = front_buffer_;
+                is_mp4 = (source_.format == SourceFormat::Mp4);
+                frame_ms = source_.frame_ms;
             }
         }
 
@@ -1424,7 +1722,8 @@ void VideoApp::worker_loop()
             continue;
         }
 
-        const bool decoded = decode_frame(frame_index, buffer_index);
+        const bool decoded = is_mp4 ? decode_mp4_frame(frame_index, buffer_index) :
+                             decode_frame(frame_index, buffer_index);
         if (!decoded) {
             consecutive_errors++;
             BROOKESIA_LOGW("Video: failed to decode frame %1%", frame_index);
@@ -1451,7 +1750,7 @@ void VideoApp::worker_loop()
             (void)context_->gui().set_view_src(PATH_FRAME, "video.frame." + std::to_string(buffer_index));
         }
 
-        next_deadline += std::chrono::milliseconds(PLAYBACK_FRAME_MS);
+        next_deadline += std::chrono::milliseconds(frame_ms);
         const auto now = std::chrono::steady_clock::now();
         if (next_deadline < now - std::chrono::milliseconds(1000)) {
             // Running behind by more than a second (slow storage or heavy UI):
@@ -1472,6 +1771,7 @@ void VideoApp::refresh_ui(system::core::AppContext &context)
     size_t movie_index = 0;
     uint32_t current_frame = 0;
     uint32_t total_frames = 0;
+    uint32_t fps = PLAYBACK_FPS;
     bool paused = true;
     int32_t width = 0;
     int32_t height = 0;
@@ -1481,7 +1781,11 @@ void VideoApp::refresh_ui(system::core::AppContext &context)
         movie_count = movies_.size();
         movie_index = movie_index_;
         current_frame = state_.current_frame;
-        total_frames = static_cast<uint32_t>(source_.frames.size());
+        total_frames = static_cast<uint32_t>(
+                           (source_.format == SourceFormat::Mp4) ? source_.samples.size() :
+                           source_.frames.size()
+                       );
+        fps = (source_.fps > 0) ? source_.fps : PLAYBACK_FPS;
         paused = state_.paused || state_.quit;
         width = source_.width;
         height = source_.height;
@@ -1503,8 +1807,8 @@ void VideoApp::refresh_ui(system::core::AppContext &context)
         std::to_string(movie_index + 1) + "/" + std::to_string(movie_count) + ")"
     );
 
-    const uint32_t total_seconds = (total_frames + PLAYBACK_FPS - 1) / PLAYBACK_FPS;
-    const uint32_t elapsed_seconds = current_frame / PLAYBACK_FPS;
+    const uint32_t total_seconds = (total_frames + fps / 2) / fps;
+    const uint32_t elapsed_seconds = current_frame / fps;
     (void)context.gui().set_binding_value(
         PATH_TIME, "time_text",
         format_time(elapsed_seconds) + " / " + format_time(total_seconds) +

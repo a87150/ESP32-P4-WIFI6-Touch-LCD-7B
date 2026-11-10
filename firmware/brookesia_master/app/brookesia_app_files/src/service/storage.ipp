@@ -88,6 +88,9 @@ void FileManagerApp::handle_storage_filesystems_result(uint64_t generation, serv
     }
 
     for (size_t volume_index = 0; volume_index < volumes_.size(); ++volume_index) {
+        if (!volumes_[volume_index].volume.available) {
+            continue;
+        }
         const auto volume_root = normalize_path_for_prefix(volumes_[volume_index].volume.root_path);
         std::string best_mount_point;
         size_t best_match_length = 0;
@@ -149,7 +152,8 @@ void FileManagerApp::handle_storage_capacity_result(
     if (!current_volume_index_ && volume_index < entries_.size()) {
         entries_[volume_index].detail = describe_volume(
                                             volumes_[volume_index].volume,
-                                            volumes_[volume_index].capacity_text
+                                            volumes_[volume_index].capacity_text,
+                                            tr("volume_not_mounted")
                                         );
         if (auto refresh_result = refresh_ui(*context_); !refresh_result) {
             BROOKESIA_LOGW("Failed to refresh File Manager volume capacity: %1%", refresh_result.error());

@@ -169,10 +169,54 @@ wifi_sta_config_t get_station_config(const wifi::ConnectApInfo &ap_info)
     }
     if (!ap_info.password.empty()) {
         snprintf(reinterpret_cast<char *>(cfg.password), sizeof(cfg.password), "%s", ap_info.password.c_str());
-        cfg.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+        // Keep the threshold permissive (WIFI_AUTH_OPEN). Forcing WPA2 here
+        // made connection attempts fail with NO_AP_FOUND_IN_AUTHMODE_THRESHOLD
+        // on routers that advertise a WPA/WPA2 or WPA3 mixed mode.
     }
 
     return cfg;
+}
+
+const char *get_disconnect_reason_name(uint8_t reason)
+{
+    switch (reason) {
+    case WIFI_REASON_UNSPECIFIED:
+        return "UNSPECIFIED";
+    case WIFI_REASON_AUTH_EXPIRE:
+        return "AUTH_EXPIRE";
+    case WIFI_REASON_AUTH_LEAVE:
+        return "AUTH_LEAVE";
+    case WIFI_REASON_ASSOC_LEAVE:
+        return "ASSOC_LEAVE";
+    case WIFI_REASON_MIC_FAILURE:
+        return "MIC_FAILURE";
+    case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+        return "4WAY_HANDSHAKE_TIMEOUT";
+    case WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT:
+        return "GROUP_KEY_UPDATE_TIMEOUT";
+    case WIFI_REASON_802_1X_AUTH_FAILED:
+        return "802_1X_AUTH_FAILED";
+    case WIFI_REASON_BEACON_TIMEOUT:
+        return "BEACON_TIMEOUT";
+    case WIFI_REASON_NO_AP_FOUND:
+        return "NO_AP_FOUND";
+    case WIFI_REASON_AUTH_FAIL:
+        return "AUTH_FAIL";
+    case WIFI_REASON_ASSOC_FAIL:
+        return "ASSOC_FAIL";
+    case WIFI_REASON_HANDSHAKE_TIMEOUT:
+        return "HANDSHAKE_TIMEOUT";
+    case WIFI_REASON_CONNECTION_FAIL:
+        return "CONNECTION_FAIL";
+    case WIFI_REASON_NO_AP_FOUND_W_COMPATIBLE_SECURITY:
+        return "NO_AP_FOUND_W_COMPATIBLE_SECURITY";
+    case WIFI_REASON_NO_AP_FOUND_IN_AUTHMODE_THRESHOLD:
+        return "NO_AP_FOUND_IN_AUTHMODE_THRESHOLD";
+    case WIFI_REASON_NO_AP_FOUND_IN_RSSI_THRESHOLD:
+        return "NO_AP_FOUND_IN_RSSI_THRESHOLD";
+    default:
+        return "UNKNOWN";
+    }
 }
 
 wifi::ScanApInfo get_ap_info(const wifi_ap_record_t &ap_record)
@@ -650,9 +694,13 @@ bool WifiEspBackend::start()
 
         std::function<void()> task_func;
         if (base == WIFI_EVENT) {
-            task_func = [hal, id = static_cast<uint8_t>(id)]() {
+            uint8_t reason = 0;
+            if ((id == WIFI_EVENT_STA_DISCONNECTED) && (data != nullptr)) {
+                reason = reinterpret_cast<wifi_event_sta_disconnected_t *>(data)->reason;
+            }
+            task_func = [hal, id = static_cast<uint8_t>(id), reason]() {
                 BROOKESIA_LOG_TRACE_GUARD();
-                BROOKESIA_CHECK_FALSE_EXIT(hal->on_wifi_event(id), "Process WiFi event failed");
+                BROOKESIA_CHECK_FALSE_EXIT(hal->on_wifi_event(id, reason), "Process WiFi event failed");
             };
         } else if (base == IP_EVENT) {
             task_func = [hal, id = static_cast<uint8_t>(id)]() {
@@ -810,6 +858,17 @@ bool WifiEspBackend::do_start()
 
     BROOKESIA_CHECK_ESP_ERR_RETURN(esp_wifi_set_mode(WIFI_MODE_STA), false, "Set WiFi mode failed");
     BROOKESIA_CHECK_ESP_ERR_RETURN(esp_wifi_start(), false, "Failed to start WiFi");
+
+    // The ESP32-C6 defaults to country code "01" (US), which only enables
+    // channels 1-11. Chinese routers frequently auto-select channel 12/13, so
+    // without this the device silently reports "no AP found" after the router
+    // reboots or changes channel. Use CN so all 2.4 GHz channels are scanned.
+    auto country_result = esp_wifi_set_country_code("CN", true);
+    if (country_result != ESP_OK) {
+        BROOKESIA_LOGW("Failed to set Wi-Fi country code to CN: %1%", esp_err_to_name(country_result));
+    } else {
+        BROOKESIA_LOGI("Wi-Fi country code set to CN (channels 1-13 enabled)");
+    }
 
     // Keeping the modem awake makes the link noticeably more stable on this
     // board (the default MIN_MODEM power save occasionally missed beacons and
@@ -1552,11 +1611,11 @@ bool WifiEspBackend::set_last_connected_ap_info(const wifi::ConnectApInfo &ap_in
     return true;
 }
 
-bool WifiEspBackend::on_wifi_event(uint8_t event)
+bool WifiEspBackend::on_wifi_event(uint8_t event, uint8_t reason)
 {
     BROOKESIA_LOG_TRACE_GUARD_WITH_THIS();
 
-    BROOKESIA_LOGD("Params: event(%1%)", event);
+    BROOKESIA_LOGD("Params: event(%1%), reason(%2%)", event, reason);
 
     auto running_action = get_running_general_action();
     auto event_id = static_cast<wifi_event_t>(event);
@@ -1588,6 +1647,13 @@ bool WifiEspBackend::on_wifi_event(uint8_t event)
         station_link_up_ = false;
         station_ip_ready_ = false;
         connected_since_ms_ = 0;
+        // Reason codes follow `wifi_err_reason_t` (esp_wifi_types.h). Logging
+        // them is essential: an auth timeout (15/204) points at wrong Wi-Fi
+        // credentials, while NO_AP_FOUND (201) usually means the AP is on a
+        // channel not covered by the current country code.
+        BROOKESIA_LOGW(
+            "Wi-Fi station disconnected (reason=%1%: %2%)", reason, get_disconnect_reason_name(reason)
+        );
         trigger_general_event(wifi::GeneralEvent::Disconnected);
         break;
     case WIFI_EVENT_SCAN_DONE: {

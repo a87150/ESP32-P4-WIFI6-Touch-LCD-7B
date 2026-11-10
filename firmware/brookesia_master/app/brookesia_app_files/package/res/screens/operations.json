@@ -147,6 +147,36 @@
                         },
                         {
                             "type": "templateRef",
+                            "id": "move",
+                            "templateId": "operation_item",
+                            "overrides": {
+                                ".": {
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "files.move"
+                                        }
+                                    ]
+                                },
+                                "icon": {
+                                    "imageProps": {
+                                        "src": "${image.files.icon.directory}"
+                                    }
+                                },
+                                "content/title": {
+                                    "labelProps": {
+                                        "text": "${constant.files.i18n.move}"
+                                    }
+                                },
+                                "content/detail": {
+                                    "labelProps": {
+                                        "text": "${constant.files.i18n.move_detail}"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "templateRef",
                             "id": "delete",
                             "templateId": "operation_item",
                             "overrides": {

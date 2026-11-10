@@ -51,20 +51,22 @@ Software baseline:
 
 Main-line capabilities:
 
-- **Status bar**: centered clock; Wi-Fi signal (runtime-tinted white icon),
-  Bluetooth and battery on the right; paused apps on the left.
+- **Status bar**: centered clock; Wi-Fi signal (ascending bars driven by RSSI,
+  with a red slash when disconnected), Bluetooth and battery (USB / BATTERY
+  power label) on the right; paused apps on the left.
 - **Launcher**: icons flow left to right across pages; swipe up on any page to
   return home, press and hold for recents; recents provide **CLEAR ALL**; the
   wallpaper can be set from the gallery.
 - **System monitor**: aggregated disk usage (turns red and raises an alarm at
   90 %), CPU / GPU temperatures in the gauge center (`HIGH!` above 90 °C), and
   DISK I/O on the network card.
-- **Music**: WAV player that keeps playing in the background, with seek, volume
-  and metadata.
+- **Music**: WAV / MP3 player that keeps playing in the background, with seek,
+  volume and metadata.
 - **Gallery**: previous / next, slideshow, resolution / size details, one-tap
   wallpaper.
-- **Video**: hardware-decoded MJPEG at a fixed 12 fps, seek, **double tap on the
-  picture to pause / resume**, and a centered control bar at the bottom.
+- **Video**: hardware-decoded MJPEG at a fixed 12 fps plus software-decoded
+  H.264 baseline MP4, seek, **double tap on the picture to pause / resume**, and
+  a centered control bar at the bottom.
 - **Settings**: Wi-Fi scan / connect / disconnect with IP and MAC plus automatic
   reconnect, BLE scan and advertising, display, sound, time, language and device
   info.
@@ -190,9 +192,9 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 | Desktop shell | `brookesia.system.super.shell` | Status bar, icon pages, recents, wallpaper, gestures |
 | Settings | `brookesia.general.settings` | Wi-Fi, Bluetooth, display, sound, time, language, device info |
 | System monitor | `brookesia.waveshare.system_monitor` | CPU / memory / disk / network / temperature dashboard |
-| Music | `brookesia.waveshare.music` | PCM WAV only, background playback |
+| Music | `brookesia.waveshare.music` | PCM WAV / MP3, background playback |
 | Gallery | `brookesia.waveshare.gallery` | Browsing, slideshow, set wallpaper |
-| Video | `brookesia.waveshare.video` | Hardware MJPEG playback, double-tap pause |
+| Video | `brookesia.waveshare.video` | Hardware MJPEG + software H.264/MP4, double-tap pause |
 
 ### Status bar and launcher
 
@@ -220,13 +222,16 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
   picker drawer over the right side, and a row starts playback and closes it.
 - The drawer shows 5 rows per page with file name and size, and tags the current
   track as playing / paused.
-- **PCM WAV only**; decoding and playback run on a dedicated thread, so the music
-  keeps playing while the app is in the background.
+- **PCM WAV and MP3**; decoding and playback run on a dedicated thread, so the
+  music keeps playing while the app is in the background. MP3 files are indexed
+  once (ID3v2 tags skipped, Layer III frames validated) so seeking jumps straight
+  to a frame; minimp3 decodes them in software.
 - The progress slider supports seek (applied once every 500 ms so dragging does
   not restart the codec continuously); volume uses − / + buttons in the bottom
   bar (10 % steps) and is echoed on the status line.
 - The detail line shows track index / total, sample rate, channel layout, bit
-  depth, bitrate (sample rate × channels × bit depth) and file size.
+  depth, bitrate (WAV: sample rate × channels × bit depth, MP3: average bitrate
+  from the frame headers) and file size.
 - Folders: `/littlefs/sounds`, `/sdcard/music`, `/sdcard`.
 - The player card has a vertical gradient and a soft shadow, with a **flowing
   waveform line** (bright line over a wider glow line, ~11 fps) next to the cover
@@ -265,9 +270,14 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
   after a row is tapped.
 - The drawer shows 5 rows per page with file name and size, and tags the current
   movie as playing.
-- Format: `.mjpeg` / `.mjpg` / `.mjp`, i.e. concatenated JPEG frames with no
-  container and no audio track.
-- Fixed **12 fps** playback (MJPEG carries no timestamps).
+- Formats: `.mjpeg` / `.mjpg` / `.mjp` (concatenated JPEG frames, no container,
+  no audio) and `.mp4` / `.m4v` / `.mov` (ISO BMFF + **H.264 constrained
+  baseline**).
+- MJPEG plays at a fixed **12 fps** (no timestamps). MP4 is demuxed in the app and
+  decoded in software by `esp_h264` tinyH264 (the P4 only has a hardware H.264
+  encoder), then converted from I420 to RGB565; AAC audio is ignored, so MP4 is
+  silent. Software decoding gives about 10 fps at 976 × 432 and about 5 fps at
+  720p, and seeks snap to the nearest IDR keyframe.
 - **Auto-next is optional** (off by default): turn it on to advance to the next
   movie when one ends; turn it off to stop on the last frame.
 - **Double tap on the picture pauses / resumes**: the JSON DSL has no double-click
@@ -280,7 +290,7 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
   the progress slider plus time on the first row, with **play / pause pinned in
   the centre** of the second row (label "Play" while paused); refresh, volume−,
   volume+ and previous sit on the left, next, auto-next and list on the right.
-  The volume buttons drive the board codec (MJPEG has no audio track).
+  The volume buttons drive the board codec (MJPEG and MP4 carry no played audio).
 - Folders: `/littlefs/videos`, `/sdcard/videos`, `/sdcard`.
 
 ### Settings
@@ -339,10 +349,13 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 - Launcher icons are no longer clipped at the top; gestures, recents and status
   bar icons behave as expected.
 - Video track switching runs on the playback worker and never blocks the UI;
-  playback is fixed at 12 fps.
+  MJPEG plays at a fixed 12 fps.
 - Wi-Fi reconnects after a drop; BLE scanning and advertising switch cleanly.
 - Background music playback, seek and volume work; gallery slideshow and
   wallpaper work.
+- MP3 decoding and MP4 (H.264 baseline) software decoding were verified on the
+  device: all 48 frames of the bundled 976 × 432 MP4 and all 347 frames of the
+  bundled MP3 decoded without errors.
 - Gallery, music and video all open on a list first and only load/play after a
   row is tapped; long lists are paged six rows at a time.
 
@@ -350,10 +363,14 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 
 - **Without an SD card** the boot log prints `sdmmc_init_ocr ... 0x107` /
   `Failed to initialize SD card` and media is read from `/littlefs` only.
-- Video must be MJPEG (no container, no audio track); use
-  [`tools/make_mjpeg.py`](tools/make_mjpeg.py) to produce it. The bundled samples
-  come from [`tools/make_demo_videos.py`](tools/make_demo_videos.py).
-- Music supports PCM WAV only.
+- Video supports MJPEG (no container, no audio, hardware decoded; produce it
+  with [`tools/make_mjpeg.py`](tools/make_mjpeg.py)) and MP4 (H.264 constrained
+  baseline, software decoded and silent, AAC ignored). The bundled samples come
+  from [`tools/make_demo_videos.py`](tools/make_demo_videos.py); the MP4 / MP3
+  `ffmpeg` commands are in section 7.4 of the
+  [main desktop document](docs/BROOKESIA_7B.md).
+- MP4 software decoding runs at about 10 fps for 976 × 432 and 5 fps for 720p.
+- Music supports PCM WAV and MP3.
 - Battery level and temperatures depend on the hardware and are indicative only;
   real CPU / GPU temperatures need the PC side.
 - Audio cannot be routed to a classic Bluetooth speaker (BLE only on the C6).
@@ -399,8 +416,8 @@ Flashing matrix:
 
 littlefs layout:
 
-- `/littlefs/music`, `/sdcard/music`: WAV tracks.
-- `/littlefs/videos`, `/sdcard/videos`: MJPEG movies.
+- `/littlefs/sounds`, `/sdcard/music`: WAV / MP3 tracks.
+- `/littlefs/videos`, `/sdcard/videos`: MJPEG / H.264 baseline MP4 movies.
 - `/littlefs/pictures`, `/littlefs/wallpapers`: photos and wallpaper candidates.
 - `/littlefs/system/super/wallpaper.txt`: current wallpaper path.
 - `/littlefs/apps`: JSON UI packages and icons for every app.

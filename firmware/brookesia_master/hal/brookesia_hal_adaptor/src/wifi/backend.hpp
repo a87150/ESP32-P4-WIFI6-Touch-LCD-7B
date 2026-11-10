@@ -180,7 +180,7 @@ private:
     void notify_softap_event(wifi::SoftApEvent event);
     void notify_softap_params_updated(const wifi::SoftApParams &params);
 
-    bool on_wifi_event(uint8_t event);
+    bool on_wifi_event(uint8_t event, uint8_t reason = 0);
     bool on_ip_event(uint8_t event);
 
     bool update_scan_ap_infos();

@@ -162,6 +162,10 @@ private:
     void release_wifi_service_binding();
     void refresh_wifi_status();
     void set_status_wifi_state(bool visible, bool connected);
+    bool ensure_wifi_signal_service_binding();
+    void release_wifi_signal_service_binding();
+    void refresh_wifi_signal();
+    void set_status_wifi_bars(int level);
     void set_status_app_icon(const std::optional<core::AppInfo> &app);
     void refresh_status_app_icons();
     void activate_status_background_app(size_t slot);
@@ -196,6 +200,7 @@ private:
     std::shared_ptr<service::dataflow::VisualOperation> display_operation_;
     service::ServiceBinding display_service_binding_;
     service::ServiceBinding wifi_service_binding_;
+    service::ServiceBinding wifi_signal_service_binding_;
     service::ServiceBinding sntp_service_binding_;
     std::vector<lib_utils::connection> display_gesture_connections_;
     service::EventRegistry::SignalConnection wifi_event_connection_;
@@ -216,6 +221,10 @@ private:
     uint64_t gesture_generation_ = 0;
     uint64_t status_peek_generation_ = 0;
     uint64_t wifi_status_generation_ = 0;
+    uint64_t wifi_signal_generation_ = 0;
+    int wifi_signal_level_ = 0;
+    int wifi_status_refresh_tick_ = 0;
+    bool wifi_status_visible_ = false;
     bool gesture_tracking_ = false;
     bool gesture_exit_armed_ = false;
     bool gesture_exit_triggered_ = false;

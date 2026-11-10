@@ -124,6 +124,14 @@ std::expected<void, std::string> FileManagerApp::on_action(
         request_delete(context);
         return {};
     }
+    if (action == ACTION_CREATE) {
+        request_create(context);
+        return {};
+    }
+    if (action == ACTION_MOVE) {
+        request_move(context);
+        return {};
+    }
     return {};
 }
 
@@ -155,7 +163,7 @@ std::expected<void, std::string> FileManagerApp::on_timer(
 std::expected<void, std::string> FileManagerApp::subscribe_actions(system::core::AppContext &context)
 {
     for (const auto *action : {
-                ACTION_BACK, ACTION_RENAME, ACTION_DELETE
+                ACTION_BACK, ACTION_RENAME, ACTION_DELETE, ACTION_CREATE, ACTION_MOVE
             }) {
         auto result = context.gui().subscribe_action(action);
         if (!result) {

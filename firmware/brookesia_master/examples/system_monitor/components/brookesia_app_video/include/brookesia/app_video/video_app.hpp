@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -15,7 +16,11 @@
 
 #include "boost/thread.hpp"
 #include "driver/jpeg_decode.h"
+#include "esp_h264_dec.h"
+#include "esp_h264_dec_param.h"
+#include "esp_h264_dec_sw.h"
 #include "lvgl.h"
+#include "brookesia/app_video/mp4_demuxer.hpp"
 #include "brookesia/gui_interface.hpp"
 #include "brookesia/hal_interface.hpp"
 #include "brookesia/hal_interface/interfaces/audio/codec_player.hpp"
@@ -24,12 +29,16 @@
 namespace esp_brookesia::app::video {
 
 /**
- * @brief MJPEG movie player for the board panel.
+ * @brief MJPEG / MP4 movie player for the board panel.
  *
- * A movie file is a plain concatenation of JPEG pictures (`.mjpeg`/`.mjpg`).
- * Every picture is decoded by the hardware JPEG codec into a PSRAM frame
- * buffer and handed to the GUI as a native image source, so playback does not
- * allocate or copy a full frame per picture.
+ * MJPEG files (`.mjpeg`/`.mjpg`) are a plain concatenation of JPEG pictures:
+ * every picture is decoded by the hardware JPEG codec into a PSRAM frame
+ * buffer. MP4/MOV files (`.mp4`/`.m4v`/`.mov`) with an H.264 (AVC) video track
+ * are demuxed from their sample tables and decoded by the software H.264
+ * decoder (the ESP32-P4 has a hardware H.264 encoder only). Both paths hand
+ * the finished RGB565 picture to the GUI as a native image source, so playback
+ * does not allocate or copy a full frame per picture. Audio tracks in MP4
+ * files are ignored.
  */
 class VideoApp final: public system::core::IApp {
 public:
@@ -60,10 +69,22 @@ private:
         uint32_t length = 0;
     };
 
+    enum class SourceFormat {
+        Mjpeg,
+        Mp4,
+    };
+
     struct Source {
-        uint8_t *data = nullptr;             ///< Whole movie file (PSRAM)
+        uint8_t *data = nullptr;             ///< Whole MJPEG file (PSRAM)
         size_t size = 0;
-        std::vector<FrameSpan> frames;
+        std::FILE *file = nullptr;           ///< MP4 file, kept open for sample reads
+        SourceFormat format = SourceFormat::Mjpeg;
+        std::vector<FrameSpan> frames;       ///< MJPEG pictures
+        std::vector<mp4::Sample> samples;    ///< MP4 coded samples
+        std::vector<uint8_t> extradata;      ///< MP4 Annex-B SPS/PPS
+        uint32_t fps = 12;                   ///< Nominal source frame rate
+        uint32_t frame_ms = 83;              ///< Playback pacing
+        uint32_t duration_ms = 0;
         int32_t width = 0;
         int32_t height = 0;
         int32_t padded_width = 0;
@@ -106,6 +127,8 @@ private:
     void register_frame_images(const Source &source);
     void unregister_frame_images();
     void apply_frame_geometry();
+    bool ensure_h264_decoder();
+    void close_h264_decoder();
 
     /* ---- playback control (app task) ---- */
     void subscribe_actions(system::core::AppContext &context);
@@ -124,6 +147,7 @@ private:
     void seek_to_permille(int32_t permille);
     void notify_worker();
     bool decode_frame(uint32_t frame_index, int32_t buffer_index);
+    bool decode_mp4_frame(uint32_t frame_index, int32_t buffer_index);
 
     /* ---- UI (app task) ---- */
     void refresh_ui(system::core::AppContext &context);
@@ -146,6 +170,10 @@ private:
 
     Source source_;
     jpeg_decoder_handle_t decoder_ = nullptr;
+    esp_h264_dec_handle_t h264_decoder_ = nullptr;
+    esp_h264_dec_param_handle_t h264_param_ = nullptr;
+    // Scratch buffer for the Annex-B version of the current MP4 sample.
+    std::vector<uint8_t> annexb_buffer_;
     uint8_t *frame_buffer_[2] = {};
     size_t frame_buffer_capacity_ = 0;
     uint8_t *input_buffer_ = nullptr;

@@ -389,7 +389,7 @@
                                             },
                                             "style": {
                                                 "lineColor": "#4338ca",
-                                                "lineWidth": "5dp"
+                                                "lineWidth": "2.5dp"
                                             },
                                             "placement": {
                                                 "mode": "absolute",
@@ -610,7 +610,7 @@
                                             },
                                             "style": {
                                                 "lineColor": "#22d3ee",
-                                                "lineWidth": "2dp"
+                                                "lineWidth": "1dp"
                                             },
                                             "placement": {
                                                 "mode": "absolute",

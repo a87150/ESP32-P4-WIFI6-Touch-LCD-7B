@@ -131,6 +131,260 @@ void FileManagerApp::request_delete(system::core::AppContext &context)
     }
 }
 
+void FileManagerApp::request_create(system::core::AppContext &context)
+{
+    if (!find_current_volume()) {
+        show_message(
+            context,
+            tr("create_failed"),
+            tr("open_volume_first"),
+            system::core::MessageDialogIcon::Warning
+        );
+        return;
+    }
+
+    auto dialog_result_handler = [this](const system::core::MessageDialogResult & result) {
+        if (!context_ || result.reason != system::core::MessageDialogCloseReason::Button) {
+            return;
+        }
+        if (result.button_index == 0) {
+            prompt_create_entry(*context_, true);
+        } else if (result.button_index == 1) {
+            prompt_create_entry(*context_, false);
+        }
+    };
+    auto dialog_options = system::core::MessageDialogOptions{
+        .text = tr("create_title"),
+        .informative_text = current_directory_path().generic_string(),
+        .icon = system::core::MessageDialogIcon::Question,
+        .buttons = {
+            system::core::MessageDialogButton{
+                .text = tr("create_folder"),
+                .role = system::core::MessageDialogButtonRole::Accept,
+            },
+            system::core::MessageDialogButton{
+                .text = tr("create_file"),
+                .role = system::core::MessageDialogButtonRole::Action,
+            },
+            system::core::MessageDialogButton{
+                .text = tr("cancel"),
+                .role = system::core::MessageDialogButtonRole::Reject,
+            },
+        },
+        .auto_close_ms = 0,
+    };
+    auto dialog = context.system_service().show_message_dialog(
+                      std::move(dialog_options),
+                      std::move(dialog_result_handler)
+                  );
+    if (!dialog) {
+        show_message(context, tr("create_failed"), dialog.error(), system::core::MessageDialogIcon::Warning);
+    }
+}
+
+void FileManagerApp::prompt_create_entry(system::core::AppContext &context, bool directory)
+{
+    auto keyboard_result_handler = [this, directory](const system::core::KeyboardResult & result) {
+        if (!context_ || !result.confirmed) {
+            return;
+        }
+        const auto name = result.text;
+        if (name.empty() || name == "." || name == ".." ||
+                name.find('/') != std::string::npos || name.find('\\') != std::string::npos) {
+            show_message(*context_, tr("create_failed"), tr("invalid_name"), system::core::MessageDialogIcon::Warning);
+            return;
+        }
+        const auto failure_key = directory ? "create_folder_failed" : "create_file_failed";
+        const auto directory_path = current_directory_path();
+        if (directory_path.empty()) {
+            show_message(
+                *context_,
+                tr(failure_key),
+                tr("open_volume_first"),
+                system::core::MessageDialogIcon::Warning
+            );
+            return;
+        }
+        const auto target = (directory_path / name).lexically_normal();
+        if (!is_inside_current_root(target)) {
+            show_message(
+                *context_,
+                tr(failure_key),
+                tr("destination_escapes"),
+                system::core::MessageDialogIcon::Critical
+            );
+            return;
+        }
+        auto existing = StorageHelper::fs_stat(target.generic_string());
+        if (existing && existing->exists) {
+            show_message(
+                *context_,
+                tr(failure_key),
+                tr("destination_exists"),
+                system::core::MessageDialogIcon::Warning
+            );
+            return;
+        }
+
+        auto operation = PendingFileOperation{
+            .kind = directory ? FileOperationKind::CreateDirectory : FileOperationKind::CreateFile,
+            .entry_kind = directory ? EntryKind::Directory : EntryKind::File,
+            .source_path = target,
+            .destination_path = {},
+        };
+        auto schedule_result = schedule_file_operation(*context_, std::move(operation));
+        if (!schedule_result) {
+            show_message(
+                *context_,
+                tr(failure_key),
+                schedule_result.error(),
+                system::core::MessageDialogIcon::Warning
+            );
+        }
+    };
+    auto keyboard_options = system::core::KeyboardRequestOptions{
+        .title = directory ? tr("new_folder_title") : tr("new_file_title"),
+        .placeholder = tr("name_placeholder"),
+        .initial_text = {},
+        .max_length = 96,
+        .password = false,
+        .mode = "text",
+        .allowed_modes = {},
+    };
+    auto keyboard = context.system_service().show_keyboard(
+                        std::move(keyboard_options),
+                        std::move(keyboard_result_handler)
+                    );
+    if (!keyboard) {
+        show_message(
+            context,
+            directory ? tr("create_folder_failed") : tr("create_file_failed"),
+            keyboard.error(),
+            system::core::MessageDialogIcon::Warning
+        );
+    }
+}
+
+void FileManagerApp::request_move(system::core::AppContext &context)
+{
+    if (!can_operate_selected()) {
+        show_message(
+            context,
+            tr("move_unavailable"),
+            tr("select_first"),
+            system::core::MessageDialogIcon::Warning
+        );
+        return;
+    }
+    auto selected = *selected_entry_;
+    auto keyboard_result_handler = [this, selected](const system::core::KeyboardResult & result) {
+        if (!context_ || !result.confirmed) {
+            return;
+        }
+        auto text = result.text;
+        while (!text.empty() && (text.back() == ' ' || text.back() == '\t')) {
+            text.pop_back();
+        }
+        while (!text.empty() && (text.front() == ' ' || text.front() == '\t')) {
+            text.erase(text.begin());
+        }
+        if (text.empty()) {
+            return;
+        }
+
+        const auto directory_path = current_directory_path();
+        if (directory_path.empty()) {
+            show_message(
+                *context_,
+                tr("move_failed"),
+                tr("open_volume_first"),
+                system::core::MessageDialogIcon::Warning
+            );
+            return;
+        }
+        std::filesystem::path target_directory(text);
+        if (!target_directory.is_absolute()) {
+            target_directory = directory_path / target_directory;
+        }
+        target_directory = target_directory.lexically_normal();
+        if (!is_inside_current_root(target_directory)) {
+            show_message(
+                *context_,
+                tr("move_failed"),
+                tr("destination_escapes"),
+                system::core::MessageDialogIcon::Critical
+            );
+            return;
+        }
+        auto target_info = StorageHelper::fs_stat(target_directory.generic_string());
+        if (!target_info || target_info->type != StorageHelper::FileType::Directory) {
+            show_message(
+                *context_,
+                tr("move_failed"),
+                tr("destination_not_directory"),
+                system::core::MessageDialogIcon::Warning
+            );
+            return;
+        }
+        const auto source = selected.path.lexically_normal();
+        const auto destination = (target_directory / selected.name).lexically_normal();
+        if (destination == source) {
+            return;
+        }
+        if (!is_inside_current_root(destination)) {
+            show_message(
+                *context_,
+                tr("move_failed"),
+                tr("destination_escapes"),
+                system::core::MessageDialogIcon::Critical
+            );
+            return;
+        }
+        auto destination_info = StorageHelper::fs_stat(destination.generic_string());
+        if (destination_info && destination_info->exists) {
+            show_message(
+                *context_,
+                tr("move_failed"),
+                tr("destination_exists"),
+                system::core::MessageDialogIcon::Warning
+            );
+            return;
+        }
+
+        auto operation = PendingFileOperation{
+            .kind = FileOperationKind::Move,
+            .entry_kind = selected.kind,
+            .source_path = source,
+            .destination_path = destination,
+        };
+        auto schedule_result = schedule_file_operation(*context_, std::move(operation));
+        if (!schedule_result) {
+            show_message(
+                *context_,
+                tr("move_failed"),
+                schedule_result.error(),
+                system::core::MessageDialogIcon::Warning
+            );
+        }
+    };
+    auto keyboard_options = system::core::KeyboardRequestOptions{
+        .title = tr("move_title"),
+        .placeholder = tr("move_target_placeholder"),
+        .initial_text = current_directory_.empty() ? std::string() : current_directory_.generic_string(),
+        .max_length = 192,
+        .password = false,
+        .mode = "text",
+        .allowed_modes = {},
+    };
+    auto keyboard = context.system_service().show_keyboard(
+                        std::move(keyboard_options),
+                        std::move(keyboard_result_handler)
+                    );
+    if (!keyboard) {
+        show_message(context, tr("move_failed"), keyboard.error(), system::core::MessageDialogIcon::Warning);
+    }
+}
+
 std::expected<void, std::string> FileManagerApp::schedule_file_operation(
     system::core::AppContext &context,
     PendingFileOperation operation
@@ -204,6 +458,73 @@ std::expected<void, std::string> FileManagerApp::commit_file_operation(system::c
         hide_file_operation_dialog(context);
         show_message(context, std::move(text), std::move(informative_text), icon);
     };
+
+    if (operation.kind == FileOperationKind::CreateDirectory || operation.kind == FileOperationKind::CreateFile) {
+        const bool directory = operation.kind == FileOperationKind::CreateDirectory;
+        const auto failure_key = directory ? "create_folder_failed" : "create_file_failed";
+        BROOKESIA_LOGI(
+            "Create File Manager %1%: path(%2%)",
+            directory ? "directory" : "file",
+            operation.source_path.generic_string()
+        );
+        std::expected<void, std::string> create_result = directory ?
+                StorageHelper::fs_mkdir(operation.source_path.generic_string()) :
+                StorageHelper::fs_write_text(operation.source_path.generic_string(), "");
+        if (!create_result) {
+            hide_guard.release();
+            show_operation_message(
+                tr(failure_key),
+                create_result.error(),
+                system::core::MessageDialogIcon::Warning
+            );
+            return {};
+        }
+        auto refresh_result = refresh_entries(context);
+        if (!refresh_result) {
+            hide_guard.release();
+            show_operation_message(
+                tr("refresh_failed"),
+                refresh_result.error(),
+                system::core::MessageDialogIcon::Warning
+            );
+        }
+        return {};
+    }
+
+    if (operation.kind == FileOperationKind::Move) {
+        BROOKESIA_LOGI(
+            "Move File Manager item: from(%1%) to(%2%)",
+            operation.source_path.generic_string(),
+            operation.destination_path.generic_string()
+        );
+        auto move_result = StorageHelper::fs_rename(
+                               operation.source_path.generic_string(),
+                               operation.destination_path.generic_string()
+                           );
+        if (!move_result) {
+            hide_guard.release();
+            show_operation_message(
+                tr("move_failed"),
+                move_result.error(),
+                system::core::MessageDialogIcon::Warning
+            );
+            return {};
+        }
+        if (operation.entry_kind == EntryKind::Directory) {
+            rebase_current_directory_after_move(operation.source_path, operation.destination_path);
+        }
+        (void)hide_operations(context);
+        auto refresh_result = refresh_entries(context);
+        if (!refresh_result) {
+            hide_guard.release();
+            show_operation_message(
+                tr("refresh_failed"),
+                refresh_result.error(),
+                system::core::MessageDialogIcon::Warning
+            );
+        }
+        return {};
+    }
 
     if (operation.kind == FileOperationKind::Rename) {
         BROOKESIA_LOGI(

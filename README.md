@@ -26,8 +26,9 @@
 >
 > **English summary** — This repository ships a runnable ESP-Brookesia 0.8 desktop
 > for the Waveshare ESP32-P4-WIFI6-Touch-LCD-7B board: status bar, launcher,
-> system monitor, WAV music player with background playback, image gallery,
-> hardware-decoded MJPEG video, and a settings app with Wi-Fi / BLE. Build with
+> system monitor, WAV / MP3 music player with background playback, image gallery,
+> hardware-decoded MJPEG and software-decoded H.264 MP4 video, and a settings
+> app with Wi-Fi / BLE. Build with
 > `idf.py build` under `firmware/brookesia_master/examples/system_monitor`, then
 > flash only `factory (0x110000)` and `storage (0x1000000)`. Full English text:
 > [README_EN.md](README_EN.md).
@@ -55,16 +56,16 @@
 
 主线能力：
 
-- **状态栏**：时间居中；右侧 Wi-Fi 信号（纯白图标，按信号强度运行时着色）、蓝牙、电量；
-  左上角显示已挂起到后台的应用图标。
+- **状态栏**：时间居中；右侧 Wi-Fi 信号（向上递增的信号条，按 RSSI 分级；未连接时
+  显示红色斜线）、蓝牙、电量（USB / BATTERY 供电标签）；左上角显示已挂起到后台的应用图标。
 - **桌面**：应用图标从左到右排列、支持多页；任意页面上滑回桌面，按住进入最近任务；
   最近任务支持 **CLEAR ALL**；壁纸可由图片 App 设置。
 - **系统监视器**：磁盘全卷聚合使用率（≥ 90 % 变红报警）、环心 CPU / GPU 温度
   （超过 90 °C 显示 `HIGH!` 并报警）、网络卡片附带 DISK I/O。
-- **音乐**：WAV 播放器，离开 App 后继续播放，支持拖动进度、独立音量与元信息。
+- **音乐**：WAV / MP3 播放器，离开 App 后继续播放，支持拖动进度、独立音量与元信息。
 - **相册**：上一张 / 下一张、自动播放、分辨率与文件大小等详情、一键设为壁纸。
-- **视频**：MJPEG（纯 JPEG 串接）硬解播放，12 fps 定速，进度拖动，
-  **双击画面暂停 / 继续**，底部控制栏按钮居中。
+- **视频**：MJPEG（纯 JPEG 串接）硬解 12 fps，以及 MP4（H.264 baseline）软解，
+  进度拖动，**双击画面暂停 / 继续**，底部控制栏按钮居中。
 - **设置**：Wi-Fi 扫描 / 连接 / 断开（显示 IP、MAC，掉线自动重连）、BLE 扫描与广播、
   显示、声音、时间、语言与设备信息。
 
@@ -177,9 +178,9 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 | 桌面 Shell | `brookesia.system.super.shell` | 状态栏、图标页、最近任务、壁纸、手势 |
 | 设置 | `brookesia.general.settings` | Wi-Fi、蓝牙、显示、声音、时间、语言、设备信息 |
 | 系统监视器 | `brookesia.waveshare.system_monitor` | CPU / 内存 / 磁盘 / 网络 / 温度仪表盘 |
-| 音乐 | `brookesia.waveshare.music` | 仅支持 PCM WAV，后台继续播放 |
+| 音乐 | `brookesia.waveshare.music` | PCM WAV / MP3，后台继续播放 |
 | 相册 | `brookesia.waveshare.gallery` | 浏览 / 自动播放 / 设为壁纸 |
-| 视频 | `brookesia.waveshare.video` | MJPEG 硬解播放，双击暂停 |
+| 视频 | `brookesia.waveshare.video` | MJPEG 硬解 + MP4（H.264）软解，双击暂停 |
 
 ### 状态栏与桌面
 
@@ -203,11 +204,12 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 - 进入 App 直接显示**播放器主界面**，不会自动出声；点「列表」按钮，右侧滑出
   宽 320 dp 的**选曲抽屉**，点某一首才开始播放并自动收起，主界面始终保留。
 - 抽屉内每页 5 首，可翻页；行内显示文件名与大小，当前曲目标「播放中 / 已暂停」。
-- 仅支持 **PCM WAV**；解码与播放跑在独立线程，离开 App 后继续播放。
+- 支持 **PCM WAV 与 MP3**；解码与播放跑在独立线程，离开 App 后继续播放。
+  首次播放 MP3 时会跳过 ID3v2 标签并逐帧建立索引，拖动进度可直接跳帧。
 - 进度条可拖动 seek（每 500 ms 应用一次，避免拖动风暴重启 codec）；
   音量用底部「−」「+」按钮调节（每步 10%），状态行回显百分比。
-- 详情区显示序号 / 总数、采样率、声道、位深、码率（由采样率 × 声道 × 位深推算）
-  与文件大小。
+- 详情区显示序号 / 总数、采样率、声道、位深、码率（WAV 按采样率 × 声道 × 位深，
+  MP3 取帧头平均码率）与文件大小。
 - 目录：`/littlefs/sounds`、`/sdcard/music`、`/sdcard`。
 - 播放器卡片带纵向渐变与柔和投影，封面旁有一条**流动的波形线**（双层描边，约 11 fps，
   播放时随音量起伏，暂停时缓慢低幅波动）。
@@ -234,9 +236,13 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 - 进入 App 直接显示**播放器主界面**（空态提示）；点「列表」按钮，右侧滑出
   宽 320 dp 的**选片抽屉**，点某一部才开始载入播放并收起抽屉。
 - 抽屉内每页 5 部，显示文件名与大小，当前影片标「播放中」。
-- 格式：**纯 JPEG 串接**的 `.mjpeg` / `.mjpg` / `.mjp`，无容器、无音轨。
-- 固定 **12 fps** 定速播放（MJPEG 不含时间戳）；**连播**为可选开关（默认关闭），
-  打开后一部播完自动接下一部，关闭则停在最后一帧。
+- 支持两种格式：
+  - `.mjpeg` / `.mjpg` / `.mjp`：**纯 JPEG 串接**，无容器、无音轨，固定 **12 fps**；
+  - `.mp4` / `.m4v` / `.mov`：**H.264/AVC constrained baseline**。P4 只有硬件 H.264
+    编码器，所以 MP4 由 `esp_h264` 的 tinyH264 **软解**（I420 → RGB565），
+    976 × 432 约 10 fps、720p 约 5 fps；AAC 音轨忽略（无声）；
+    拖动进度会吸附到最近的 IDR 关键帧。
+- **连播**为可选开关（默认关闭），打开后一部播完自动接下一部，关闭则停在最后一帧。
 - **双击画面暂停 / 继续**：GUI 没有双击事件，由 `video.tap` 在 400 ms 窗口内
   合并两次点击。
 - 硬件 JPEG 解码（`esp_driver_jpeg`）输出 RGB565，双缓冲逐帧切换；
@@ -244,7 +250,7 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 - 画面区 976 × 432，小于画面区的素材按原始尺寸 1:1 居中显示（LVGL 不放大，
   保证帧率）；底部 76 dp 控制栏：第一行进度条，第二行**播放 / 暂停固定在正中**
   （暂停时显示「播放」），左侧为刷新、音量−、音量+、上一部，右侧为下一部、连播、
-  列表；「列表」在最右侧（音量按钮控制板载 codec，MJPEG 本身无音轨）。
+  列表；「列表」在最右侧（音量按钮控制板载 codec，MJPEG / MP4 都没有实际播放的音轨）。
 - 目录：`/littlefs/videos`、`/sdcard/videos`、`/sdcard`。
 
 ### 设置
@@ -287,9 +293,11 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 
 - `idf.py build` 通过；烧录 `factory + storage` 后可正常启动，6 个 App 全部 installed。
 - 桌面图标顶部不再被裁切；上滑 / 按住手势、最近任务、状态栏图标显示正常。
-- 视频换片由播放线程异步执行，切换时不阻塞 UI；12 fps 定速播放。
+- 视频换片由播放线程异步执行，切换时不阻塞 UI；MJPEG 12 fps 定速。
 - Wi-Fi 掉线自动重连；BLE 扫描与广播互斥切换正常。
 - 音乐后台播放、进度拖动、音量调节正常；相册自动播放与设为壁纸正常。
+- MP3 软解、MP4（H.264 baseline）软解与上屏已验证：内置 976 × 432 MP4
+  48 帧全部解出，MP3 347 帧全部解出。
 - 相册 / 音乐 / 视频进入即显示主界面（不自动播放），点「列表」在右侧弹出抽屉，
   点选后才切换或播放，抽屉每页 5 项；主画面不被替换。
 
@@ -297,10 +305,13 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 
 - **未插 SD 卡时**启动日志会打印 `sdmmc_init_ocr ... 0x107` /
   `Failed to initialize SD card`，此时媒体只读取 `/littlefs` 下的内置素材。
-- 视频必须是 MJPEG（无容器、无音轨），可用
-  [`tools/make_mjpeg.py`](tools/make_mjpeg.py) 生成；内置示例素材由
-  [`tools/make_demo_videos.py`](tools/make_demo_videos.py) 生成。
-- 音乐仅支持 PCM WAV。
+- 视频支持 MJPEG（无容器、无音轨，硬件解码，可用
+  [`tools/make_mjpeg.py`](tools/make_mjpeg.py) 生成）与 MP4（H.264 constrained
+  baseline，软解无声，AAC 音轨忽略）；内置示例素材由
+  [`tools/make_demo_videos.py`](tools/make_demo_videos.py) 生成，MP4 / MP3 示例见
+  [桌面系统主文档](docs/BROOKESIA_7B_ZH.md) 第 7.4 节的 ffmpeg 命令。
+- MP4 软解速度：976 × 432 约 10 fps，720p 约 5 fps；分辨率越小越流畅。
+- 音乐支持 PCM WAV 与 MP3。
 - 电池电量与实际温度受硬件限制，读数仅供参考；CPU / GPU 真实温度需要 PC 端配合。
 - 无法把音频投到经典蓝牙音箱（C6 仅 BLE）。
 - 屏幕与触摸的最终观感（颜色、触控校准）需要上机确认。
@@ -344,8 +355,8 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 
 资源目录（littlefs）：
 
-- `/littlefs/music`、`/sdcard/music`：WAV 音乐。
-- `/littlefs/videos`、`/sdcard/videos`：MJPEG 视频。
+- `/littlefs/sounds`、`/sdcard/music`：WAV / MP3 音乐。
+- `/littlefs/videos`、`/sdcard/videos`：MJPEG / H.264 baseline MP4 视频。
 - `/littlefs/pictures`、`/littlefs/wallpapers`：图片与壁纸候选。
 - `/littlefs/system/super/wallpaper.txt`：当前壁纸路径。
 - `/littlefs/apps`：各应用的 JSON UI 包与图标。

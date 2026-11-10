@@ -193,6 +193,12 @@ std::expected<void, std::string> ShellApp::on_timer(
         status_clock_timer_id_ = core::INVALID_TIMER_ID;
         refresh_status_clock();
         refresh_battery_status();
+        // Re-query Wi-Fi every five seconds so the status-bar bars follow the
+        // RSSI and drop to the "disconnected" glyph when the link is lost.
+        if (++wifi_status_refresh_tick_ >= 5) {
+            wifi_status_refresh_tick_ = 0;
+            refresh_wifi_status();
+        }
         schedule_status_clock_timer();
         return {};
     }

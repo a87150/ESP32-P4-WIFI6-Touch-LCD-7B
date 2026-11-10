@@ -14,6 +14,12 @@
     ],
     "variants": [
         {
+            "when": "${expr(${env.widthDp} == 1024dp && ${env.heightDp} == 600dp)}",
+            "assets": [
+                "constants/1024x600.json"
+            ]
+        },
+        {
             "when": "${expr(${env.widthDp} == 480dp && ${env.heightDp} == 480dp)}",
             "assets": [
                 "constants/480x480.json"

@@ -15,7 +15,11 @@ FileManagerApp::build_entries_for_current_location() const
                 .instance_id = {},
                 .view_path = {},
                 .name = volumes_[i].display_name,
-                .detail = describe_volume(volumes_[i].volume, volumes_[i].capacity_text),
+                .detail = describe_volume(
+                    volumes_[i].volume,
+                    volumes_[i].capacity_text,
+                    tr("volume_not_mounted")
+                ),
                 .icon = ICON_DRIVER,
                 .path = volumes_[i].volume.root_path,
                 .volume_index = i,
@@ -79,6 +83,15 @@ FileManagerApp::build_entries_for_current_location() const
 std::expected<void, std::string> FileManagerApp::open_entry(system::core::AppContext &context, const Entry &entry)
 {
     if (entry.kind == EntryKind::Volume) {
+        if (entry.volume_index >= volumes_.size() || !volumes_[entry.volume_index].volume.available) {
+            show_message(
+                context,
+                tr("volume_not_mounted"),
+                entry.name + "  " + entry.path.generic_string(),
+                system::core::MessageDialogIcon::Information
+            );
+            return {};
+        }
         BROOKESIA_LOGI("Open File Manager volume: name(%1%), root(%2%)", entry.name, entry.path.generic_string());
         current_volume_index_ = entry.volume_index;
         current_directory_.clear();

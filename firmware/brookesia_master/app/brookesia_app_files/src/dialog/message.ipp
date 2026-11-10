@@ -44,8 +44,24 @@ std::expected<void, std::string> FileManagerApp::show_file_operation_dialog(syst
         return {};
     }
 
-    const auto text_key = pending_file_operation_->kind == FileOperationKind::Rename ?
-                          "rename_in_progress" : "delete_in_progress";
+    const char *text_key = "delete_in_progress";
+    switch (pending_file_operation_->kind) {
+    case FileOperationKind::Rename:
+        text_key = "rename_in_progress";
+        break;
+    case FileOperationKind::Delete:
+        text_key = "delete_in_progress";
+        break;
+    case FileOperationKind::Move:
+        text_key = "move_in_progress";
+        break;
+    case FileOperationKind::CreateDirectory:
+        text_key = "create_folder_in_progress";
+        break;
+    case FileOperationKind::CreateFile:
+        text_key = "create_file_in_progress";
+        break;
+    }
     auto options = system::core::MessageDialogOptions{
         .text = tr(text_key),
         .informative_text = pending_file_operation_->source_path.generic_string(),

@@ -20,6 +20,8 @@
 #include "brookesia/lib_utils/describe_helpers.hpp"
 #include "brookesia/service_helper/network/sntp.hpp"
 #include "brookesia/service_helper/network/wifi.hpp"
+#include "brookesia/service_helper/system/device.hpp"
+#include "boost/json.hpp"
 #include "soc/soc_caps.h"
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
 #   include "driver/usb_serial_jtag.h"
@@ -33,6 +35,7 @@ namespace {
 
 using SNTPHelper = service::helper::SNTP;
 using WifiHelper = service::helper::Wifi;
+using DeviceHelper = service::helper::Device;
 
 struct WifiStatusState {
     bool visible = false;
@@ -41,21 +44,22 @@ struct WifiStatusState {
 
 WifiStatusState get_wifi_status_from_state(std::string_view state)
 {
+    if (state.empty()) {
+        return {};
+    }
     if (state == BROOKESIA_DESCRIBE_TO_STR(WifiHelper::GeneralState::Connected)) {
         return {
             .visible = true,
             .connected = true,
         };
     }
-    if (state == BROOKESIA_DESCRIBE_TO_STR(WifiHelper::GeneralState::Started) ||
-            state == BROOKESIA_DESCRIBE_TO_STR(WifiHelper::GeneralState::Connecting) ||
-            state == BROOKESIA_DESCRIBE_TO_STR(WifiHelper::GeneralState::Disconnecting)) {
-        return {
-            .visible = true,
-            .connected = false,
-        };
-    }
-    return {};
+    // Any other valid state means the Wi-Fi service is alive but not
+    // connected. Keep the icon visible so the status bar can show the
+    // "disconnected" glyph instead of silently hiding Wi-Fi.
+    return {
+        .visible = true,
+        .connected = false,
+    };
 }
 
 WifiStatusState get_wifi_status_from_event(std::string_view event)
@@ -66,14 +70,24 @@ WifiStatusState get_wifi_status_from_event(std::string_view event)
             .connected = true,
         };
     }
-    if (event == BROOKESIA_DESCRIBE_TO_STR(WifiHelper::GeneralEvent::Started) ||
-            event == BROOKESIA_DESCRIBE_TO_STR(WifiHelper::GeneralEvent::Disconnected)) {
-        return {
-            .visible = true,
-            .connected = false,
-        };
+    return {
+        .visible = true,
+        .connected = false,
+    };
+}
+
+int signal_dbm_to_level(int dbm)
+{
+    if (dbm > -55) {
+        return 4;
     }
-    return {};
+    if (dbm > -65) {
+        return 3;
+    }
+    if (dbm > -75) {
+        return 2;
+    }
+    return 1;
 }
 
 std::string bool_to_binding(bool value)
@@ -137,6 +151,9 @@ bool ShellApp::ensure_wifi_service_binding()
             ++wifi_status_generation_;
             const auto status = get_wifi_status_from_event(event);
             set_status_wifi_state(status.visible, status.connected);
+            if (status.connected) {
+                refresh_wifi_signal();
+            }
         };
         wifi_event_connection_ = WifiHelper::subscribe_event(
                                      WifiHelper::EventId::GeneralEventHappened,
@@ -154,8 +171,70 @@ void ShellApp::release_wifi_service_binding()
     ++wifi_status_generation_;
     wifi_event_connection_.disconnect();
     wifi_service_binding_.release();
+    release_wifi_signal_service_binding();
     wifi_connected_ = false;
+    wifi_status_visible_ = false;
+    wifi_signal_level_ = 0;
+    wifi_status_refresh_tick_ = 0;
     set_status_wifi_state(false, false);
+}
+
+bool ShellApp::ensure_wifi_signal_service_binding()
+{
+    if (wifi_signal_service_binding_.is_valid()) {
+        return true;
+    }
+    if (!DeviceHelper::is_available()) {
+        return false;
+    }
+    wifi_signal_service_binding_ = service::ServiceManager::get_instance().bind(DeviceHelper::get_name().data());
+    if (!wifi_signal_service_binding_.is_valid()) {
+        BROOKESIA_LOGW("Failed to bind Device service for Shell Wi-Fi signal");
+        return false;
+    }
+    return true;
+}
+
+void ShellApp::release_wifi_signal_service_binding()
+{
+    ++wifi_signal_generation_;
+    wifi_signal_service_binding_.release();
+}
+
+void ShellApp::refresh_wifi_signal()
+{
+    if (context_ == nullptr || !ensure_wifi_signal_service_binding()) {
+        return;
+    }
+
+    const auto generation = ++wifi_signal_generation_;
+    const auto handler = [this, generation](service::FunctionResult && result) {
+        if (context_ == nullptr || generation != wifi_signal_generation_ ||
+                !wifi_signal_service_binding_.is_valid()) {
+            return;
+        }
+        if (!result.success || !result.has_data()) {
+            return;
+        }
+        auto &json_value = result.get_data<boost::json::array>();
+        DeviceHelper::NetworkConnectivityInfos infos;
+        if (!BROOKESIA_DESCRIBE_FROM_JSON(json_value, infos)) {
+            return;
+        }
+        for (const auto &info : infos) {
+            if (info.status.interface_type != hal::network::InterfaceType::WifiStation) {
+                continue;
+            }
+            if (!info.status.signal_dbm.has_value()) {
+                continue;
+            }
+            set_status_wifi_bars(signal_dbm_to_level(*info.status.signal_dbm));
+            break;
+        }
+    };
+    if (!DeviceHelper::call_function_async(DeviceHelper::FunctionId::GetNetworkConnectivityInfo, handler)) {
+        BROOKESIA_LOGW("Failed to submit Wi-Fi signal request for Shell status");
+    }
 }
 
 void ShellApp::refresh_wifi_status()
@@ -176,6 +255,9 @@ void ShellApp::refresh_wifi_status()
         const auto &state = result.get_data<std::string>();
         const auto status = get_wifi_status_from_state(state);
         set_status_wifi_state(status.visible, status.connected);
+        if (status.connected) {
+            refresh_wifi_signal();
+        }
     };
     if (!WifiHelper::call_function_async(WifiHelper::FunctionId::GetGeneralState, state_handler)) {
         BROOKESIA_LOGW("Failed to submit Wi-Fi state request for Shell status");
@@ -185,7 +267,17 @@ void ShellApp::refresh_wifi_status()
 
 void ShellApp::set_status_wifi_state(bool visible, bool connected)
 {
+    wifi_status_visible_ = visible;
     wifi_connected_ = connected;
+    if (!visible) {
+        wifi_signal_level_ = 0;
+    } else if (connected && wifi_signal_level_ <= 0) {
+        // Unknown RSSI right after connecting: show the full icon until the
+        // connectivity service reports a value.
+        wifi_signal_level_ = 4;
+    } else if (!connected) {
+        wifi_signal_level_ = 0;
+    }
     if (context_ == nullptr) {
         return;
     }
@@ -196,13 +288,57 @@ void ShellApp::set_status_wifi_state(bool visible, bool connected)
         .value = bool_to_binding(!visible),
     });
     updates.push_back(gui::BindingValueUpdate{
-        .absolute_path = SUPER_STATUS_WIFI_PATH,
-        .key = "wifi_tint",
-        .value = connected ? "#5fd28a" : "#9b9b9b",
+        .absolute_path = std::string(SUPER_STATUS_WIFI_PATH) + "/wifi_off_slash",
+        .key = "wifi_off_hidden",
+        .value = bool_to_binding(connected),
     });
+    // Keep the familiar ascending bar glyph in both states: green bars up to
+    // the current RSSI level when connected, and the full muted stack behind
+    // the red slash when disconnected.
+    const std::string_view bar_color = connected ? "${color.success.fill}" : "${color.text.muted}";
+    for (int level = 1; level <= 4; ++level) {
+        const auto bar_path = std::string(SUPER_STATUS_WIFI_PATH) + "/wifi_bar_" + std::to_string(level);
+        updates.push_back(gui::BindingValueUpdate{
+            .absolute_path = bar_path,
+            .key = "wifi_bar" + std::to_string(level) + "_hidden",
+            .value = bool_to_binding(connected && wifi_signal_level_ < level),
+        });
+        updates.push_back(gui::BindingValueUpdate{
+            .absolute_path = bar_path,
+            .key = "wifi_bar_color",
+            .value = std::string(bar_color),
+        });
+    }
     auto result = context_->gui().set_binding_values(updates);
     if (!result) {
         BROOKESIA_LOGW("Failed to refresh Shell Wi-Fi status icon: %1%", result.error());
+    }
+}
+
+void ShellApp::set_status_wifi_bars(int level)
+{
+    if (!wifi_status_visible_ || !wifi_connected_) {
+        return;
+    }
+    level = std::clamp(level, 1, 4);
+    if (level == wifi_signal_level_) {
+        return;
+    }
+    wifi_signal_level_ = level;
+    if (context_ == nullptr) {
+        return;
+    }
+    std::vector<gui::BindingValueUpdate> updates;
+    for (int bar = 1; bar <= 4; ++bar) {
+        updates.push_back(gui::BindingValueUpdate{
+            .absolute_path = std::string(SUPER_STATUS_WIFI_PATH) + "/wifi_bar_" + std::to_string(bar),
+            .key = "wifi_bar" + std::to_string(bar) + "_hidden",
+            .value = bool_to_binding(bar > level),
+        });
+    }
+    auto result = context_->gui().set_binding_values(updates);
+    if (!result) {
+        BROOKESIA_LOGW("Failed to refresh Shell Wi-Fi signal bars: %1%", result.error());
     }
 }
 
@@ -316,7 +452,7 @@ void ShellApp::refresh_battery_status()
     updates.push_back(gui::BindingValueUpdate{
         .absolute_path = SUPER_STATUS_BATTERY_TEXT_PATH,
         .key = "battery_text",
-        .value = usb_connected ? "USB" : "N/A",
+        .value = usb_connected ? "USB" : "BATTERY",
     });
     updates.push_back(gui::BindingValueUpdate{
         .absolute_path = SUPER_STATUS_BATTERY_TEXT_PATH,
