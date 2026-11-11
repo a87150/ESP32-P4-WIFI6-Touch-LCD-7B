@@ -47,7 +47,8 @@
                     "placement": {
                         "mode": "flow",
                         "width": "match",
-                        "height": "match"
+                        "height": "1dp",
+                        "flexGrow": 1
                     },
                     "children": [
                         {
@@ -97,6 +98,42 @@
                         "alignSelf": "stretch"
                     },
                     "children": [
+                        {
+                            "type": "container",
+                            "id": "mode",
+                            "commonProps": {
+                                "clickable": false
+                            },
+                            "styleRefs": [
+                                "app.primaryChip"
+                            ],
+                            "style": {
+                                "padding": "6dp"
+                            },
+                            "layout": {
+                                "type": "flex",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "wrap",
+                                "height": "wrap",
+                                "alignSelf": "center"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "label",
+                                    "bindings": {
+                                        "labelProps.text": "picker_mode_text"
+                                    },
+                                    "labelProps": {
+                                        "text": "${constant.files.i18n.paste_mode}"
+                                    }
+                                }
+                            ]
+                        },
                         {
                             "type": "label",
                             "id": "hint",
@@ -190,7 +227,7 @@
                                         "labelProps.text": "picker_confirm_text"
                                     },
                                     "labelProps": {
-                                        "text": "${constant.files.i18n.move_here}"
+                                        "text": "${constant.files.i18n.paste_here}"
                                     }
                                 }
                             ]

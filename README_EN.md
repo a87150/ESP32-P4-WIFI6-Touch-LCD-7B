@@ -306,10 +306,12 @@ SysCore: : Native app installed: id(7), manifest(brookesia.general.files)
   for unavailable volumes.
 - Long-press a file or folder to open its action page: **rename, copy, move and
   delete**. The `+` button in the header creates a folder or an empty file.
-- **Copy and move no longer ask for a typed path**: the browser reopens as the
-  destination picker. Enter a subfolder or switch volumes, then press
-  "Move here" / "Copy here" or "Cancel". Confirmation is enabled only after a
-  volume is open.
+- **Copy and move no longer ask for a typed path**: the browser reopens in a
+  clearly marked paste / move mode. The header switches to "Paste to folder" or
+  "Move to folder", and a bottom bar shows the mode, source, target path and
+  "Paste here" / "Move here" plus "Cancel". The list shrinks so the bar stays
+  visible while you enter subfolders or switch volumes. Confirmation is enabled
+  only after a volume is open.
 - Duplicate names, paths escaping the volume, and copying / moving a folder
   into itself are rejected. Cross-volume moves copy the tree first and then
   remove the source, because `rename` cannot cross filesystems.

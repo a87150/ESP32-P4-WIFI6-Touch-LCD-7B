@@ -226,9 +226,11 @@ In-house components:
 - Long-press a file or folder to open its action page: **rename, copy, move and
   delete**. The `+` button in the header creates a folder or an empty file.
 - **Copy and move use a graphical destination-folder picker**: the browser
-  reopens and becomes the chooser. Enter a subfolder or switch volumes, then
-  press "Move here" / "Copy here" or "Cancel". Confirmation is disabled until a
-  volume is open.
+  reopens in a clearly marked paste / move mode. The header switches to "Paste to
+  folder" or "Move to folder", and a fixed bottom bar shows the mode, source,
+  target path and "Paste here" / "Move here" plus "Cancel". The list shrinks so
+  the bar stays visible while entering subfolders or switching volumes.
+  Confirmation is disabled until a volume is open.
 - Duplicate names, paths escaping the volume, and copying / moving a folder into
   itself are rejected. Cross-volume moves copy the tree first and then remove
   the source, because `rename` cannot cross filesystems.
@@ -533,7 +535,7 @@ The GUI only exposes `clicked`, so the video app:
 
 ## 11. Verification checklist
 
-1. **Boot**: six `Native app installed` lines, no `System init failed`, no panic.
+1. **Boot**: seven `Native app installed` lines, no `System init failed`, no panic.
 2. **Launcher**: icons not clipped at the top; paging; swipe-up home; long-press
    recents; CLEAR ALL.
 3. **Status bar**: centered clock, signal-tinted Wi-Fi icon, paused apps on the
@@ -558,6 +560,10 @@ The GUI only exposes `clicked`, so the video app:
    default; seek; previous / next switching without stutter.
 8. **Settings**: Wi-Fi shows IP / MAC and reconnects; BLE scan and advertising
    are mutually exclusive.
+9. **Files**: after choosing "Copy", the header changes to "Paste to folder"
+   and the bottom bar shows the "Paste mode" chip, target path and "Paste here";
+   the list shrinks but the buttons stay visible while entering subfolders.
+   "Move" shows "Move to folder" and "Move here", clearly distinct.
 
 ---
 

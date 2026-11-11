@@ -400,6 +400,8 @@ std::expected<void, std::string> FileManagerApp::confirm_picker(system::core::Ap
     // the copied or moved item there.
     picker_active_ = false;
     picker_source_.reset();
+    picker_return_directory_.clear();
+    picker_return_volume_index_.reset();
     return refresh_ui(context);
 }
 

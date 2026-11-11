@@ -49,6 +49,7 @@ static constexpr const char *ENTRY_TEMPLATE_ID = "file_entry";
 static constexpr const char *LIST_CONTAINER_PATH = "/browser/page/list";
 static constexpr const char *LIST_PATH = "/browser/page/list/items";
 static constexpr const char *PICKER_BAR_PATH = "/browser/page/picker_bar";
+static constexpr const char *PICKER_MODE_PATH = "/browser/page/picker_bar/mode/label";
 static constexpr const char *PICKER_HINT_PATH = "/browser/page/picker_bar/hint";
 static constexpr const char *PICKER_CONFIRM_PATH = "/browser/page/picker_bar/confirm";
 static constexpr const char *PICKER_CONFIRM_LABEL_PATH = "/browser/page/picker_bar/confirm/label";

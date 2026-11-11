@@ -97,25 +97,25 @@ std::expected<void, std::string> FileManagerApp::refresh_ui(system::core::AppCon
         BROOKESIA_LOGW("Failed to refresh Files i18n: %1%", i18n_result.error());
     }
     std::vector<gui::BindingValueUpdate> updates;
-    add_binding(
-        updates,
-        HEADER_TITLE_PATH,
-        "labelProps.text",
-        current_volume_index_ ? volumes_[*current_volume_index_].display_name : tr("storage")
-    );
-    add_binding(
-        updates,
-        HEADER_SUBTITLE_PATH,
-        "labelProps.text",
-        current_volume_index_ ? ("/" + current_directory_.generic_string()) : tr("volumes_subtitle")
-    );
+    const bool picker_visible = picker_active_;
+    std::string header_title;
+    std::string header_subtitle;
+    if (picker_visible && picker_source_) {
+        const bool copy = picker_kind_ == FileOperationKind::Copy;
+        header_title = tr(copy ? "paste_title" : "move_title");
+        header_subtitle = tr("source_prefix") + picker_source_->name;
+    } else {
+        header_title = current_volume_index_ ? volumes_[*current_volume_index_].display_name : tr("storage");
+        header_subtitle = current_volume_index_ ? ("/" + current_directory_.generic_string()) : tr("volumes_subtitle");
+    }
+    add_binding(updates, HEADER_TITLE_PATH, "labelProps.text", header_title);
+    add_binding(updates, HEADER_SUBTITLE_PATH, "labelProps.text", header_subtitle);
     add_binding(
         updates,
         HEADER_COUNT_PATH,
         "labelProps.text",
         item_count_text(entries_.size(), tr("empty"), tr("items_suffix"))
     );
-    const bool picker_visible = picker_active_;
     const bool can_create = current_volume_index_.has_value() && !picker_visible;
     add_binding(
         updates,
@@ -140,9 +140,24 @@ std::expected<void, std::string> FileManagerApp::refresh_ui(system::core::AppCon
     );
     add_binding(
         updates,
+        PICKER_MODE_PATH,
+        "labelProps.text",
+        picker_kind_ == FileOperationKind::Copy ? tr("paste_mode") : tr("move_mode")
+    );
+    std::string picker_hint;
+    if (!picker_visible) {
+        picker_hint = tr("pick_destination");
+    } else if (current_volume_index_) {
+        picker_hint = tr("target_prefix") + volumes_[*current_volume_index_].display_name +
+                      " /" + current_directory_.generic_string();
+    } else {
+        picker_hint = tr("open_volume_first");
+    }
+    add_binding(
+        updates,
         PICKER_HINT_PATH,
         "labelProps.text",
-        tr("pick_destination")
+        picker_hint
     );
     const bool can_confirm = picker_visible && current_volume_index_.has_value();
     add_binding(
@@ -161,7 +176,7 @@ std::expected<void, std::string> FileManagerApp::refresh_ui(system::core::AppCon
         updates,
         PICKER_CONFIRM_LABEL_PATH,
         "labelProps.text",
-        picker_kind_ == FileOperationKind::Copy ? tr("copy_here") : tr("move_here")
+        picker_kind_ == FileOperationKind::Copy ? tr("paste_here") : tr("move_here")
     );
 
     for (const auto &entry : entries_) {
