@@ -165,7 +165,7 @@ private:
     bool ensure_wifi_signal_service_binding();
     void release_wifi_signal_service_binding();
     void refresh_wifi_signal();
-    void set_status_wifi_bars(int level);
+    void set_status_wifi_level(int level);
     void set_status_app_icon(const std::optional<core::AppInfo> &app);
     void refresh_status_app_icons();
     void activate_status_background_app(size_t slot);

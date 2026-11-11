@@ -95,6 +95,7 @@ private:
     enum class FileOperationKind {
         Rename,
         Delete,
+        Copy,
         Move,
         CreateDirectory,
         CreateFile,
@@ -128,7 +129,11 @@ private:
     void request_delete(system::core::AppContext &context);
     void request_create(system::core::AppContext &context);
     void prompt_create_entry(system::core::AppContext &context, bool directory);
+    void request_copy(system::core::AppContext &context);
     void request_move(system::core::AppContext &context);
+    void begin_picker(system::core::AppContext &context, FileOperationKind kind);
+    std::expected<void, std::string> confirm_picker(system::core::AppContext &context);
+    std::expected<void, std::string> cancel_picker(system::core::AppContext &context);
     std::filesystem::path current_directory_path() const;
     std::expected<void, std::string> schedule_file_operation(
         system::core::AppContext &context,

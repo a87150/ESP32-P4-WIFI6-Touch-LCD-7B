@@ -63,6 +63,10 @@ std::expected<void, std::string> FileManagerApp::on_start(system::core::AppConte
     current_volume_index_.reset();
     current_directory_.clear();
     suppressed_entry_click_path_.reset();
+    picker_active_ = false;
+    picker_source_.reset();
+    picker_return_directory_.clear();
+    picker_return_volume_index_.reset();
     current_page_ = Page::Browser;
 
     auto result = subscribe_actions(context);
@@ -100,6 +104,10 @@ std::expected<void, std::string> FileManagerApp::on_stop(system::core::AppContex
     resource_dir_.clear();
     selected_entry_.reset();
     suppressed_entry_click_path_.reset();
+    picker_active_ = false;
+    picker_source_.reset();
+    picker_return_directory_.clear();
+    picker_return_volume_index_.reset();
     current_page_ = Page::Browser;
     context_ = nullptr;
     return {};
@@ -113,6 +121,12 @@ std::expected<void, std::string> FileManagerApp::on_action(
     if (action == ACTION_BACK) {
         if (current_page_ == Page::Operations) {
             return hide_operations(context);
+        }
+        if (picker_active_) {
+            if (current_volume_index_) {
+                return navigate_back(context);
+            }
+            return cancel_picker(context);
         }
         return navigate_back(context);
     }
@@ -128,9 +142,19 @@ std::expected<void, std::string> FileManagerApp::on_action(
         request_create(context);
         return {};
     }
+    if (action == ACTION_COPY) {
+        request_copy(context);
+        return {};
+    }
     if (action == ACTION_MOVE) {
         request_move(context);
         return {};
+    }
+    if (action == ACTION_PICK_CONFIRM) {
+        return confirm_picker(context);
+    }
+    if (action == ACTION_PICK_CANCEL) {
+        return cancel_picker(context);
     }
     return {};
 }
@@ -163,7 +187,8 @@ std::expected<void, std::string> FileManagerApp::on_timer(
 std::expected<void, std::string> FileManagerApp::subscribe_actions(system::core::AppContext &context)
 {
     for (const auto *action : {
-                ACTION_BACK, ACTION_RENAME, ACTION_DELETE, ACTION_CREATE, ACTION_MOVE
+                ACTION_BACK, ACTION_RENAME, ACTION_DELETE, ACTION_CREATE,
+                ACTION_COPY, ACTION_MOVE, ACTION_PICK_CONFIRM, ACTION_PICK_CANCEL
             }) {
         auto result = context.gui().subscribe_action(action);
         if (!result) {
@@ -192,7 +217,7 @@ std::expected<void, std::string> FileManagerApp::subscribe_actions(system::core:
         }
     });
     entry_long_press_connection_ = context.gui().subscribe_action(ACTION_ENTRY_LONG, [this](const gui::Event & event) {
-        if (!context_) {
+        if (!context_ || picker_active_) {
             return;
         }
         auto entry = find_entry_by_path(event.path);

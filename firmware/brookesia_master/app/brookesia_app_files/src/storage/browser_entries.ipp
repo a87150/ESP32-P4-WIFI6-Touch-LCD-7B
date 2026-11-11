@@ -98,6 +98,11 @@ std::expected<void, std::string> FileManagerApp::open_entry(system::core::AppCon
         return refresh_entries(context);
     }
     if (entry.kind != EntryKind::Directory) {
+        if (picker_active_) {
+            // While choosing a destination, files are not selectable; only
+            // folders can be entered.
+            return {};
+        }
         BROOKESIA_LOGI("Open File Manager item operations: path(%1%)", entry.path.generic_string());
         return show_operations(context, entry);
     }

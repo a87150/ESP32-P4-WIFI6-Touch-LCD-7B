@@ -32,7 +32,7 @@ formats, UI development conventions, troubleshooting and known limits.
 The system boots into the Brookesia launcher (Super Shell). Apps can be paused in
 the background and resumed later; the status bar shows paused apps.
 
-A healthy boot installs six apps (serial log at 115200):
+A healthy boot installs seven apps (serial log at 115200):
 
 ```text
 SysCore: : Native app installed: id(1), manifest(brookesia.system.super.shell)
@@ -41,6 +41,7 @@ SysCore: : Native app installed: id(3), manifest(brookesia.waveshare.gallery)
 SysCore: : Native app installed: id(4), manifest(brookesia.waveshare.music)
 SysCore: : Native app installed: id(5), manifest(brookesia.waveshare.system_monitor)
 SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
+SysCore: : Native app installed: id(7), manifest(brookesia.general.files)
 ```
 
 ---
@@ -94,9 +95,10 @@ In-house components:
 
 ### 3.1 Desktop (Super Shell)
 
-- **Status bar**: centered clock; on the right the Wi-Fi signal (ascending bars
-  driven by RSSI, with a red slash when disconnected), Bluetooth and battery
-  (USB / BATTERY power label); on the left up to three paused apps.
+- **Status bar**: centered large clock with the date; on the right an evenly
+  spaced standard three-arc Wi-Fi glyph (1–3 arcs light up with RSSI, green when
+  connected; grey with a slash when disconnected), standard Bluetooth glyph and
+  battery (USB / BATTERY power label); on the left up to three paused apps.
 - **Icon pages**: apps flow left to right across pages with swipe paging.
 - **Gestures**: swipe up quickly on any page to return home; press and hold to
   open recents.
@@ -216,14 +218,31 @@ In-house components:
   Authoring MJPEG at **976 × 432** gives full-screen 1:1 playback at 12 fps.
 - Folders: `/littlefs/videos`, `/sdcard/videos`, `/sdcard`.
 
-### 3.6 Settings (`brookesia.general.settings`)
+### 3.6 Files (`brookesia.general.files`)
+
+- The first screen follows the Windows "My Computer" model: internal storage,
+  SD card, USB drive and network storage; unavailable volumes are marked
+  "not mounted" and cannot be entered.
+- Long-press a file or folder to open its action page: **rename, copy, move and
+  delete**. The `+` button in the header creates a folder or an empty file.
+- **Copy and move use a graphical destination-folder picker**: the browser
+  reopens and becomes the chooser. Enter a subfolder or switch volumes, then
+  press "Move here" / "Copy here" or "Cancel". Confirmation is disabled until a
+  volume is open.
+- Duplicate names, paths escaping the volume, and copying / moving a folder into
+  itself are rejected. Cross-volume moves copy the tree first and then remove
+  the source, because `rename` cannot cross filesystems.
+- A progress dialog is shown while the operation runs; the browser stays at the
+  destination and refreshes the list when it finishes.
+
+### 3.7 Settings (`brookesia.general.settings`)
 
 - Wi-Fi: scan, connect, disconnect, show **IP / MAC**, reconnect automatically.
 - Bluetooth: BLE scan and advertising (advertising resumes after a scan).
 - Display: brightness / theme; sound: volume; time: time zone and SNTP;
   language; device info.
 
-### 3.7 Bluetooth
+### 3.8 Bluetooth
 
 - The on-board C6 provides **BLE 5** (GAP advertising + scanning).
 - The C6 firmware has no classic Bluetooth, so **A2DP is unavailable** and audio

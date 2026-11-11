@@ -11,10 +11,14 @@
             "overlay": {
                 "metric": {
                     "statusPaddingX": "12dp",
-                    "statusLeftWidth": "220dp",
+                    "statusLeftWidth": "140dp",
                     "statusTitleWidth": "140dp",
                     "statusRightWidth": "140dp",
-                    "statusBatteryWidth": "44dp"
+                    "statusBatteryWidth": "44dp",
+                    "statusClockWidth": "156dp",
+                    "statusClockFont": "16sp",
+                    "statusClockDateFont": "16sp",
+                    "statusClockGap": "6dp"
                 }
             },
             "keyboard": {

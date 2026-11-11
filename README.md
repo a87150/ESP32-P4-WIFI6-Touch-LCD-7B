@@ -56,8 +56,9 @@
 
 主线能力：
 
-- **状态栏**：时间居中；右侧 Wi-Fi 信号（向上递增的信号条，按 RSSI 分级；未连接时
-  显示红色斜线）、蓝牙、电量（USB / BATTERY 供电标签）；左上角显示已挂起到后台的应用图标。
+- **状态栏**：大号时间与年月日居中；右侧为等距对齐的 Wi-Fi 标准三弧图标（按 RSSI
+  逐层点亮 1–3 层弧线，连接时绿色；未连接时灰色并带斜线）、标准蓝牙图标、电量
+  （USB / BATTERY 供电标签）；左上角显示已挂起到后台的应用图标。
 - **桌面**：应用图标从左到右排列、支持多页；任意页面上滑回桌面，按住进入最近任务；
   最近任务支持 **CLEAR ALL**；壁纸可由图片 App 设置。
 - **系统监视器**：磁盘全卷聚合使用率（≥ 90 % 变红报警）、环心 CPU / GPU 温度
@@ -66,11 +67,13 @@
 - **相册**：上一张 / 下一张、自动播放、分辨率与文件大小等详情、一键设为壁纸。
 - **视频**：MJPEG（纯 JPEG 串接）硬解 12 fps，以及 MP4（H.264 baseline）软解，
   进度拖动，**双击画面暂停 / 继续**，底部控制栏按钮居中。
+- **文件管理**：本机 / SD 卡 / 移动硬盘 / 网络存储卷；新建、复制、移动、重命名、删除；
+  复制与移动使用**图形化目标文件夹选择器**，不需要手动输入路径。
 - **设置**：Wi-Fi 扫描 / 连接 / 断开（显示 IP、MAC，掉线自动重连）、BLE 扫描与广播、
   显示、声音、时间、语言与设备信息。
 
 与出厂演示固件的差别：出厂固件是原厂 Brookesia 示例，本仓库主线固件新增了中文界面、
-状态栏与手势、自研的四个媒体 / 监控 App、蓝牙设置页，以及一套 16 MB 的 littlefs
+状态栏与手势、自研的五个媒体 / 监控 / 文件 App、蓝牙设置页，以及一套 16 MB 的 littlefs
 资源分区（改分区表，见“固件与分区”）。
 
 ## 🖥️ 硬件概况
@@ -153,7 +156,7 @@ python -m esptool --chip esp32p4 -p COMx -b 460800 `
 
 ### 串口日志与验收
 
-烧录后从 USB-Serial/JTAG 口看日志（115200），启动成功的标志是 6 个 App 全部安装：
+烧录后从 USB-Serial/JTAG 口看日志（115200），启动成功的标志是 7 个 App 全部安装：
 
 ```text
 SysCore: : Native app installed: id(1), manifest(brookesia.system.super.shell)
@@ -162,6 +165,7 @@ SysCore: : Native app installed: id(3), manifest(brookesia.waveshare.gallery)
 SysCore: : Native app installed: id(4), manifest(brookesia.waveshare.music)
 SysCore: : Native app installed: id(5), manifest(brookesia.waveshare.system_monitor)
 SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
+SysCore: : Native app installed: id(7), manifest(brookesia.general.files)
 ```
 
 ### 常见编译问题
@@ -181,6 +185,7 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 | 音乐 | `brookesia.waveshare.music` | PCM WAV / MP3，后台继续播放 |
 | 相册 | `brookesia.waveshare.gallery` | 浏览 / 自动播放 / 设为壁纸 |
 | 视频 | `brookesia.waveshare.video` | MJPEG 硬解 + MP4（H.264）软解，双击暂停 |
+| 文件 | `brookesia.general.files` | 浏览存储卷，新建 / 复制 / 移动 / 重命名 / 删除 |
 
 ### 状态栏与桌面
 
@@ -253,6 +258,18 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
   列表；「列表」在最右侧（音量按钮控制板载 codec，MJPEG / MP4 都没有实际播放的音轨）。
 - 目录：`/littlefs/videos`、`/sdcard/videos`、`/sdcard`。
 
+### 文件管理
+
+- 首屏按「我的电脑」方式列出本机、SD 卡、移动硬盘与网络存储卷；未挂载的卷会明确提示。
+- 进入文件夹后可长按文件或文件夹打开操作页：**重命名、复制、移动、删除**；
+  顶部 `+` 按钮新建文件夹或空文件。
+- **复制 / 移动不再要求手动输入路径**：点操作后返回浏览器，当前目录即目标目录；
+  可继续进入子文件夹或切换到其他存储卷，底部出现「移动到这里 / 复制到这里」与「取消」。
+  只有当前已打开一个存储卷时确认按钮才可用。
+- 复制与移动会检查同名目标、越界路径和「把文件夹复制/移动到自身内部」等非法操作；
+  跨存储卷移动会先完整复制再删除源，避免 `rename` 不能跨文件系统的问题。
+- 操作期间显示进度对话框，完成后停留在目标目录并刷新列表。
+
 ### 设置
 
 - Wi-Fi：扫描、连接、断开，显示 IPv4 与 MAC，掉线自动重连。
@@ -291,7 +308,7 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 
 ### 验证记录
 
-- `idf.py build` 通过；烧录 `factory + storage` 后可正常启动，6 个 App 全部 installed。
+- `idf.py build` 通过；烧录 `factory + storage` 后可正常启动，7 个 App 全部 installed。
 - 桌面图标顶部不再被裁切；上滑 / 按住手势、最近任务、状态栏图标显示正常。
 - 视频换片由播放线程异步执行，切换时不阻塞 UI；MJPEG 12 fps 定速。
 - Wi-Fi 掉线自动重连；BLE 扫描与广播互斥切换正常。

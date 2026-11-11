@@ -79,15 +79,24 @@ WifiStatusState get_wifi_status_from_event(std::string_view event)
 int signal_dbm_to_level(int dbm)
 {
     if (dbm > -55) {
-        return 4;
-    }
-    if (dbm > -65) {
         return 3;
     }
-    if (dbm > -75) {
+    if (dbm > -70) {
         return 2;
     }
     return 1;
+}
+
+std::string wifi_level_image_id(int level)
+{
+    switch (level) {
+    case 1:
+        return "icon.wifi_level1";
+    case 2:
+        return "icon.wifi_level2";
+    default:
+        return "icon.wifi_level3";
+    }
 }
 
 std::string bool_to_binding(bool value)
@@ -95,7 +104,7 @@ std::string bool_to_binding(bool value)
     return value ? "true" : "false";
 }
 
-std::string make_clock_text()
+std::string format_local_time(const char *format, const char *fallback)
 {
     const auto now = std::chrono::system_clock::now();
     const auto time = std::chrono::system_clock::to_time_t(now);
@@ -105,11 +114,21 @@ std::string make_clock_text()
 #else
     localtime_r(&time, &local_time);
 #endif
-    char buffer[8] = {};
-    if (std::strftime(buffer, sizeof(buffer), "%H:%M", &local_time) == 0) {
-        return "--:--";
+    char buffer[24] = {};
+    if (std::strftime(buffer, sizeof(buffer), format, &local_time) == 0) {
+        return fallback;
     }
     return buffer;
+}
+
+std::string make_clock_text()
+{
+    return format_local_time("%H:%M", "--:--");
+}
+
+std::string make_clock_date_text()
+{
+    return format_local_time("%Y-%m-%d", "----.--.--");
 }
 
 } // namespace
@@ -228,7 +247,7 @@ void ShellApp::refresh_wifi_signal()
             if (!info.status.signal_dbm.has_value()) {
                 continue;
             }
-            set_status_wifi_bars(signal_dbm_to_level(*info.status.signal_dbm));
+            set_status_wifi_level(signal_dbm_to_level(*info.status.signal_dbm));
             break;
         }
     };
@@ -272,9 +291,9 @@ void ShellApp::set_status_wifi_state(bool visible, bool connected)
     if (!visible) {
         wifi_signal_level_ = 0;
     } else if (connected && wifi_signal_level_ <= 0) {
-        // Unknown RSSI right after connecting: show the full icon until the
-        // connectivity service reports a value.
-        wifi_signal_level_ = 4;
+        // Unknown RSSI right after connecting: show the full three-arc icon
+        // until the connectivity service reports a value.
+        wifi_signal_level_ = 3;
     } else if (!connected) {
         wifi_signal_level_ = 0;
     }
@@ -287,40 +306,32 @@ void ShellApp::set_status_wifi_state(bool visible, bool connected)
         .key = "wifi_hidden",
         .value = bool_to_binding(!visible),
     });
+    // Standard Wi-Fi glyph: one, two, or three arcs layered upward for the
+    // current RSSI level; the muted off glyph adds a slash when disconnected.
     updates.push_back(gui::BindingValueUpdate{
-        .absolute_path = std::string(SUPER_STATUS_WIFI_PATH) + "/wifi_off_slash",
-        .key = "wifi_off_hidden",
-        .value = bool_to_binding(connected),
+        .absolute_path = SUPER_STATUS_WIFI_PATH,
+        .key = "wifi_src",
+        .value = (visible && connected) ? wifi_level_image_id(wifi_signal_level_) : "icon.wifi_off",
     });
-    // Keep the familiar ascending bar glyph in both states: green bars up to
-    // the current RSSI level when connected, and the full muted stack behind
-    // the red slash when disconnected.
-    const std::string_view bar_color = connected ? "${color.success.fill}" : "${color.text.muted}";
-    for (int level = 1; level <= 4; ++level) {
-        const auto bar_path = std::string(SUPER_STATUS_WIFI_PATH) + "/wifi_bar_" + std::to_string(level);
-        updates.push_back(gui::BindingValueUpdate{
-            .absolute_path = bar_path,
-            .key = "wifi_bar" + std::to_string(level) + "_hidden",
-            .value = bool_to_binding(connected && wifi_signal_level_ < level),
-        });
-        updates.push_back(gui::BindingValueUpdate{
-            .absolute_path = bar_path,
-            .key = "wifi_bar_color",
-            .value = std::string(bar_color),
-        });
-    }
+    // Image recolour bindings accept literal '#RRGGBB' values only; theme
+    // colour expressions such as ${color.success.fill} are not resolved here.
+    updates.push_back(gui::BindingValueUpdate{
+        .absolute_path = SUPER_STATUS_WIFI_PATH,
+        .key = "wifi_tint",
+        .value = connected ? "#5fd28a" : "#9b9b9b",
+    });
     auto result = context_->gui().set_binding_values(updates);
     if (!result) {
         BROOKESIA_LOGW("Failed to refresh Shell Wi-Fi status icon: %1%", result.error());
     }
 }
 
-void ShellApp::set_status_wifi_bars(int level)
+void ShellApp::set_status_wifi_level(int level)
 {
     if (!wifi_status_visible_ || !wifi_connected_) {
         return;
     }
-    level = std::clamp(level, 1, 4);
+    level = std::clamp(level, 1, 3);
     if (level == wifi_signal_level_) {
         return;
     }
@@ -329,16 +340,19 @@ void ShellApp::set_status_wifi_bars(int level)
         return;
     }
     std::vector<gui::BindingValueUpdate> updates;
-    for (int bar = 1; bar <= 4; ++bar) {
-        updates.push_back(gui::BindingValueUpdate{
-            .absolute_path = std::string(SUPER_STATUS_WIFI_PATH) + "/wifi_bar_" + std::to_string(bar),
-            .key = "wifi_bar" + std::to_string(bar) + "_hidden",
-            .value = bool_to_binding(bar > level),
-        });
-    }
+    updates.push_back(gui::BindingValueUpdate{
+        .absolute_path = SUPER_STATUS_WIFI_PATH,
+        .key = "wifi_src",
+        .value = wifi_level_image_id(level),
+    });
+    updates.push_back(gui::BindingValueUpdate{
+        .absolute_path = SUPER_STATUS_WIFI_PATH,
+        .key = "wifi_tint",
+        .value = "#5fd28a",
+    });
     auto result = context_->gui().set_binding_values(updates);
     if (!result) {
-        BROOKESIA_LOGW("Failed to refresh Shell Wi-Fi signal bars: %1%", result.error());
+        BROOKESIA_LOGW("Failed to refresh Shell Wi-Fi signal level: %1%", result.error());
     }
 }
 
@@ -534,7 +548,18 @@ void ShellApp::refresh_status_clock()
     if (context_ == nullptr) {
         return;
     }
-    auto result = context_->gui().set_binding_value(SUPER_STATUS_CLOCK_PATH, "clock_text", make_clock_text());
+    std::vector<gui::BindingValueUpdate> updates;
+    updates.push_back(gui::BindingValueUpdate{
+        .absolute_path = SUPER_STATUS_CLOCK_PATH,
+        .key = "clock_text",
+        .value = make_clock_text(),
+    });
+    updates.push_back(gui::BindingValueUpdate{
+        .absolute_path = SUPER_STATUS_CLOCK_DATE_PATH,
+        .key = "clock_date_text",
+        .value = make_clock_date_text(),
+    });
+    auto result = context_->gui().set_binding_values(updates);
     if (!result) {
         BROOKESIA_LOGW("Failed to refresh Shell status clock: %1%", result.error());
     }

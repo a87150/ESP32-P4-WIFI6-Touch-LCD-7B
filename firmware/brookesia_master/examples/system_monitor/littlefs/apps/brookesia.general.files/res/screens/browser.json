@@ -66,6 +66,136 @@
                             }
                         }
                     ]
+                },
+                {
+                    "type": "container",
+                    "id": "picker_bar",
+                    "commonProps": {
+                        "hidden": true,
+                        "scrollable": false
+                    },
+                    "bindings": {
+                        "commonProps.hidden": "picker_hidden"
+                    },
+                    "styleRefs": [
+                        "app.card"
+                    ],
+                    "style": {
+                        "padding": "${constant.files.layout.cardPadding}"
+                    },
+                    "layout": {
+                        "type": "flex",
+                        "flexFlow": "row",
+                        "mainAlign": "spaceBetween",
+                        "crossAlign": "center",
+                        "gap": "${constant.files.layout.pickerGap}"
+                    },
+                    "placement": {
+                        "mode": "flow",
+                        "width": "match",
+                        "height": "${constant.files.layout.pickerHeight}",
+                        "alignSelf": "stretch"
+                    },
+                    "children": [
+                        {
+                            "type": "label",
+                            "id": "hint",
+                            "commonProps": {
+                                "clickable": false
+                            },
+                            "bindings": {
+                                "labelProps.text": "picker_hint"
+                            },
+                            "styleRefs": [
+                                "app.caption"
+                            ],
+                            "labelProps": {
+                                "text": "${constant.files.i18n.pick_destination}"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "1dp",
+                                "height": "wrap",
+                                "flexGrow": 1
+                            }
+                        },
+                        {
+                            "type": "button",
+                            "id": "cancel",
+                            "events": [
+                                {
+                                    "type": "clicked",
+                                    "action": "files.pick.cancel"
+                                }
+                            ],
+                            "styleRefs": [
+                                "app.secondaryChip"
+                            ],
+                            "layout": {
+                                "type": "flex",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "${constant.files.layout.pickerButtonWidth}",
+                                "height": "${constant.files.layout.pickerButtonHeight}",
+                                "alignSelf": "center"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "label",
+                                    "labelProps": {
+                                        "text": "${constant.files.i18n.cancel}"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "button",
+                            "id": "confirm",
+                            "commonProps": {
+                                "disabled": true
+                            },
+                            "bindings": {
+                                "commonProps.disabled": "picker_confirm_disabled",
+                                "style.opacity": "picker_confirm_opacity"
+                            },
+                            "events": [
+                                {
+                                    "type": "clicked",
+                                    "action": "files.pick.confirm"
+                                }
+                            ],
+                            "styleRefs": [
+                                "app.primaryChip"
+                            ],
+                            "layout": {
+                                "type": "flex",
+                                "mainAlign": "center",
+                                "crossAlign": "center"
+                            },
+                            "placement": {
+                                "mode": "flow",
+                                "width": "${constant.files.layout.pickerButtonWidth}",
+                                "height": "${constant.files.layout.pickerButtonHeight}",
+                                "alignSelf": "center"
+                            },
+                            "children": [
+                                {
+                                    "type": "label",
+                                    "id": "label",
+                                    "bindings": {
+                                        "labelProps.text": "picker_confirm_text"
+                                    },
+                                    "labelProps": {
+                                        "text": "${constant.files.i18n.move_here}"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
                 }
             ]
         }

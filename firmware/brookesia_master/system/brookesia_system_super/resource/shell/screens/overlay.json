@@ -194,8 +194,10 @@
                     },
                     "layout": {
                         "type": "flex",
+                        "flexFlow": "row",
                         "mainAlign": "center",
-                        "crossAlign": "center"
+                        "crossAlign": "center",
+                        "gap": "${constant.ui.overlay.metric.statusClockGap}"
                     },
                     "placement": {
                         "mode": "flow",
@@ -203,6 +205,25 @@
                         "height": "${constant.ui.overlay.metric.statusPillHeight}"
                     },
                     "children": [
+                        {
+                            "type": "label",
+                            "id": "date",
+                            "labelProps": {
+                                "text": "----.--.--"
+                            },
+                            "bindings": {
+                                "labelProps.text": "clock_date_text"
+                            },
+                            "style": {
+                                "fontSize": "${constant.ui.overlay.metric.statusClockDateFont}"
+                            },
+                            "placement": {
+                                "mode": "flow"
+                            },
+                            "styleRefs": [
+                                "shell.statusTinyMuted"
+                            ]
+                        },
                         {
                             "type": "label",
                             "id": "label",
@@ -219,7 +240,7 @@
                                 "mode": "flow"
                             },
                             "styleRefs": [
-                                "shell.statusTinyMuted"
+                                "shell.statusTiny"
                             ]
                         }
                     ]
@@ -241,148 +262,27 @@
                     },
                     "children": [
                         {
-                            "type": "container",
+                            "type": "image",
                             "id": "wifi_icon",
                             "commonProps": {
                                 "hidden": false,
                                 "clickable": false
                             },
                             "bindings": {
-                                "commonProps.hidden": "wifi_hidden"
+                                "commonProps.hidden": "wifi_hidden",
+                                "imageProps.src": "wifi_src",
+                                "imageProps.recolor": "wifi_tint"
+                            },
+                            "imageProps": {
+                                "src": "${image.icon.wifi_level3}",
+                                "innerAlign": "contain",
+                                "recolor": "#5fd28a"
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "34dp",
-                                "height": "22dp"
-                            },
-                            "children": [
-                                {
-                                    "type": "container",
-                                    "id": "wifi_bar_1",
-                                    "commonProps": {
-                                        "hidden": false,
-                                        "clickable": false
-                                    },
-                                    "bindings": {
-                                        "commonProps.hidden": "wifi_bar1_hidden",
-                                        "style.bgColor": "wifi_bar_color"
-                                    },
-                                    "style": {
-                                        "bgColor": "#5fd28a",
-                                        "radius": "1dp"
-                                    },
-                                    "placement": {
-                                        "mode": "absolute",
-                                        "x": "1dp",
-                                        "y": "16dp",
-                                        "width": "5dp",
-                                        "height": "6dp"
-                                    }
-                                },
-                                {
-                                    "type": "container",
-                                    "id": "wifi_bar_2",
-                                    "commonProps": {
-                                        "hidden": false,
-                                        "clickable": false
-                                    },
-                                    "bindings": {
-                                        "commonProps.hidden": "wifi_bar2_hidden",
-                                        "style.bgColor": "wifi_bar_color"
-                                    },
-                                    "style": {
-                                        "bgColor": "#5fd28a",
-                                        "radius": "1dp"
-                                    },
-                                    "placement": {
-                                        "mode": "absolute",
-                                        "x": "9dp",
-                                        "y": "12dp",
-                                        "width": "5dp",
-                                        "height": "10dp"
-                                    }
-                                },
-                                {
-                                    "type": "container",
-                                    "id": "wifi_bar_3",
-                                    "commonProps": {
-                                        "hidden": false,
-                                        "clickable": false
-                                    },
-                                    "bindings": {
-                                        "commonProps.hidden": "wifi_bar3_hidden",
-                                        "style.bgColor": "wifi_bar_color"
-                                    },
-                                    "style": {
-                                        "bgColor": "#5fd28a",
-                                        "radius": "1dp"
-                                    },
-                                    "placement": {
-                                        "mode": "absolute",
-                                        "x": "17dp",
-                                        "y": "8dp",
-                                        "width": "5dp",
-                                        "height": "14dp"
-                                    }
-                                },
-                                {
-                                    "type": "container",
-                                    "id": "wifi_bar_4",
-                                    "commonProps": {
-                                        "hidden": false,
-                                        "clickable": false
-                                    },
-                                    "bindings": {
-                                        "commonProps.hidden": "wifi_bar4_hidden",
-                                        "style.bgColor": "wifi_bar_color"
-                                    },
-                                    "style": {
-                                        "bgColor": "#5fd28a",
-                                        "radius": "1dp"
-                                    },
-                                    "placement": {
-                                        "mode": "absolute",
-                                        "x": "25dp",
-                                        "y": "4dp",
-                                        "width": "5dp",
-                                        "height": "18dp"
-                                    }
-                                },
-                                {
-                                    "type": "line",
-                                    "id": "wifi_off_slash",
-                                    "commonProps": {
-                                        "hidden": true,
-                                        "clickable": false
-                                    },
-                                    "bindings": {
-                                        "commonProps.hidden": "wifi_off_hidden"
-                                    },
-                                    "lineProps": {
-                                        "points": [
-                                            {
-                                                "x": 3,
-                                                "y": 3
-                                            },
-                                            {
-                                                "x": 27,
-                                                "y": 19
-                                            }
-                                        ]
-                                    },
-                                    "style": {
-                                        "lineColor": "#ef4444",
-                                        "lineWidth": "2dp"
-                                    },
-                                    "placement": {
-                                        "mode": "absolute",
-                                        "x": "0dp",
-                                        "y": "0dp",
-                                        "width": "match",
-                                        "height": "match"
-                                    }
-                                }
-                            ]
+                                "width": "${constant.ui.overlay.metric.statusPillHeight}",
+                                "height": "${constant.ui.overlay.metric.statusPillHeight}"
+                            }
                         },
                         {
                             "type": "image",
@@ -401,8 +301,8 @@
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "22dp",
-                                "height": "30dp"
+                                "width": "${constant.ui.overlay.metric.statusPillHeight}",
+                                "height": "${constant.ui.overlay.metric.statusPillHeight}"
                             }
                         },
                         {
@@ -423,7 +323,7 @@
                             },
                             "placement": {
                                 "mode": "flow",
-                                "width": "${constant.ui.overlay.metric.statusBatteryWidth}",
+                                "width": "wrap",
                                 "height": "${constant.ui.overlay.metric.statusPillHeight}"
                             },
                             "children": [

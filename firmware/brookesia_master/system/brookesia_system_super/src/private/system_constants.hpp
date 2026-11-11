@@ -124,6 +124,8 @@ inline constexpr const char *SUPER_STATUS_BATTERY_TEXT_PATH = BROOKESIA_SYSTEM_S
         "/status_right/battery_pill/battery_text";
 inline constexpr const char *SUPER_STATUS_CLOCK_PATH = BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS
         "/clock/label";
+inline constexpr const char *SUPER_STATUS_CLOCK_DATE_PATH = BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY_STATUS
+        "/clock/date";
 inline constexpr const char *SUPER_GESTURE_INDICATOR_PATH =
     BROOKESIA_SYSTEM_SUPER_PATH_OVERLAY "/gesture_indicator";
 inline constexpr const char *SUPER_GESTURE_INDICATOR_BAR_PATH =

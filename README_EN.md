@@ -51,9 +51,10 @@ Software baseline:
 
 Main-line capabilities:
 
-- **Status bar**: centered clock; Wi-Fi signal (ascending bars driven by RSSI,
-  with a red slash when disconnected), Bluetooth and battery (USB / BATTERY
-  power label) on the right; paused apps on the left.
+- **Status bar**: centered large clock with the date; evenly spaced standard
+  three-arc Wi-Fi glyph (1–3 arcs light up with RSSI, green when connected; grey
+  with a slash when disconnected), standard Bluetooth glyph and battery
+  (USB / BATTERY power label) on the right; paused apps on the left.
 - **Launcher**: icons flow left to right across pages; swipe up on any page to
   return home, press and hold for recents; recents provide **CLEAR ALL**; the
   wallpaper can be set from the gallery.
@@ -67,13 +68,16 @@ Main-line capabilities:
 - **Video**: hardware-decoded MJPEG at a fixed 12 fps plus software-decoded
   H.264 baseline MP4, seek, **double tap on the picture to pause / resume**, and
   a centered control bar at the bottom.
+- **Files**: internal / SD / USB / network volumes; create, copy, move, rename
+  and delete; copy and move use a **graphical destination-folder picker**
+  instead of typing a path.
 - **Settings**: Wi-Fi scan / connect / disconnect with IP and MAC plus automatic
   reconnect, BLE scan and advertising, display, sound, time, language and device
   info.
 
 Compared with the vendor demo, the main firmware adds a Chinese UI, the status
-bar and gesture set, four in-house media / monitoring apps, a Bluetooth settings
-page and a 16 MB littlefs resource volume (partition table change, see
+bar and gesture set, five in-house media / monitoring / file apps, a Bluetooth
+settings page and a 16 MB littlefs resource volume (partition table change, see
 "Firmware and partitions").
 
 ## 🖥️ Hardware overview
@@ -164,7 +168,7 @@ Rules:
 ### Serial log and acceptance
 
 After flashing, watch the USB-Serial/JTAG port at 115200. A healthy boot installs
-all six apps:
+all seven apps:
 
 ```text
 SysCore: : Native app installed: id(1), manifest(brookesia.system.super.shell)
@@ -173,6 +177,7 @@ SysCore: : Native app installed: id(3), manifest(brookesia.waveshare.gallery)
 SysCore: : Native app installed: id(4), manifest(brookesia.waveshare.music)
 SysCore: : Native app installed: id(5), manifest(brookesia.waveshare.system_monitor)
 SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
+SysCore: : Native app installed: id(7), manifest(brookesia.general.files)
 ```
 
 ### Common build issues
@@ -195,6 +200,7 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 | Music | `brookesia.waveshare.music` | PCM WAV / MP3, background playback |
 | Gallery | `brookesia.waveshare.gallery` | Browsing, slideshow, set wallpaper |
 | Video | `brookesia.waveshare.video` | Hardware MJPEG + software H.264/MP4, double-tap pause |
+| Files | `brookesia.general.files` | Browse volumes; create, copy, move, rename and delete |
 
 ### Status bar and launcher
 
@@ -293,6 +299,23 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
   The volume buttons drive the board codec (MJPEG and MP4 carry no played audio).
 - Folders: `/littlefs/videos`, `/sdcard/videos`, `/sdcard`.
 
+### Files
+
+- The first screen follows the Windows "My Computer" model: internal storage,
+  SD card, USB drive and network storage, with a clear "not mounted" message
+  for unavailable volumes.
+- Long-press a file or folder to open its action page: **rename, copy, move and
+  delete**. The `+` button in the header creates a folder or an empty file.
+- **Copy and move no longer ask for a typed path**: the browser reopens as the
+  destination picker. Enter a subfolder or switch volumes, then press
+  "Move here" / "Copy here" or "Cancel". Confirmation is enabled only after a
+  volume is open.
+- Duplicate names, paths escaping the volume, and copying / moving a folder
+  into itself are rejected. Cross-volume moves copy the tree first and then
+  remove the source, because `rename` cannot cross filesystems.
+- A progress dialog is shown while the operation runs; the browser stays at the
+  destination and refreshes the list when it finishes.
+
 ### Settings
 
 - Wi-Fi: scan, connect and disconnect, showing IPv4 and MAC, with automatic
@@ -344,8 +367,8 @@ SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
 
 ### Verification log
 
-- `idf.py build` succeeds and a `factory + storage` flash boots with all six apps
-  installed.
+- `idf.py build` succeeds and a `factory + storage` flash boots with all seven
+  apps installed.
 - Launcher icons are no longer clipped at the top; gestures, recents and status
   bar icons behave as expected.
 - Video track switching runs on the playback worker and never blocks the UI;

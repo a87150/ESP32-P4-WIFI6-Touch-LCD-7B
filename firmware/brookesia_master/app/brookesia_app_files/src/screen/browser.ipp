@@ -115,17 +115,53 @@ std::expected<void, std::string> FileManagerApp::refresh_ui(system::core::AppCon
         "labelProps.text",
         item_count_text(entries_.size(), tr("empty"), tr("items_suffix"))
     );
+    const bool picker_visible = picker_active_;
+    const bool can_create = current_volume_index_.has_value() && !picker_visible;
     add_binding(
         updates,
         HEADER_CREATE_PATH,
         "commonProps.disabled",
-        bool_text(!current_volume_index_.has_value())
+        bool_text(!can_create)
     );
     add_binding(
         updates,
         HEADER_CREATE_PATH,
         "style.opacity",
-        std::to_string(current_volume_index_ ? ENABLED_OPACITY : DISABLED_OPACITY)
+        std::to_string(can_create ? ENABLED_OPACITY : DISABLED_OPACITY)
+    );
+
+    // Destination picker: the browser itself becomes a folder chooser while
+    // the bar below the list confirms or cancels the pending copy/move.
+    add_binding(
+        updates,
+        PICKER_BAR_PATH,
+        "commonProps.hidden",
+        bool_text(!picker_visible)
+    );
+    add_binding(
+        updates,
+        PICKER_HINT_PATH,
+        "labelProps.text",
+        tr("pick_destination")
+    );
+    const bool can_confirm = picker_visible && current_volume_index_.has_value();
+    add_binding(
+        updates,
+        PICKER_CONFIRM_PATH,
+        "commonProps.disabled",
+        bool_text(!can_confirm)
+    );
+    add_binding(
+        updates,
+        PICKER_CONFIRM_PATH,
+        "style.opacity",
+        std::to_string(can_confirm ? ENABLED_OPACITY : DISABLED_OPACITY)
+    );
+    add_binding(
+        updates,
+        PICKER_CONFIRM_LABEL_PATH,
+        "labelProps.text",
+        picker_kind_ == FileOperationKind::Copy ? tr("copy_here") : tr("move_here")
     );
 
     for (const auto &entry : entries_) {

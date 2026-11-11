@@ -80,10 +80,34 @@
             "height": 44
         },
         {
+            "id": "icon.wifi_level1",
+            "src": "icon/wifi_level1.png",
+            "width": 36,
+            "height": 36
+        },
+        {
+            "id": "icon.wifi_level2",
+            "src": "icon/wifi_level2.png",
+            "width": 36,
+            "height": 36
+        },
+        {
+            "id": "icon.wifi_level3",
+            "src": "icon/wifi_level3.png",
+            "width": 36,
+            "height": 36
+        },
+        {
+            "id": "icon.wifi_off",
+            "src": "icon/wifi_off.png",
+            "width": 36,
+            "height": 36
+        },
+        {
             "id": "icon.bt",
             "src": "icon/bt.png",
-            "width": 44,
-            "height": 60
+            "width": 48,
+            "height": 48
         }
     ]
 }

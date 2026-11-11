@@ -52,6 +52,9 @@ std::expected<void, std::string> FileManagerApp::show_file_operation_dialog(syst
     case FileOperationKind::Delete:
         text_key = "delete_in_progress";
         break;
+    case FileOperationKind::Copy:
+        text_key = "copy_in_progress";
+        break;
     case FileOperationKind::Move:
         text_key = "move_in_progress";
         break;

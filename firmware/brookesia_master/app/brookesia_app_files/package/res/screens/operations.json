@@ -147,6 +147,36 @@
                         },
                         {
                             "type": "templateRef",
+                            "id": "copy",
+                            "templateId": "operation_item",
+                            "overrides": {
+                                ".": {
+                                    "events": [
+                                        {
+                                            "type": "clicked",
+                                            "action": "files.copy"
+                                        }
+                                    ]
+                                },
+                                "icon": {
+                                    "imageProps": {
+                                        "src": "${image.files.icon.copy}"
+                                    }
+                                },
+                                "content/title": {
+                                    "labelProps": {
+                                        "text": "${constant.files.i18n.copy}"
+                                    }
+                                },
+                                "content/detail": {
+                                    "labelProps": {
+                                        "text": "${constant.files.i18n.copy_detail}"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "templateRef",
                             "id": "move",
                             "templateId": "operation_item",
                             "overrides": {

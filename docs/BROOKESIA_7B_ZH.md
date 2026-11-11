@@ -29,7 +29,7 @@
 系统启动后进入 Brookesia 桌面（Super Shell），可在桌面上启动各应用；应用之间可以
 后台挂起与恢复，状态栏会显示被挂起的应用。
 
-启动成功的验收标志（串口 115200）是 6 个 App 全部安装：
+启动成功的验收标志（串口 115200）是 7 个 App 全部安装：
 
 ```text
 SysCore: : Native app installed: id(1), manifest(brookesia.system.super.shell)
@@ -38,6 +38,7 @@ SysCore: : Native app installed: id(3), manifest(brookesia.waveshare.gallery)
 SysCore: : Native app installed: id(4), manifest(brookesia.waveshare.music)
 SysCore: : Native app installed: id(5), manifest(brookesia.waveshare.system_monitor)
 SysCore: : Native app installed: id(6), manifest(brookesia.waveshare.video)
+SysCore: : Native app installed: id(7), manifest(brookesia.general.files)
 ```
 
 ---
@@ -91,9 +92,9 @@ docs/
 
 ### 3.1 桌面（Super Shell）
 
-- **状态栏**：时间居中；右侧为 Wi-Fi 信号（向上递增的信号条，按 RSSI 分级；未连接时
-  显示红色斜线）、蓝牙、电量（USB / BATTERY 供电标签）；左上角显示处于后台（Paused）
-  的应用图标，最多 3 个槽位。
+- **状态栏**：大号时间与年月日居中；右侧为等距对齐的 Wi-Fi 标准三弧图标（按 RSSI
+  逐层点亮 1–3 层弧线，连接时绿色；未连接时灰色并带斜线）、标准蓝牙图标、电量
+  （USB / BATTERY 供电标签）；左上角显示处于后台（Paused）的应用图标，最多 3 个槽位。
 - **图标页**：应用图标从左往右排列，支持多页与滑动。
 - **手势**：任意页面**快速上滑**回到桌面；**按住**（长按）进入最近任务。
 - **最近任务**：卡片式预览，带 **CLEAR ALL** 一键清理。
@@ -178,13 +179,26 @@ docs/
 - 目录：`/littlefs/videos`、`/sdcard/videos`、`/sdcard`。
 - 生成工具见第 7 节。
 
-### 3.6 设置（`brookesia.general.settings`）
+### 3.6 文件管理（`brookesia.general.files`）
+
+- 首屏按「我的电脑」方式列出本机、SD 卡、移动硬盘与网络存储卷；未挂载的卷显示
+  「未挂载」，不会误进入。
+- 进入文件夹后可长按文件或文件夹打开操作页：**重命名、复制、移动、删除**；
+  顶部 `+` 按钮新建文件夹或空文件。
+- **复制 / 移动使用图形化目标文件夹选择器**：点操作后回到浏览器，当前目录即目标目录；
+  可继续进入子文件夹或切换到其他存储卷，底部显示「移动到这里 / 复制到这里」与「取消」。
+  未打开任何存储卷时确认按钮禁用。
+- 操作前检查同名目标、越界路径，以及「把文件夹复制 / 移动到自身内部」等非法情况。
+  跨存储卷移动会先完整复制再删除源（`rename` 不能跨文件系统）。
+- 操作期间显示进度对话框，完成后停留在目标目录并刷新列表。
+
+### 3.7 设置（`brookesia.general.settings`）
 
 - Wi-Fi：扫描 / 连接 / 断开，显示 **IP、MAC**，掉线**自动重连**。
 - 蓝牙：BLE 扫描与广播（关闭扫描后自动恢复广播）。
 - 显示：亮度 / 主题；声音：音量；时间：时区与 SNTP；语言；设备信息。
 
-### 3.7 蓝牙
+### 3.8 蓝牙
 
 - 板载 C6 直接提供 **BLE 5**（GAP 广播 + 扫描），不经经典蓝牙。
 - 由于 C6 固件只带 BLE，**不支持经典蓝牙 / A2DP**，因此无法把音频投到蓝牙音箱。
@@ -450,9 +464,10 @@ GUI 只提供 `clicked` 事件，视频 App 的处理方式是：
 
 上机验收建议按下列顺序走一遍：
 
-1. **启动**：串口出现 6 个 `Native app installed`，无 `System init failed`、无 panic。
+1. **启动**：串口出现 7 个 `Native app installed`，无 `System init failed`、无 panic。
 2. **桌面**：图标顶部不被裁切；左右翻页；上滑回桌面；按住进最近任务；CLEAR ALL 正常。
-3. **状态栏**：时间居中；Wi-Fi 图标随信号强度变色；后台 App 图标出现在左上角。
+3. **状态栏**：大号时间与年月日居中；右侧 Wi-Fi 三弧图标按信号强度逐层点亮（连接时
+   绿色，未连接时灰色带斜线）、标准蓝牙图标与电量等距对齐；后台 App 图标出现在左上角。
 4. **系统监视器**：磁盘/CPU/内存有数据；环心显示 CPU / GPU 温度；超过 90 °C 出现 `HIGH!`；
    运行 `scripts/pc_agent.py` 后网络卡片有 PC 指标与 DISK I/O。
 5. **音乐**：进入即显示播放器（不出声）；点「列表」（按钮排最右）右侧弹出抽屉（每页 5 首），

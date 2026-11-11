@@ -20,7 +20,11 @@
                 "iconBox": "36dp",
                 "operationIconColumn": "52dp",
                 "operationItemHeight": "68dp",
-                "chevronWidth": "20dp"
+                "chevronWidth": "20dp",
+                "pickerHeight": "52dp",
+                "pickerButtonWidth": "104dp",
+                "pickerButtonHeight": "36dp",
+                "pickerGap": "6dp"
             },
             "font": {
                 "title": "22sp",

@@ -41,10 +41,17 @@ static constexpr const char *ACTION_ENTRY_LONG = "files.entry.long";
 static constexpr const char *ACTION_RENAME = "files.rename";
 static constexpr const char *ACTION_DELETE = "files.delete";
 static constexpr const char *ACTION_CREATE = "files.create";
+static constexpr const char *ACTION_COPY = "files.copy";
 static constexpr const char *ACTION_MOVE = "files.move";
+static constexpr const char *ACTION_PICK_CONFIRM = "files.pick.confirm";
+static constexpr const char *ACTION_PICK_CANCEL = "files.pick.cancel";
 static constexpr const char *ENTRY_TEMPLATE_ID = "file_entry";
 static constexpr const char *LIST_CONTAINER_PATH = "/browser/page/list";
 static constexpr const char *LIST_PATH = "/browser/page/list/items";
+static constexpr const char *PICKER_BAR_PATH = "/browser/page/picker_bar";
+static constexpr const char *PICKER_HINT_PATH = "/browser/page/picker_bar/hint";
+static constexpr const char *PICKER_CONFIRM_PATH = "/browser/page/picker_bar/confirm";
+static constexpr const char *PICKER_CONFIRM_LABEL_PATH = "/browser/page/picker_bar/confirm/label";
 static constexpr const char *HEADER_TITLE_PATH = "/files_header/bar/text/title";
 static constexpr const char *HEADER_SUBTITLE_PATH = "/files_header/bar/text/subtitle";
 static constexpr const char *HEADER_COUNT_PATH = "/files_header/bar/count/label";
@@ -54,6 +61,7 @@ static constexpr const char *OP_INFO_DETAIL_PATH = "/operations/page/selection_c
 static constexpr const char *OP_INFO_ICON_PATH = "/operations/page/selection_card/selected/icon";
 static constexpr const char *OP_INFO_CHEVRON_PATH = "/operations/page/selection_card/selected/chevron";
 static constexpr const char *OP_RENAME_PATH = "/operations/page/actions_card/rename";
+static constexpr const char *OP_COPY_PATH = "/operations/page/actions_card/copy";
 static constexpr const char *OP_MOVE_PATH = "/operations/page/actions_card/move";
 static constexpr const char *OP_DELETE_PATH = "/operations/page/actions_card/delete";
 static constexpr const char *INITIAL_REFRESH_TIMER_NAME = "files.initial.refresh";
@@ -409,6 +417,11 @@ struct FileManagerApp::Impl {
     std::vector<Entry> entries;
     size_t entry_view_count = 0;
     std::optional<Entry> selected_entry;
+    bool picker_active = false;
+    FileOperationKind picker_kind = FileOperationKind::Move;
+    std::optional<Entry> picker_source;
+    std::filesystem::path picker_return_directory;
+    std::optional<size_t> picker_return_volume_index;
     std::optional<std::string> suppressed_entry_click_path;
     std::optional<size_t> current_volume_index;
     std::filesystem::path current_directory;
@@ -443,6 +456,11 @@ FileManagerApp::~FileManagerApp() = default;
 #define entries_ impl_->entries
 #define entry_view_count_ impl_->entry_view_count
 #define selected_entry_ impl_->selected_entry
+#define picker_active_ impl_->picker_active
+#define picker_kind_ impl_->picker_kind
+#define picker_source_ impl_->picker_source
+#define picker_return_directory_ impl_->picker_return_directory
+#define picker_return_volume_index_ impl_->picker_return_volume_index
 #define suppressed_entry_click_path_ impl_->suppressed_entry_click_path
 #define current_volume_index_ impl_->current_volume_index
 #define current_directory_ impl_->current_directory
@@ -479,6 +497,11 @@ FileManagerApp::~FileManagerApp() = default;
 #undef entries_
 #undef entry_view_count_
 #undef selected_entry_
+#undef picker_active_
+#undef picker_kind_
+#undef picker_source_
+#undef picker_return_directory_
+#undef picker_return_volume_index_
 #undef suppressed_entry_click_path_
 #undef current_volume_index_
 #undef current_directory_
